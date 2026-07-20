@@ -1,6 +1,6 @@
 <?php
 
-use App\Livewire\Header;
+use App\Livewire\Dashboard;
 use App\Livewire\Login;
 use Illuminate\Support\Facades\Route;
 
@@ -10,4 +10,4 @@ use Illuminate\Support\Facades\Route;
 
 // Route::livewire('/home', 'pages::components.header');
 Route::get('/', Login::class)->name('header');
-Route::get('/dashboard', Header::class)->name('header');
+Route::get('/dashboard', Dashboard::class)->name('dashboard ');
