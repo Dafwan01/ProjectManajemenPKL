@@ -2,31 +2,43 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use Notifiable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $primaryKey = 'user_id';
+
+    protected $fillable = [
+        'nama',
+        'asal_sekolah',
+        'mentor',
+        'status',
+        'email',
+        'password',
+        'tanggal_mulai',
+        'tanggal_Akhir',
+        'role',
+        'nilai',
+        'surat_penerimaan',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'password' => 'hashed',
+        'tanggal_mulai' => 'datetime',
+        'tanggal_Akhir' => 'date',
+
+        // Casting Enum di sini
+        'role' => UserRole::class,
+        'status' => UserStatus::class,
+    ];
 }
