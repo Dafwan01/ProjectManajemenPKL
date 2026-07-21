@@ -1,15 +1,15 @@
 <?php
-
+    
 namespace App\Livewire;
 
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-class Login extends Component
+class Dashboard extends Component
 {
-    #[Layout('layouts.auth')]
+    #[Layout('layouts.dashboard')]
     public function render()
     {
-        return view('livewire.login');
+        return view('livewire.dashboard.dashboard');
     }
 }
