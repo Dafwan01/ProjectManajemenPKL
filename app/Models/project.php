@@ -15,6 +15,7 @@ class project extends Model
         'user_id',
         'file_project',
         'link_github',
+        'nama_project',
     ];
 
       public function user()

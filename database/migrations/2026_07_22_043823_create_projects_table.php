@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
             $table->string('file_project')->nullable();
             $table->string('link_github')->nullable();
+            $table->string('nama_project')->nullable();
         });
     }
 
