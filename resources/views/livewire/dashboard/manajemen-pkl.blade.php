@@ -48,7 +48,7 @@
                         <td class="px-6 py-4 flex flex-wrap gap-2">
                             <button type="button" wire:click="openEditProfile({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</button>
                             <button type="button" wire:click="openJadwalModal({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">jadwal masuk</button>
-                            <button type="button" class="font-medium text-blue-600 dark:text-blue-500 opacity-60 cursor-not-allowed">Project</button>
+                            <button type="button" wire:click="openProjectModal({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Project</button>
                             <button type="button" wire:click="delete({{ $user->user_id }})" onclick="confirm('Apakah Anda yakin ingin menghapus akun ini?') || event.stopImmediatePropagation()" class="font-medium text-red-600 dark:text-red-500 hover:underline">Hapus</button>
                         </td>
                     </tr>
@@ -80,4 +80,11 @@
             </div>
         </div>
     @endif
+    @if($showProjectModal)
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6" @click="$event.target === $el && $wire.closeProjectModal()" wire:key="project-modal-{{ $selectedUserId }}">
+        <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800" @click.stop>
+            @livewire('form.project', ['userId' => $selectedUserId], key('project-modal-' . ($selectedUserId ?? 'new')))
+        </div>
+    </div>
+@endif
 </div>

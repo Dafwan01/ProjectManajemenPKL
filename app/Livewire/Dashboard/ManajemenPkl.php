@@ -188,11 +188,25 @@ class ManajemenPkl extends Component
         $this->closeModal();
     }
 
+    public bool $showProjectModal = false;
 
+public function openProjectModal($id)
+{
+    $this->selectedUserId = $id;
+    $this->showProjectModal = true;
+}
+
+#[On('close-project-modal')]
+public function closeProjectModal()
+{
+    $this->showProjectModal = false;
+    $this->selectedUserId = null;
+}
 
     public function render()
     {
         $users = User::query()
+          ->where('role', UserRole::PKL->value)
             ->when($this->search, function ($query) {
                 $query->where('nama', 'like', '%' . $this->search . '%')
                       ->orWhere('email', 'like', '%' . $this->search . '%')
