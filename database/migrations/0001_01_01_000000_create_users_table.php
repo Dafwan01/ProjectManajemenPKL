@@ -29,7 +29,8 @@ return new class extends Migration
             $table->string('nilai')->nullable();
             $table->string('surat_penerimaan')->nullable();
             $table->rememberToken();
-            $table->timestamps();
+            $table->string('foto')->nullable();
+            $table->text('skill')->nullable();
         });
     }
 

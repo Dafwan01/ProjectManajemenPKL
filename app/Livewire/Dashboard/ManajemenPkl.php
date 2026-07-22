@@ -1,35 +1,39 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Dashboard;
 
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 
 #[Layout('layouts.dashboard')]
-class ManajemenAkun extends Component
+class ManajemenPkl extends Component
 {
     use WithPagination;
 
-    // Property Form
     public $userId = null;
     public $nama = '';
     public $email = '';
     public $role = '';
-    public $status = 'Aktif';
+    public $status = UserStatus::AKTIF->value;
     public $asal_sekolah = '';
     public $mentor = '';
+    public $tanggal_mulai = null;
+    public $skill = '';
     public $password = '';
     public $confirm_password = '';
 
-    // UI States
-    public bool $showModal = false;
+    public bool $showEditProfileModal = false;
     public bool $isEditMode = false;
     public string $search = '';
+    public bool $showJadwalModal = false;
+    public $selectedUserId = null;
 
     protected function rules()
     {
@@ -40,8 +44,10 @@ class ManajemenAkun extends Component
             'status' => ['required', Rule::enum(UserStatus::class)],
             'asal_sekolah' => 'nullable|string',
             'mentor' => 'nullable|string',
-            'password' => $this->isEditMode 
-                ? 'nullable|min:8|same:confirm_password' 
+            'tanggal_mulai' => 'nullable|date',
+            'skill' => 'nullable|string',
+            'password' => $this->isEditMode
+                ? 'nullable|min:8|same:confirm_password'
                 : 'required|min:8|same:confirm_password',
         ];
     }
@@ -68,40 +74,19 @@ class ManajemenAkun extends Component
         $this->status = UserStatus::AKTIF->value;
         $this->asal_sekolah = '';
         $this->mentor = '';
+        $this->tanggal_mulai = null;
+        $this->skill = '';
         $this->password = '';
         $this->confirm_password = '';
         $this->resetValidation();
     }
 
-    public function openCreateModal()
+    public function updatingSearch()
     {
-        $this->resetFields();
-        $this->isEditMode = false;
-        $this->showModal = true;
+        $this->resetPage();
     }
 
-    public function openEditModal($id)
-    {
-        $this->resetFields();
-        $this->isEditMode = true;
-        
-        $user = User::findOrFail($id);
-        $this->userId = $user->user_id;
-        $this->nama = $user->nama;
-        $this->email = $user->email;
-        $this->role = $user->role->value;
-        $this->status = $user->status->value;
-        $this->asal_sekolah = $user->asal_sekolah;
-        $this->mentor = $user->mentor;
 
-        $this->showModal = true;
-    }
-
-    public function closeModal()
-    {
-        $this->showModal = false;
-        $this->resetFields();
-    }
 
     public function save()
     {
@@ -117,15 +102,23 @@ class ManajemenAkun extends Component
                 'asal_sekolah' => $this->asal_sekolah,
                 'mentor' => $this->mentor,
             ];
-            
+
             if (!empty($this->password)) {
                 $data['password'] = bcrypt($this->password);
+            }
+
+            if (!empty($this->tanggal_mulai)) {
+                $data['tanggal_mulai'] = $this->tanggal_mulai;
+            }
+
+            if (Schema::hasColumn('users', 'skill')) {
+                $data['skill'] = $this->skill;
             }
 
             $user->update($data);
             session()->flash('message', 'Akun berhasil diperbarui!');
         } else {
-            User::create([
+            $data = [
                 'nama' => $this->nama,
                 'email' => $this->email,
                 'role' => $this->role,
@@ -134,7 +127,13 @@ class ManajemenAkun extends Component
                 'mentor' => $this->mentor,
                 'password' => bcrypt($this->password),
                 'tanggal_mulai' => now(),
-            ]);
+            ];
+
+            if (Schema::hasColumn('users', 'skill')) {
+                $data['skill'] = $this->skill;
+            }
+
+            User::create($data);
             session()->flash('message', 'Akun berhasil dibuat!');
         }
 
@@ -147,6 +146,50 @@ class ManajemenAkun extends Component
         session()->flash('message', 'Akun berhasil dihapus!');
     }
 
+    public function openJadwalModal($id)
+    {
+        $this->selectedUserId = $id;
+        $this->showJadwalModal = true;
+    }
+#[On('close-jadwal-modal')]
+    public function closeJadwalModal()
+    {
+        $this->showJadwalModal = false;
+        $this->selectedUserId = null;
+    }
+
+      public function openEditProfile($id)
+      {
+          $this->userId = $id;
+          $user = User::findOrFail($id);
+
+          $this->nama = $user->nama;
+          $this->email = $user->email;
+          $this->role = $user->role;
+          $this->status = $user->status;
+          $this->asal_sekolah = $user->asal_sekolah;
+          $this->mentor = $user->mentor;
+
+          $this->isEditMode = true;
+          $this->showEditProfileModal = true;
+          $this->tanggal_mulai = optional($user->tanggal_mulai)->format('Y-m-d');
+          $this->skill = $user->skill ?? '';
+      }
+    public function closeModal()
+    {
+        $this->resetFields();
+        $this->showEditProfileModal = false;
+        $this->isEditMode = false;
+    }
+
+    #[On('close-edit-profile')]
+    public function closeEditProfile()
+    {
+        $this->closeModal();
+    }
+
+
+
     public function render()
     {
         $users = User::query()
@@ -157,7 +200,7 @@ class ManajemenAkun extends Component
             })
             ->latest('tanggal_mulai')
             ->paginate(10);
-            
-        return view('livewire.dashboard.manajemen-akun', compact('users'));
+
+        return view('livewire.dashboard.manajemen-pkl', compact('users'));
     }
 }
