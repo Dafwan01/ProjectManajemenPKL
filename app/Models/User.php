@@ -4,12 +4,16 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Models\DetailJadwal;
+use App\Models\Project;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
     use Notifiable;
+
+    public $timestamps = false;
 
     protected $primaryKey = 'user_id';
 
@@ -25,6 +29,8 @@ class User extends Authenticatable
         'role',
         'nilai',
         'surat_penerimaan',
+        'foto',
+        'skill',
     ];
 
     protected $hidden = [
@@ -41,4 +47,14 @@ class User extends Authenticatable
         'role' => UserRole::class,
         'status' => UserStatus::class,
     ];
+
+    public function detailJadwals()
+    {
+        return $this->hasMany(DetailJadwal::class, 'user_id', 'user_id');
+    }
+
+     public function projects()
+    {
+        return $this->hasMany(Project::class, 'user_id', 'user_id');
+    }
 }
