@@ -18,7 +18,10 @@ return new class extends Migration
             $table->string('foto_keluar')->nullable();
             $table->date('tanggal')->nullable();
             $table->enum('status_kehadiran', PresensiStatusKehadiran::cases())->nullable();
-            $table->string('lokasi_masuk')->nullable();
+            $table->decimal('latitude', 10, 8);
+            $table->decimal('longitude', 11, 8);
+            $table->time('absen_masuk')->nullable();
+            $table->time('absen_keluar')->nullable();
         });
     }
 

@@ -49,7 +49,6 @@
                             <button type="button" wire:click="openEditProfile({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</button>
                             <button type="button" wire:click="openJadwalModal({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">jadwal masuk</button>
                             <button type="button" wire:click="openProjectModal({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Project</button>
-                            <button type="button" wire:click="delete({{ $user->user_id }})" onclick="confirm('Apakah Anda yakin ingin menghapus akun ini?') || event.stopImmediatePropagation()" class="font-medium text-red-600 dark:text-red-500 hover:underline">Hapus</button>
                         </td>
                     </tr>
                 @empty
