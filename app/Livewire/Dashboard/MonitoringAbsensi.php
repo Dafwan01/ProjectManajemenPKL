@@ -33,6 +33,9 @@ class MonitoringAbsensi extends Component
     public function render()
     {
         $presensis = presensi::with('logBooks.user')
+            ->whereHas('logBooks.user', function ($query) {
+                $query->where('role', 'PKL');
+            })
             ->when($this->tanggal, function ($query) {
                 $query->whereDate('tanggal', $this->tanggal);
             })
