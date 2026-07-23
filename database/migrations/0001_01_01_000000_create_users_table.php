@@ -31,6 +31,7 @@ return new class extends Migration
             $table->rememberToken();
             $table->string('foto')->nullable();
             $table->text('skill')->nullable();
+            $table->string('sertifikat')->nullable();
         });
     }
 

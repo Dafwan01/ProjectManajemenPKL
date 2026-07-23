@@ -163,7 +163,6 @@ class ManajemenAkun extends Component
     public function render()
     {
         $users = User::query()
-            ->where('role', UserRole::PKL->value)
             ->when($this->search, function ($query) {
                 $query->where('nama', 'like', '%' . $this->search . '%')
                       ->orWhere('email', 'like', '%' . $this->search . '%')
