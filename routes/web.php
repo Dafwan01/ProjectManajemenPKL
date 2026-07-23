@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Components\Bottomnav;
 use App\Models\project;
 use App\Livewire\Dashboard\Dashboard;
 use App\Livewire\Dashboard\ManajemenAkun;
@@ -30,3 +31,4 @@ Route::get('/project/{project}/download', function (project $project) {
 Route::get('/surat-penerimaan-magang', SuratPenerimaanMagang::class)->name('surat-penerimaan-magang');
 Route::get('/sertifikat', Sertifikat::class)->name('sertifikat');
 Route::get('/nilai', Nilai::class)->name('nilai');
+Route::get('/bottomnav', Bottomnav::class)->name('bottomnav');

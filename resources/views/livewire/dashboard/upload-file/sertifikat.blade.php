@@ -44,19 +44,21 @@
                         <td class="px-6 py-4">{{ $user->mentor }}</td>
                         <!-- BENAR (Opsi 2: Ternary Operator) -->
 <td class="px-6 py-4">
-    <span class="capitalize px-2.5 py-0.5 text-xs font-semibold rounded {{ $user->surat_penerimaan ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
-        {{ $user->sertifkat ? 'Sudah Upload' : 'Belum Upload' }}
+    <span class="capitalize px-2.5 py-0.5 text-xs font-semibold rounded {{ $user->sertifikat ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
+        {{ $user->sertifikat ? 'Sudah Upload' : 'Belum Upload' }}
     </span>
+<td class="px-6 py-4">
+    <button 
+        type="button"
+        wire:click="openUploadModal({{ $user->user_id }})"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700"
+    >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+        </svg>
+        Upload File
+    </button>
 </td>
-                        <td class="px-6 py-4 flex space-x-3">
-      <a href=""
-                       class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-                        </svg>
-                        Upload File
-                    </a>  
-                        </td>
                     </tr>
                 @empty
                     <tr>
