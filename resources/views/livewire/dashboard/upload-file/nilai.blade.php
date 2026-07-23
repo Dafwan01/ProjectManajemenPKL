@@ -1,5 +1,5 @@
 <div>
-    <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Manajemen Anak PKL</h1>
+    <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Nilai Magang</h1>
 
     <!-- Flash Message Notifikasi -->
     @if (session()->has('message'))
@@ -20,7 +20,7 @@
                     </div>
                     <input type="text" wire:model.live.debounce.300ms="search" class="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-60 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Cari nama atau email...">
                 </div>
-            </div>           
+            </div>
         </div>
         
         <!-- Tabel Data (READ) -->
@@ -28,10 +28,9 @@
             <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                 <tr>
                     <th scope="col" class="px-6 py-3">Nama</th>
-                    <th scope="col" class="px-6 py-3">asal sekolah</th>
+                    <th scope="col" class="px-6 py-3">Asal Sekolah</th>
+                    <th scope="col" class="px-6 py-3">Mentor</th>
                     <th scope="col" class="px-6 py-3">Status</th>
-                    <th scope="col" class="px-6 py-3">Tanggal Masuk</th>
-                    <th scope="col" class="px-6 py-3">Tanggal keluar</th>
                     <th scope="col" class="px-6 py-3">Aksi</th>
                 </tr>
             </thead>
@@ -42,18 +41,26 @@
                             {{ $user->nama }}
                         </th>
                         <td class="px-6 py-4">{{ $user->asal_sekolah }}</td>
-                        <td class="px-6 py-4"><span class="capitalize px-2 py-1 text-xs rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">{{ $user->status }}</span></td>
-                        <td class="px-6 py-4">{{ optional($user->tanggal_mulai)->format('d M Y') }}</td>
-                        <td class="px-6 py-4">{{ optional($user->tanggal_Akhir)->format('d M Y') ?? '-' }}</td>
-                        <td class="px-6 py-4 flex flex-wrap gap-2">
-                            <button type="button" wire:click="openEditProfile({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</button>
-                            <button type="button" wire:click="openJadwalModal({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">jadwal masuk</button>
-                            <button type="button" wire:click="openProjectModal({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Project</button>
+                        <td class="px-6 py-4">{{ $user->mentor }}</td>
+                        <!-- BENAR (Opsi 2: Ternary Operator) -->
+<td class="px-6 py-4">
+    <span class="capitalize px-2.5 py-0.5 text-xs font-semibold rounded {{ $user->nilai ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
+        {{ $user->nilai ? 'Sudah Upload' : 'Belum Upload' }}
+    </span>
+</td>
+                        <td class="px-6 py-4 flex space-x-3">
+                                 <a href=""
+                       class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Upload Nilai
+                    </a>  
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">Tidak ada data ditemukan.</td>
+                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">Tidak ada data ditemukan.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -66,24 +73,4 @@
     </div>
 
     <!-- Panggil File Form Modal Terpisah -->
-    @if($showEditProfileModal)
-        @include('livewire.form.profile', ['userId' => $selectedUserId])
-    @endif
-
-    @if($showJadwalModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6" @click="$event.target === $el && $wire.closeJadwalModal()" wire:key="jadwal-modal-{{ $selectedUserId }}">
-            <div class="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-4 shadow-2xl dark:bg-gray-800" @click.stop>
-                <div class="pt-2">
-                    @livewire('form.jadwal', ['userId' => $selectedUserId], key('jadwal-modal-' . ($selectedUserId ?? 'new')))
-                </div>
-            </div>
-        </div>
-    @endif
-    @if($showProjectModal)
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6" @click="$event.target === $el && $wire.closeProjectModal()" wire:key="project-modal-{{ $selectedUserId }}">
-        <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800" @click.stop>
-            @livewire('form.project', ['userId' => $selectedUserId], key('project-modal-' . ($selectedUserId ?? 'new')))
-        </div>
-    </div>
-@endif
 </div>

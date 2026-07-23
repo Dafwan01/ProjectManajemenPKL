@@ -13,6 +13,7 @@
     <body>
         {{ $slot }}
 
+            @include('components.bottomnav')
         @livewireScripts
     </body>
 </html>

@@ -31,6 +31,7 @@ class User extends Authenticatable
         'surat_penerimaan',
         'foto',
         'skill',
+        'sertifikat',
     ];
 
     protected $hidden = [

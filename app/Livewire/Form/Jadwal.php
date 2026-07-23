@@ -5,6 +5,7 @@ namespace App\Livewire\Form;
 use App\Enums\JadwalStatusKerja;
 use App\Models\DetailJadwal;
 use App\Models\Jadwal as JadwalModel;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -20,7 +21,7 @@ class Jadwal extends Component
 
     public function mount($userId = null)
     {
-        $this->userId = $userId ?? optional(auth()->user())->user_id ?? auth()->id();
+        $this->userId = $userId ?? optional(auth::user())->user_id ?? Auth::id();
 
         foreach ($this->daftarHari as $hari) {
             $detail = DetailJadwal::where('user_id', $this->userId)
