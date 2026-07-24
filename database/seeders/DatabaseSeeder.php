@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             ProjectSeeder::class,
             PresensiSeeder::class,
             LogbookSeeder::class,
+            PermohonanIzinSeeder::class,
         ]);
     }
 }
