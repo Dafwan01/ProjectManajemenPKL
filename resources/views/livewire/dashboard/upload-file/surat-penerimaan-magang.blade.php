@@ -33,23 +33,38 @@
                             {{ $user->nama }}
                         </th>
                         <td class="px-6 py-4">{{ $user->asal_sekolah }}</td>
-                      <td class="px-6 py-4">
-    <span class="capitalize px-2.5 py-0.5 text-xs font-semibold rounded {{ $user->surat_penerimaan ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
-        {{ $user->surat_penerimaan ? 'Sudah Upload' : 'Belum Upload' }}
-    </span>
-</td>
-                       <td class="px-6 py-4">
-    <button 
-        type="button"
-        wire:click="openUploadModal({{ $user->user_id }})"
-        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700"
-    >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-        </svg>
-        Upload File
-    </button>
-</td>
+                        <td class="px-6 py-4">
+                            <span class="capitalize px-2.5 py-0.5 text-xs font-semibold rounded {{ $user->surat_penerimaan ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
+                                {{ $user->surat_penerimaan ? 'Sudah Upload' : 'Belum Upload' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <!-- Input file tersembunyi, unik per user -->
+                            <input 
+                                type="file"
+                                id="fileInput-{{ $user->user_id }}"
+                                wire:model="files.{{ $user->user_id }}"
+                                class="hidden"
+                            >
+
+                            <button 
+                                type="button"
+                                onclick="document.getElementById('fileInput-{{ $user->user_id }}').click()"
+                                wire:loading.attr="disabled"
+                                wire:target="files.{{ $user->user_id }}"
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                                </svg>
+                                <span wire:loading.remove wire:target="files.{{ $user->user_id }}">Upload File</span>
+                                <span wire:loading wire:target="files.{{ $user->user_id }}">Mengunggah...</span>
+                            </button>
+
+                            @error("files.{$user->user_id}")
+                                <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+                            @enderror
+                        </td>
                     </tr>
                 @empty
                     <tr>
@@ -63,12 +78,4 @@
             {{ $users->links() }}
         </div>
     </div>
-
-    @if($showUploadModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6" @click="$event.target === $el && $wire.closeUploadModal()" wire:key="upload-modal-{{ $selectedUserId }}">
-            <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800" @click.stop>
-                @livewire('form.upload-surat', ['userId' => $selectedUserId], key('upload-modal-' . ($selectedUserId ?? 'new')))
-            </div>
-        </div>
-    @endif
 </div>
