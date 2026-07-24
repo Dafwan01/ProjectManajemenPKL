@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\DetailJadwal;
 use App\Models\Project;
+use App\Models\Nilai;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -27,7 +28,6 @@ class User extends Authenticatable
         'tanggal_mulai',
         'tanggal_Akhir',
         'role',
-        'nilai',
         'surat_penerimaan',
         'foto',
         'skill',
@@ -58,4 +58,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Project::class, 'user_id', 'user_id');
     }
+
+      public function nilais()
+    {
+        return $this->hasMany(Nilai::class, 'user_id', 'user_id');
+    }
+
+    public function nilai()
+{
+    return $this->hasOne(Nilai::class, 'user_id', 'user_id');
+}
 }
