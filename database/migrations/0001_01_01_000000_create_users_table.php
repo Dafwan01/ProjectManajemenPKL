@@ -26,7 +26,6 @@ return new class extends Migration
             $table->string('password');
             $table->timestamp('tanggal_mulai')->useCurrent();
             $table->date('tanggal_Akhir')->nullable();
-            $table->string('nilai')->nullable();
             $table->string('surat_penerimaan')->nullable();
             $table->rememberToken();
             $table->string('foto')->nullable();

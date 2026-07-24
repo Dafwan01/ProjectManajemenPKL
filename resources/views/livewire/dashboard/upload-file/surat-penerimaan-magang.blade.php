@@ -48,18 +48,19 @@
                             >
 
                             <button 
-                                type="button"
-                                onclick="document.getElementById('fileInput-{{ $user->user_id }}').click()"
-                                wire:loading.attr="disabled"
-                                wire:target="files.{{ $user->user_id }}"
-                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-                                </svg>
-                                <span wire:loading.remove wire:target="files.{{ $user->user_id }}">Upload File</span>
-                                <span wire:loading wire:target="files.{{ $user->user_id }}">Mengunggah...</span>
-                            </button>
+    type="button"
+    onclick="document.getElementById('fileInput-{{ $user->user_id }}').click()"
+    wire:loading.attr="disabled"
+    wire:target="files.{{ $user->user_id }}"
+    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50"
+>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 8l-4-4m0 0L8 8m4-4v12" />
+    </svg>
+
+    <span wire:loading.remove wire:target="files.{{ $user->user_id }}">Upload File</span>
+    <span wire:loading wire:target="files.{{ $user->user_id }}">Mengunggah...</span>
+</button>
 
                             @error("files.{$user->user_id}")
                                 <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>

@@ -32,6 +32,7 @@
                     <th scope="col" class="px-6 py-3">Status</th>
                     <th scope="col" class="px-6 py-3">Tanggal Masuk</th>
                     <th scope="col" class="px-6 py-3">Tanggal keluar</th>
+                    <th scope="col" class="px-6 py-3">Mentor</th>
                     <th scope="col" class="px-6 py-3">Aksi</th>
                 </tr>
             </thead>
@@ -45,6 +46,7 @@
                         <td class="px-6 py-4"><span class="capitalize px-2 py-1 text-xs rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">{{ $user->status }}</span></td>
                         <td class="px-6 py-4">{{ optional($user->tanggal_mulai)->format('d M Y') }}</td>
                         <td class="px-6 py-4">{{ optional($user->tanggal_Akhir)->format('d M Y') ?? '-' }}</td>
+                           <td class="px-6 py-4">{{ $user->mentor }}</td>
                         <td class="px-6 py-4 flex flex-wrap gap-2">
                             <button type="button" wire:click="openEditProfile({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</button>
                             <button type="button" wire:click="openJadwalModal({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">jadwal masuk</button>
@@ -53,7 +55,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">Tidak ada data ditemukan.</td>
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">Tidak ada data ditemukan.</td>
                     </tr>
                 @endforelse
             </tbody>
