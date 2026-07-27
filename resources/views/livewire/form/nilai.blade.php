@@ -77,20 +77,39 @@
             ></textarea>
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-4 border-t dark:border-gray-700">
-            <button 
-                type="button"
-                wire:click="tutup"
-                class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-            >
-                Batal
-            </button>
-            <button 
-                type="submit"
-                class="px-5 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700"
-            >
-                Simpan
-            </button>
+        <div class="flex items-center justify-between gap-3 pt-4 border-t dark:border-gray-700">
+            <!-- Tombol Cetak PDF (Sisi Kiri) -->
+            <div>
+                @if($sudahAdaNilai)
+                    <a 
+                        href="{{ route('cetak.nilai', ['userId' => $userId]) }}" 
+                        target="_blank"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 transition"
+                    >
+                        <svg class="w-4 h-4 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M5 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.414A2 2 0 0 0 16.414 6L13 2.586A2 2 0 0 0 11.586 2H5Zm0 2h6v3a1 1 0 0 0 1 1h3v8H5V4Z"/>
+                        </svg>
+                        Cetak PDF
+                    </a>
+                @endif
+            </div>
+
+            <!-- Tombol Batal & Simpan (Sisi Kanan) -->
+            <div class="flex items-center gap-3">
+                <button 
+                    type="button"
+                    wire:click="tutup"
+                    class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                >
+                    Batal
+                </button>
+                <button 
+                    type="submit"
+                    class="px-5 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700"
+                >
+                    Simpan
+                </button>
+            </div>
         </div>
 
     </form>

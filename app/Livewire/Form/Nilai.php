@@ -18,6 +18,8 @@ class Nilai extends Component
     public $kualitas_ketepatan = 0;
     public $catatan = '';
 
+    public $sudahAdaNilai = false; // Flag status nilai
+
     protected function rules()
     {
         return [
@@ -55,6 +57,7 @@ class Nilai extends Component
             $this->komunikasi_kerjasama = $nilai->komunikasi_kerjasama;
             $this->kualitas_ketepatan = $nilai->kualitas_ketepatan;
             $this->catatan = $nilai->catatan;
+            $this->sudahAdaNilai = true;
         }
     }
 
@@ -73,6 +76,8 @@ class Nilai extends Component
                 'catatan' => $this->catatan,
             ]
         );
+
+        $this->sudahAdaNilai = true;
 
         session()->flash('message', 'Nilai untuk ' . $this->user->nama . ' berhasil disimpan!');
         $this->dispatch('close-nilai-modal');
