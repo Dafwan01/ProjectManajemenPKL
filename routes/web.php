@@ -40,8 +40,7 @@ Route::get('/sertifikat', Sertifikat::class)->name('sertifikat');
 Route::get('/nilai', Nilai::class)->name('nilai');
 Route::get('/bottomnav', Bottomnav::class)->name('bottomnav');
 Route::get('/rekap-absensi',RekapAbsensi::class)->name('rekap-absensi');
-Route::get('/cetak-rekap-absensi/{userId}', CetakRekapAbsensi::class)
-    ->name('cetak.rekap-absensi');
+Route::get('/cetak-rekap-absensi/{userId}', \App\Livewire\Components\CetakRekapAbsensi::class);
 
 Route::get('/user/presensi', Presensi::class)->name('user.presensi');
 Route::get('/user/riwayat', Riwayat::class)->name('user.riwayat');

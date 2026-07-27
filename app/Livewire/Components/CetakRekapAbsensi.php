@@ -2,44 +2,51 @@
 
 namespace App\Livewire\Components;
 
-use Livewire\Component;
-use Livewire\Attributes\Layout;
+use App\Http\Controllers\Controller; // Menggunakan Base Controller Laravel
 use App\Models\User;
 use App\Models\presensi;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controller as RoutingController;
 
-#[Layout('layouts.auth')] // Gunakan layout polos/tanpa sidebar dashboard
-class CetakRekapAbsensi extends Component
+class CetakRekapAbsensi extends RoutingController
 {
-    public $userId;
-    public $bulan;
-    public $tahun;
-
-    public function mount($userId)
+    public function __invoke(Request $request, $userId = null)
     {
-        $this->userId = $userId;
-        $this->bulan = request()->query('bulan', now()->format('m'));
-        $this->tahun = request()->query('tahun', now()->format('Y'));
-    }
+        $userId = $userId ?? $request->route('userId') ?? $request->route('id');
+        $bulan  = $request->query('bulan', now()->format('m'));
+        $tahun  = $request->query('tahun', now()->format('Y'));
 
-    public function render()
-    {
-        $selectedUser = User::findOrFail($this->userId);
+        $selectedUser = User::findOrFail($userId);
 
         $presensisUser = presensi::with(['logBooks'])
-            ->where('user_id', $selectedUser->user_id)
-            ->whereMonth('tanggal', $this->bulan)
-            ->whereYear('tanggal', $this->tahun)
+            ->where('user_id', $selectedUser->user_id ?? $selectedUser->id)
+            ->whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
             ->orderBy('tanggal', 'asc')
             ->get();
 
-        $namaBulan = Carbon::createFromDate((int)$this->tahun, (int)$this->bulan, 1)
+        $namaBulan = Carbon::createFromDate((int)$tahun, (int)$bulan, 1)
             ->translatedFormat('F Y');
 
-        return view('livewire.components.cetak-rekap-absensi', [
+        // Render PDF menggunakan DomPDF
+        $pdf = Pdf::loadView('livewire.components.cetak-rekap-absensi', [
             'selectedUser'  => $selectedUser,
             'presensisUser' => $presensisUser,
             'namaBulan'     => $namaBulan,
-        ]);
+        ])->setPaper('a4', 'portrait');
+
+        // Stream langsung agar Chrome PDF Viewer otomatis aktif
+        return response()->stream(
+            function () use ($pdf) {
+                echo $pdf->output();
+            },
+            200,
+            [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="Rekap_Absensi_' . ($selectedUser->nama ?? $selectedUser->name) . '.pdf"',
+            ]
+        );
     }
 }
