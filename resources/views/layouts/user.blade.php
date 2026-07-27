@@ -122,14 +122,22 @@
     <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
         <!-- Top Navbar Header -->
-        <header class="bg-gray-900/50 backdrop-blur-md border-b border-gray-800/80 px-6 py-3.5 flex items-center justify-end sticky top-0 z-40">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-blue-500/30">
-                    JO
-                </div>
-                <span class="text-sm font-medium text-gray-200">Jonathan</span>
+     <header class="bg-gray-900/50 backdrop-blur-md border-b border-gray-800/80 px-6 py-3.5 flex items-center justify-end sticky top-0 z-40">
+    <div class="flex items-center gap-3">
+        @if (auth()->user()?->foto)
+            <img 
+                src="{{ asset('storage/' . auth()->user()->foto) }}" 
+                alt="Foto Profil" 
+                class="w-8 h-8 rounded-full object-cover ring-2 ring-blue-500/30"
+            >
+        @else
+            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-blue-500/30">
+                {{ auth()->user() ? strtoupper(substr(auth()->user()->nama, 0, 2)) : '?' }}
             </div>
-        </header>
+        @endif
+        <span class="text-sm font-medium text-gray-200">{{ auth()->user()?->nama ?? 'Guest' }}</span>
+    </div>
+</header>
 
         <!-- Main Slot Livewire View Page -->
         <main class="p-6 lg:p-8 flex-1">

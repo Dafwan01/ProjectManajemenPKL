@@ -1,7 +1,8 @@
 <div>
+    <!-- MediaPipe Face Detection JS -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
-    
-    <!-- Deklarasikan instance Wasm di luar Alpine Proxy -->
+
+    <!-- Global Instance agar tidak dibungkus Alpine Proxy -->
     <script>
         let faceDetectorInstance = null;
     </script>
@@ -11,13 +12,78 @@
          x-data="{ 
             isCameraOn: false, 
             hasPhoto: false,
+            photoPreview: null,
             locationError: '',
 
+            // Konfigurasi Geofencing Balai Kota Bogor
+            targetLat: -6.595181,
+            targetLng: 106.793836,
+            maxRadiusMeters: 100,
+            distance: null,
+            isWithinRadius: false,
+
+            // MediaPipe State
             faceDetected: false,
             isModelLoading: false,
             modelsLoaded: false,
             animFrameId: null,
             isDetecting: false,
+
+            // Formula Haversine (Hitung Jarak GPS)
+            calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371000; 
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = 
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return Math.round(R * c);
+            },
+
+            getLocation() {
+                this.locationError = '';
+                
+                if (!navigator.geolocation) {
+                    this.locationError = 'Browser Anda tidak mendukung Geolocation.';
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+
+                        this.$wire.latitude = lat;
+                        this.$wire.longitude = lng;
+
+                        this.distance = this.calculateDistance(lat, lng, this.targetLat, this.targetLng);
+                        this.isWithinRadius = this.distance <= this.maxRadiusMeters;
+
+                        if (!this.isWithinRadius) {
+                            this.locationError = `Anda berada di luar lokasi! Jarak saat ini: ${this.distance}m dari Balai Kota Bogor (Maks ${this.maxRadiusMeters}m).`;
+                        }
+                    },
+                    (error) => {
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                this.locationError = 'Izin lokasi ditolak. Harap izinkan akses lokasi pada browser.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                this.locationError = 'Informasi lokasi tidak tersedia.';
+                                break;
+                            case error.TIMEOUT:
+                                this.locationError = 'Waktu pengambilan lokasi habis (timeout).';
+                                break;
+                            default:
+                                this.locationError = 'Gagal mendapatkan lokasi GPS.';
+                                break;
+                        }
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            },
 
             async loadFaceModel() {
                 if (this.modelsLoaded) return;
@@ -40,8 +106,8 @@
                     await faceDetectorInstance.initialize();
                     this.modelsLoaded = true;
                 } catch (err) {
-                    console.error('Gagal load model MediaPipe:', err);
-                    alert('Gagal memuat model deteksi wajah. Coba refresh halaman.');
+                    console.error('Gagal memuat model MediaPipe:', err);
+                    alert('Gagal memuat model deteksi wajah. Silakan refresh halaman.');
                 } finally {
                     this.isModelLoading = false;
                 }
@@ -50,6 +116,7 @@
             async initCamera() {
                 this.isCameraOn = true;
                 this.hasPhoto = false;
+                this.photoPreview = null;
                 this.faceDetected = false;
 
                 await this.loadFaceModel();
@@ -102,7 +169,10 @@
                 const context = canvas.getContext('2d');
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
-                this.$wire.fotoCaptured = canvas.toDataURL('image/jpeg');
+                const dataUrl = canvas.toDataURL('image/jpeg');
+
+                this.photoPreview = dataUrl;
+                this.$wire.fotoCaptured = dataUrl;
                 
                 this.hasPhoto = true;
                 this.isCameraOn = false;
@@ -123,41 +193,10 @@
                 }
             },
 
-            getLocation() {
-                this.locationError = '';
-                
-                if (!navigator.geolocation) {
-                    this.locationError = 'Browser Anda tidak mendukung Geolocation.';
-                    return;
-                }
-
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        this.$wire.latitude = position.coords.latitude;
-                        this.$wire.longitude = position.coords.longitude;
-                    },
-                    (error) => {
-                        switch(error.code) {
-                            case error.PERMISSION_DENIED:
-                                this.locationError = 'Izin akses lokasi ditolak oleh pengguna/browser.';
-                                break;
-                            case error.POSITION_UNAVAILABLE:
-                                this.locationError = 'Informasi lokasi tidak tersedia.';
-                                break;
-                            case error.TIMEOUT:
-                                this.locationError = 'Waktu permintaan lokasi habis (timeout).';
-                                break;
-                            default:
-                                this.locationError = 'Terjadi kesalahan saat mengambil lokasi.';
-                                break;
-                        }
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0
-                    }
-                );
+            resetVisualState() {
+                this.stopCamera();
+                this.hasPhoto = false;
+                this.photoPreview = null;
             }
          }"
          x-init="getLocation()"
@@ -200,7 +239,7 @@
                         <video x-show="isCameraOn" x-ref="video" autoplay playsinline muted class="w-full h-full object-cover"></video>
                         
                         <template x-if="hasPhoto && !isCameraOn">
-                            <img src="{{ $fotoCaptured }}" class="w-full h-full object-cover transition-opacity duration-300">
+                            <img :src="photoPreview" class="w-full h-full object-cover transition-opacity duration-300">
                         </template>
 
                         <div x-show="!isCameraOn && !hasPhoto" class="flex flex-col items-center p-4 text-center">
@@ -255,7 +294,7 @@
                             x-show="isCameraOn" 
                             @click="takeSnap()" 
                             :disabled="!faceDetected"
-                            :class="faceDetected ? 'bg-blue-600 hover:bg-blue-500' : 'bg-gray-600 cursor-not-allowed opacity-60'"
+                            :class="faceDetected ? 'bg-blue-600 hover:bg-blue-500 cursor-pointer' : 'bg-gray-600 cursor-not-allowed opacity-60'"
                             class="w-full text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg"
                         >
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -272,22 +311,26 @@
                 <!-- Detail & Input Data -->
                 <div class="flex flex-col space-y-4 w-full flex-1">
                     
-                    <!-- Indicator Status GPS / Geolocation -->
+                    <!-- Indicator Status GPS / Geofencing -->
                     <div class="p-4 bg-gray-900 border border-gray-700 rounded-lg text-xs shadow-inner">
                         <template x-if="$wire.latitude && $wire.longitude">
-                            <div class="flex items-center gap-2 text-green-400 font-mono">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                <span>Lokasi Terdeteksi: <span x-text="$wire.latitude"></span>, <span x-text="$wire.longitude"></span></span>
-                            </div>
-                        </template>
-                        <template x-if="!$wire.latitude || !$wire.longitude">
-                            <div class="flex items-center gap-2 text-yellow-400 font-mono">
-                                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                <span>⏳ Mendeteksi koordinat GPS Anda...</span>
+                            <div class="flex items-center justify-between font-mono">
+                                <div class="flex items-center gap-2" :class="isWithinRadius ? 'text-green-400' : 'text-red-400'">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    <span x-text="isWithinRadius ? 'Lokasi Valid (Balai Kota Bogor)' : 'Di Luar Area Balai Kota'"></span>
+                                </div>
+                                <span class="text-gray-400" x-text="`${distance}m dari pusat`"></span>
                             </div>
                         </template>
 
-                        <div x-show="locationError" class="text-red-400 mt-2 font-sans" x-text="locationError"></div>
+                        <template x-if="!$wire.latitude || !$wire.longitude">
+                            <div class="flex items-center gap-2 text-yellow-400 font-mono">
+                                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span>⏳ Mendeteksi lokasi GPS Anda...</span>
+                            </div>
+                        </template>
+
+                        <div x-show="locationError" class="text-red-400 mt-2 font-sans font-medium" x-text="locationError"></div>
 
                         @error('latitude') 
                             <span class="text-red-400 text-xs block mt-2 p-1.5 bg-red-950 border border-red-800 rounded">{{ $message }}</span> 
@@ -314,8 +357,12 @@
                     </div>
 
                     <!-- Tombol Submit Presensi -->
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-xl transition shadow-lg shadow-green-600/30 flex items-center justify-center gap-2">
-                        <span>Kirim Presensi</span>
+                    <button 
+                        type="submit" 
+                        :disabled="!isWithinRadius"
+                        :class="isWithinRadius ? 'bg-green-600 hover:bg-green-500 cursor-pointer' : 'bg-gray-600 cursor-not-allowed opacity-50'"
+                        class="w-full text-white font-bold py-3 px-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                        <span x-text="isWithinRadius ? 'Kirim Presensi' : 'Di Luar Area Balai Kota'"></span>
                     </button>
                 </div>
             </div>

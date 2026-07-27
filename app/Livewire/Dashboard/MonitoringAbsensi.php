@@ -29,7 +29,7 @@ class MonitoringAbsensi extends Component
 
 public function openMap()
 {
-    $dataPresensi = Presensi::with(['logBooks.user'])
+    $dataPresensi = presensi::with(['logBooks.user'])
         ->whereDate('tanggal', $this->tanggal)
         ->whereNotNull('latitude')
         ->whereNotNull('longitude')

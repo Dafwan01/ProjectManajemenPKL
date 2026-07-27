@@ -91,7 +91,7 @@ class PermohonanIzin extends Component
         ]);
 
         // Hubungkan presensi baru ini dengan LogBook user
-        \App\Models\LogBook::create([
+        \App\Models\log_book::create([
             'user_id' => $permohonan->user_id,
             'presensi_id' => $presensi->presensi_id, // Sesuaikan dengan primary key tabel presensis
             'kegiatan' => 'Izin/Sakit: ' . $permohonan->alasan,

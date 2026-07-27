@@ -106,10 +106,14 @@
          </div>
        
          <!-- Profil User -->
-         <div class="flex items-center gap-2 h-full">
-             <img src="/images/profile-placeholder.png" alt="Logo" class="w-7 h-7 rounded-full object-cover">
-             <p class="text-sm font-medium">John Doe</p>
-         </div>
+       <div class="flex items-center gap-2 h-full">
+    <img 
+        src="{{ auth()->user()->foto ? asset('storage/' . auth()->user()->foto) : asset('images/profile-placeholder.png') }}" 
+        alt="Foto Profil" 
+        class="w-7 h-7 rounded-full object-cover"
+    >
+    <p class="text-sm font-medium">{{ auth()->user()->nama ?? 'Guest' }}</p>
+</div>
      </header>
 
      <!-- ISI KONTEN UTAMA -->
