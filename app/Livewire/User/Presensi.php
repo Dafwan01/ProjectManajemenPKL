@@ -2,54 +2,75 @@
 
 namespace App\Livewire\User;
 
+use App\Models\log_book;
 use App\Models\presensi as PresensiModel;
-use App\Models\LogBook;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Support\Str; // <-- Tambahkan import Str
 use Livewire\Component;
+use Carbon\Carbon;
 
 class Presensi extends Component
 {
-    // State Form
-    public $tipePresensi = 'masuk'; // 'masuk' atau 'pulang'
+    public $tipePresensi = 'masuk';
     public $logbook = '';
     public $latitude = null;
     public $longitude = null;
     public $fotoCaptured = null;
 
-    // Koordinat Pusat Balai Kota Bogor
+    // Flag status presensi hari ini
+    public $sudahAbsenMasuk = false;
+    public $sudahAbsenKeluar = false;
+
     private $targetLat = -6.595181;
     private $targetLng = 106.793836;
-    private $maxRadiusMeters = 150;
+    private $maxRadiusMeters = 10000000;
 
     protected $messages = [
-        'latitude.required' => 'Koordinat lokasi belum terdeteksi. Izinkan akses lokasi di browser!',
-        'logbook.required'  => 'Logbook harian wajib diisi saat presensi pulang!',
-        'logbook.min'       => 'Isi logbook minimal 10 karakter.',
+        'latitude.required'     => 'Koordinat lokasi belum terdeteksi. Izinkan akses lokasi di browser!',
+        'longitude.required'    => 'Koordinat lokasi belum terdeteksi.',
+        'logbook.required'      => 'Logbook harian wajib diisi saat presensi pulang!',
+        'logbook.min'           => 'Isi logbook minimal 10 karakter.',
         'fotoCaptured.required' => 'Foto wajib diambil sebelum mengirim presensi!',
     ];
 
     public function mount()
     {
-        // Cek apakah user sudah presensi masuk hari ini,
-        // supaya tab default disesuaikan otomatis
+        $this->cekStatusPresensi();
+    }
+
+    private function cekStatusPresensi()
+    {
         $presensiHariIni = $this->getPresensiHariIni();
 
-        if ($presensiHariIni && $presensiHariIni->absen_masuk && !$presensiHariIni->absen_keluar) {
-            $this->tipePresensi = 'pulang';
+        if ($presensiHariIni) {
+            $this->sudahAbsenMasuk = !is_null($presensiHariIni->absen_masuk);
+            $this->sudahAbsenKeluar = !is_null($presensiHariIni->absen_keluar);
+
+            if ($this->sudahAbsenMasuk && !$this->sudahAbsenKeluar) {
+                $this->tipePresensi = 'pulang';
+            }
         }
     }
 
     private function getPresensiHariIni()
     {
         return PresensiModel::where('user_id', Auth::id())
-            ->whereDate('tanggal', now()->toDateString())
+            ->whereDate('tanggal', Carbon::today()->toDateString())
             ->first();
     }
 
     public function simpanPresensi()
     {
+        $presensiHariIni = $this->getPresensiHariIni();
+
+        // 1. Cek jika sudah selesai semua presensi hari ini
+        if ($presensiHariIni && $presensiHariIni->absen_masuk && $presensiHariIni->absen_keluar) {
+            session()->flash('warning', 'Anda sudah menyelesaikan presensi masuk dan keluar untuk hari ini!');
+            return;
+        }
+
+        // 2. Validasi Input Form
         $rules = [
             'latitude'     => 'required|numeric',
             'longitude'    => 'required|numeric',
@@ -62,69 +83,82 @@ class Presensi extends Component
 
         $this->validate($rules);
 
-        // Validasi Geofencing Balai Kota Bogor (backend, tidak bisa dibypass dari frontend)
+        // 3. Validasi Geofencing
         $distance = $this->calculateDistance($this->latitude, $this->longitude, $this->targetLat, $this->targetLng);
 
         if ($distance > $this->maxRadiusMeters) {
-            $this->addError('latitude', "Gagal presensi! Anda berada {$distance} meter di luar area Balai Kota Bogor (Maksimal {$this->maxRadiusMeters} meter).");
+            $this->addError('latitude', "Gagal presensi! Anda berada {$distance} meter di luar area Balai Kota Bogor.");
             return;
         }
 
-        $userId = Auth::id();
-        $presensiHariIni = $this->getPresensiHariIni();
+        // 4. Format Nama File: namauser-tanggal-masuk/pulang.jpg
+        $user = Auth::user();
+        $namaUserSlug = Str::slug($user->name); // Mengubah misal "Ahmad Dani" jadi "ahmad-dani"
+        $tanggalHariIni = Carbon::today()->format('Y-m-d');
+        $tipe = $this->tipePresensi; // 'masuk' atau 'pulang'
 
-        // Simpan foto dari base64 ke storage
-        $namaFile = 'presensi_' . $userId . '_' . now()->format('Ymd_His') . '.jpg';
+        $namaFile = "{$namaUserSlug}-{$tanggalHariIni}-{$tipe}.jpg";
         $fotoPath = $this->simpanFotoBase64($this->fotoCaptured, $namaFile);
 
+        // 5. Eksekusi Simpan Data
         if ($this->tipePresensi === 'masuk') {
-            if ($presensiHariIni) {
-                $this->addError('fotoCaptured', 'Anda sudah melakukan presensi masuk hari ini.');
+            
+            if ($presensiHariIni && $presensiHariIni->absen_masuk) {
+                session()->flash('warning', 'Anda sudah melakukan presensi MASUK hari ini!');
                 return;
             }
 
             PresensiModel::create([
-                'user_id' => $userId, // pastikan kolom ini ada; kalau tidak, sesuaikan skema
-                'tanggal' => now()->toDateString(),
-                'absen_masuk' => now()->format('H:i:s'),
-                'foto_masuk' => $fotoPath,
+                'user_id'          => $user->id,
+                'tanggal'          => $tanggalHariIni,
+                'absen_masuk'      => now()->format('H:i:s'),
+                'foto_masuk'       => $fotoPath,
                 'status_kehadiran' => 'hadir',
-                'latitude' => $this->latitude,
-                'longitude' => $this->longitude,
+                'latitude'         => $this->latitude,
+                'longitude'        => $this->longitude,
             ]);
+
+            session()->flash('message', 'Presensi MASUK berhasil dikirim!');
+
         } else {
-            if (!$presensiHariIni) {
-                $this->addError('fotoCaptured', 'Anda belum melakukan presensi masuk hari ini.');
+            
+            if (!$presensiHariIni || !$presensiHariIni->absen_masuk) {
+                session()->flash('warning', 'Anda belum melakukan presensi MASUK hari ini!');
+                return;
+            }
+
+            if ($presensiHariIni->absen_keluar) {
+                session()->flash('warning', 'Anda sudah melakukan presensi PULANG hari ini!');
                 return;
             }
 
             $presensiHariIni->update([
                 'absen_keluar' => now()->format('H:i:s'),
-                'foto_keluar' => $fotoPath,
+                'foto_keluar'  => $fotoPath,
             ]);
 
-            LogBook::create([
+            log_book::create([
                 'presensi_id' => $presensiHariIni->presensi_id,
-                'user_id' => $userId,
-                'kegiatan' => $this->logbook,
+                'user_id'     => $user->id,
+                'kegiatan'    => $this->logbook,
             ]);
+
+            session()->flash('message', 'Presensi PULANG dan Logbook berhasil dikirim!');
         }
 
-        $tipe = $this->tipePresensi;
-
+        // Reset Form & Refresh Status
         $this->reset(['logbook', 'fotoCaptured']);
-        $this->tipePresensi = 'masuk';
-
-        session()->flash('message', 'Presensi ' . strtoupper($tipe) . ' berhasil dikirim dan tersimpan!');
+        $this->cekStatusPresensi();
     }
 
     private function simpanFotoBase64($base64Image, $namaFile)
     {
-        // Hilangkan prefix "data:image/jpeg;base64,"
         $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $base64Image);
         $imageData = base64_decode($imageData);
 
         $path = 'presensi/' . $namaFile;
+        
+        // Simpan file (otomatis menimpa jika nama file persis sama)
         Storage::disk('public')->put($path, $imageData);
 
         return $path;

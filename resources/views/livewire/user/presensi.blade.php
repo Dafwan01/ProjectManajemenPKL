@@ -18,7 +18,7 @@
             // Konfigurasi Geofencing Balai Kota Bogor
             targetLat: -6.595181,
             targetLng: 106.793836,
-            maxRadiusMeters: 100,
+            maxRadiusMeters: 1000000,
             distance: null,
             isWithinRadius: false,
 
@@ -357,13 +357,23 @@
                     </div>
 
                     <!-- Tombol Submit Presensi -->
-                    <button 
-                        type="submit" 
-                        :disabled="!isWithinRadius"
-                        :class="isWithinRadius ? 'bg-green-600 hover:bg-green-500 cursor-pointer' : 'bg-gray-600 cursor-not-allowed opacity-50'"
-                        class="w-full text-white font-bold py-3 px-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
-                        <span x-text="isWithinRadius ? 'Kirim Presensi' : 'Di Luar Area Balai Kota'"></span>
-                    </button>
+                  <!-- Modifikasi Tombol Submit -->
+<button 
+    type="submit" 
+    :disabled="!isWithinRadius || ({{ $tipePresensi === 'masuk' && $sudahAbsenMasuk ? 'true' : 'false' }}) || ({{ $tipePresensi === 'pulang' && $sudahAbsenKeluar ? 'true' : 'false' }})"
+    :class="(isWithinRadius && !({{ $tipePresensi === 'masuk' && $sudahAbsenMasuk ? 'true' : 'false' }}) && !({{ $tipePresensi === 'pulang' && $sudahAbsenKeluar ? 'true' : 'false' }})) 
+            ? 'bg-green-600 hover:bg-green-500 cursor-pointer' 
+            : 'bg-gray-600 cursor-not-allowed opacity-50'"
+    class="w-full text-white font-bold py-3 px-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+    
+    @if ($tipePresensi === 'masuk' && $sudahAbsenMasuk)
+        <span>Sudah Absen Masuk Hari Ini</span>
+    @elseif ($tipePresensi === 'pulang' && $sudahAbsenKeluar)
+        <span>Sudah Absen Pulang Hari Ini</span>
+    @else
+        <span x-text="isWithinRadius ? 'Kirim Presensi' : 'Di Luar Area Balai Kota'"></span>
+    @endif
+</button>
                 </div>
             </div>
         </form>
