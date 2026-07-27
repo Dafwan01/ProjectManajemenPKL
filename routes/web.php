@@ -12,13 +12,11 @@ use App\Livewire\Dashboard\UploadFile\SuratPenerimaanMagang;
 use App\Livewire\Login;
 use App\Livewire\Dashboard\PermohonanIzin;
 use Illuminate\Support\Facades\Storage;
-
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 
 use App\Livewire\User\Presensi;
 use App\Livewire\User\Riwayat;
-use App\livewire\User\IzinSakit;
+use App\Livewire\User\IzinSakit;
 
 // Route::get('/', function () {
 //     return view('components.header');

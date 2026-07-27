@@ -2,11 +2,14 @@
 
 namespace App\Livewire\User;
 
+use App\Models\LogBook;
 use Livewire\Component;
-use Carbon\Carbon;
+use Livewire\WithPagination;
 
 class Riwayat extends Component
 {
+    use WithPagination;
+
     public $search = '';
     public $filterStatus = 'semua';
 
@@ -24,44 +27,49 @@ class Riwayat extends Component
         'editingLogbook.min'      => 'Logbook minimal 10 karakter.',
     ];
 
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStatus()
+    {
+        $this->resetPage();
+    }
+
     /**
-     * Membuka modal edit dan menyiapkan data logbook yang dipih
+     * Membuka modal edit dan menyiapkan data logbook yang dipilih
      */
     public function editLogbook($id)
     {
-        $riwayatData = session()->get('riwayat_presensi', $this->getDefaultRiwayat());
-        $item = collect($riwayatData)->firstWhere('id', $id);
+        $logBook = LogBook::find($id);
 
-        if ($item) {
-            $item = (object) $item;
-            $this->editingId = $item->id;
-            $this->editingLogbook = $item->logbook ?? '';
+        if ($logBook) {
+            $this->editingId = $logBook->log_book_id;
+            $this->editingLogbook = $logBook->kegiatan ?? '';
             $this->isEditModalOpen = true;
         }
     }
 
     /**
-     * Menyimpan perubahan logbook ke dalam Session
+     * Menyimpan perubahan logbook ke database
      */
     public function updateLogbook()
     {
         $this->validate();
 
-        $riwayatData = session()->get('riwayat_presensi', $this->getDefaultRiwayat());
+        $logBook = LogBook::findOrFail($this->editingId);
 
-        foreach ($riwayatData as $index => $item) {
-            $itemId = is_array($item) ? ($item['id'] ?? null) : ($item->id ?? null);
-            if ($itemId == $this->editingId) {
-                if (is_array($riwayatData[$index])) {
-                    $riwayatData[$index]['logbook'] = $this->editingLogbook;
-                } else {
-                    $riwayatData[$index]->logbook = $this->editingLogbook;
-                }
-                break;
-            }
+        // Pastikan user cuma bisa edit logbook miliknya sendiri
+        if ($logBook->user_id !== auth()->id()) {
+            session()->flash('error', 'Anda tidak memiliki akses untuk mengedit logbook ini.');
+            $this->closeModal();
+            return;
         }
 
-        session()->put('riwayat_presensi', $riwayatData);
+        $logBook->update([
+            'kegiatan' => $this->editingLogbook,
+        ]);
 
         $this->closeModal();
         session()->flash('message', 'Logbook berhasil diperbarui!');
@@ -75,76 +83,45 @@ class Riwayat extends Component
         $this->resetValidation();
     }
 
-    /**
-     * Data dummy cadangan jika Session riwayat_presensi masih kosong
-     */
-    private function getDefaultRiwayat()
-    {
-        return [
-            [
-                'id' => 1,
-                'nama' => 'Jonathan',
-                'sekolah' => 'Institut Bisnis dan Informatika Bogor',
-                'tanggal' => 'Jumat, 24/07/2026',
-                'jam_masuk' => '2026-07-24 07:55:00',
-                'jam_pulang' => '2026-07-24 16:05:00',
-                'status' => 'HADIR',
-                'logbook' => 'Mengimplementasikan komponen UI presensi terpisah, menangani integrasi kamera real-time, dan perekaman geolocation GPS via Alpine.js.',
-                'latitude' => '-6.5971',
-                'longitude' => '106.8060'
-            ]
-        ];
-    }
-
     public function render()
     {
-        // 1. Ambil data dari Session, jika belum ada gunakan default dummy
-        $riwayatData = session()->get('riwayat_presensi', $this->getDefaultRiwayat());
+        $userId = auth()->id();
 
-        // 2. Format & Transformasi Data
-        $dataFiltered = collect($riwayatData)
-            ->map(function ($item) {
-                $item = (object) $item;
-
-                // Helper untuk parsing format jam menggunakan Carbon secara aman
-                $formatJam = function ($time) {
-                    if (empty($time) || $time === '-') {
-                        return '-';
-                    }
-                    try {
-                        return Carbon::parse($time)->format('H:i') . ' WIB';
-                    } catch (\Exception $e) {
-                        return $time; // Fallback jika format teks jam biasa (misal: "08:00 WIB")
-                    }
-                };
-
-                return [
-                    'id'         => $item->id ?? null,
-                    'nama'       => $item->nama ?? '-',
-                    'sekolah'    => $item->sekolah ?? '-',
-                    'tanggal'    => $item->tanggal ?? '-',
-                    'jam_masuk'  => $formatJam($item->jam_masuk ?? null),
-                    'jam_pulang' => $formatJam($item->jam_pulang ?? null),
-                    'status'     => $item->status ?? '-',
-                    'logbook'    => $item->logbook ?? '-',
-                    'latitude'   => $item->latitude ?? null,
-                    'longitude'  => $item->longitude ?? null,
-                ];
+        $logBooks = LogBook::with(['presensi', 'user'])
+            ->where('user_id', $userId)
+            ->when($this->search, function ($query) {
+                $query->where('kegiatan', 'like', '%' . $this->search . '%')
+                    ->orWhereHas('presensi', function ($q) {
+                        $q->whereDate('tanggal', 'like', '%' . $this->search . '%');
+                    });
             })
-            // 3. Filter Berdasarkan Pencarian (Search) dan Filter Status
-            ->filter(function ($item) {
-                $matchSearch = empty($this->search) || 
-                    str_contains(strtolower($item['logbook']), strtolower($this->search)) ||
-                    str_contains(strtolower($item['tanggal']), strtolower($this->search));
-                    
-                $matchStatus = ($this->filterStatus === 'semua') || 
-                    (strtoupper($item['status']) === strtoupper($this->filterStatus));
+            ->when($this->filterStatus !== 'semua', function ($query) {
+                $query->whereHas('presensi', function ($q) {
+                    $q->where('status_kehadiran', strtolower($this->filterStatus));
+                });
+            })
+            ->latest('log_book_id')
+            ->paginate(10);
 
-                return $matchSearch && $matchStatus;
-            });
+        $dataRiwayat = $logBooks->through(function ($logBook) {
+            $presensi = $logBook->presensi;
+
+            return [
+                'id'         => $logBook->log_book_id,
+                'nama'       => $logBook->user->nama ?? '-',
+                'sekolah'    => $logBook->user->asal_sekolah ?? '-',
+                'tanggal'    => $presensi && $presensi->tanggal ? $presensi->tanggal->translatedFormat('l, d/m/Y') : '-',
+                'jam_masuk'  => $presensi && $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) . ' WIB' : '-',
+                'jam_pulang' => $presensi && $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) . ' WIB' : '-',
+                'status'     => $presensi ? strtoupper($presensi->status_kehadiran?->value ?? '-') : '-',
+                'logbook'    => $logBook->kegiatan ?? '-',
+                'latitude'   => $presensi->latitude ?? null,
+                'longitude'  => $presensi->longitude ?? null,
+            ];
+        });
 
         return view('livewire.user.riwayat', [
-            'dataRiwayat' => $dataFiltered
+            'dataRiwayat' => $dataRiwayat,
         ])->layout('layouts.user');
     }
 }

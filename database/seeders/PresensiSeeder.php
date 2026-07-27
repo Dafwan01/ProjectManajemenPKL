@@ -27,7 +27,7 @@ class PresensiSeeder extends Seeder
             presensi::create([
                 'foto_masuk' => 'presensis/foto_masuk_' . $i . '.jpg',
                 'foto_keluar' => $i % 2 === 0 ? 'presensis/foto_keluar_' . $i . '.jpg' : null,
-                'tanggal' => '2026-07-22',
+                'tanggal' => '2026-07-27',
                 'status_kehadiran' => $statuses[array_rand($statuses)],
                 'latitude' => $latitude,
                 'longitude' => $longitude,
