@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Dashboard;
 
+use App\Enums\UserDivisi;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\User;
@@ -30,6 +31,7 @@ class ManajemenAkun extends Component
     public $mentor = '';
     public $password = '';
     public $confirm_password = '';
+    public $divisi = '';
 
     // UI States
     public bool $showModal = false;
@@ -42,6 +44,7 @@ class ManajemenAkun extends Component
             'nama' => 'required|min:3',
             'email' => 'required|email|unique:users,email,' . $this->userId . ',user_id',
             'role' => ['required', Rule::enum(UserRole::class)],
+            'divisi' => ['required', Rule::enum(UserDivisi::class)],
             'status' => ['required', Rule::enum(UserStatus::class)],
             'asal_sekolah' => 'nullable|string',
             'mentor' => 'nullable|string',
@@ -58,6 +61,7 @@ class ManajemenAkun extends Component
         'email.email' => 'Format email tidak valid.',
         'email.unique' => 'Email ini sudah terdaftar.',
         'role.required' => 'Silakan pilih role pengguna.',
+        'divisi.required' => 'Silakan pilih divisi pengguna.',
         'status.required' => 'Silakan pilih status akun.',
         'password.required' => 'Password wajib diisi.',
         'password.min' => 'Password minimal harus 8 karakter.',
@@ -70,6 +74,7 @@ class ManajemenAkun extends Component
         $this->nama = '';
         $this->email = '';
         $this->role = '';
+        $this->divisi = '';
         $this->status = UserStatus::AKTIF->value;
         $this->asal_sekolah = '';
         $this->mentor = '';
@@ -95,6 +100,7 @@ class ManajemenAkun extends Component
         $this->nama = $user->nama;
         $this->email = $user->email;
         $this->role = $user->role->value;
+        $this->divisi = $user->divisi->value;
         $this->status = $user->status->value;
         $this->asal_sekolah = $user->asal_sekolah;
         $this->mentor = $user->mentor;
@@ -118,6 +124,7 @@ class ManajemenAkun extends Component
                 'nama' => $this->nama,
                 'email' => $this->email,
                 'role' => $this->role,
+                'divisi' => $this->divisi,
                 'status' => $this->status,
                 'asal_sekolah' => $this->asal_sekolah,
                 'mentor' => $this->mentor,
@@ -135,6 +142,7 @@ class ManajemenAkun extends Component
                 'nama' => $this->nama,
                 'email' => $this->email,
                 'role' => $this->role,
+                'divisi' => $this->divisi,
                 'status' => $this->status,
                 'asal_sekolah' => $this->asal_sekolah,
                 'mentor' => $this->mentor,

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserDivisi;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\DetailJadwal;
@@ -28,6 +29,7 @@ class User extends Authenticatable
         'tanggal_mulai',
         'tanggal_Akhir',
         'role',
+        'divisi',
         'surat_penerimaan',
         'foto',
         'skill',
@@ -47,6 +49,7 @@ class User extends Authenticatable
         // Casting Enum di sini
         'role' => UserRole::class,
         'status' => UserStatus::class,
+        'divisi' => UserDivisi::class,
     ];
 
     public function detailJadwals()
