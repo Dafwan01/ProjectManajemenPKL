@@ -1,0 +1,770 @@
+Presensi.php
+<?php
+
+namespace App\Livewire\User;
+
+use Livewire\Component;
+
+class Presensi extends Component
+{
+    public $nama = 'Jonathan';
+    public $jabatan = 'PKL';
+    public $opd = 'Dinas Komunikasi dan Informatika';
+    public $bidang = 'Magang Aplikasi Informatika';
+    
+    // State Form
+    public $tipePresensi = 'masuk'; // 'masuk' atau 'pulang'
+    public $logbook = '';
+    public $latitude = null;
+    public $longitude = null;
+    public $fotoCaptured = null;
+
+    protected $messages = [
+        'latitude.required' => 'Koordinat lokasi belum terdeteksi. Izinkan akses lokasi di browser!',
+        'logbook.required'  => 'Logbook harian wajib diisi saat presensi pulang!',
+        'logbook.min'       => 'Isi logbook minimal 10 karakter.',
+        'fotoCaptured.required' => 'Foto wajib diambil sebelum mengirim presensi!',
+    ];
+
+    public function simpanPresensi()
+    {
+        // Dynamic Validation Rules
+        $rules = [
+            'latitude'     => 'required',
+            'longitude'    => 'required',
+            'fotoCaptured' => 'required',
+        ];
+
+        if ($this->tipePresensi === 'pulang') {
+            $rules['logbook'] = 'required|min:10';
+        }
+
+        $this->validate($rules);
+
+        // Ambil data riwayat yang sudah ada di Session (jika ada)
+        $riwayatSession = session()->get('riwayat_presensi', []);
+
+        // Buat data presensi baru
+        $dataBaru = [
+            'id' => count($riwayatSession) + 1,
+            'nama' => $this->nama,
+            'sekolah' => 'Institut Bisnis dan Informatika Bogor',
+            'tanggal' => now()->translatedFormat('l, d/m/Y'),
+            'jam_masuk' => $this->tipePresensi === 'masuk' ? now()->format('H:i') . ' WIB' : '08:00 WIB',
+            'jam_pulang' => $this->tipePresensi === 'pulang' ? now()->format('H:i') . ' WIB' : '-',
+            'status' => 'HADIR',
+            'logbook' => $this->tipePresensi === 'pulang' ? $this->logbook : 'Presensi Masuk',
+            'foto' => $this->fotoCaptured,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude
+        ];
+
+        // Masukkan data baru ke urutan paling atas array
+        array_unshift($riwayatSession, $dataBaru);
+
+        // Simpan kembali ke Session
+        session()->put('riwayat_presensi', $riwayatSession);
+
+        $tipe = $this->tipePresensi;
+
+        // Reset Form
+        $this->reset(['logbook', 'fotoCaptured']);
+        $this->tipePresensi = 'masuk';
+
+        session()->flash('message', 'Presensi ' . strtoupper($tipe) . ' berhasil dikirim dan tersimpan!');
+    }
+
+    public function render()
+    {
+        return view('livewire.user.presensi')
+            ->layout('layouts.user');
+    }
+}
+
+presensi.blade.php
+<div>
+    <div class="w-full mx-auto max-w-7xl" 
+         x-data="{ 
+            openModal: false, 
+            isCameraOn: false, 
+            hasPhoto: false,
+            lat: @entangle('latitude'),
+            long: @entangle('longitude'),
+            locationError: '',
+
+            initCamera() {
+                this.isCameraOn = true;
+                this.hasPhoto = false;
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } })
+                    .then(stream => {
+                        this.$refs.video.srcObject = stream;
+                    })
+                    .catch(err => {
+                        alert('Kamera tidak dapat diakses atau diizinkan browser!');
+                        this.isCameraOn = false;
+                    });
+            },
+            
+            takeSnap() {
+                let video = this.$refs.video;
+                let canvas = this.$refs.canvas;
+                
+                // --- LOGIKA KOMPRESI FOTO (SARAN MENTOR) ---
+                let maxWidth = 800; // Maksimal lebar foto 800px
+                let width = video.videoWidth || 640;
+                let height = video.videoHeight || 480;
+
+                // Hitung rasio agar proporsional
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                let context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, width, height);
+                
+                // Export & Kompres ke format JPEG dengan kualitas 70% (0.7)
+                // Hasilnya akan jauh lebih ringan dan aman dari limit 1MB Laravel
+                let compressedImageData = canvas.toDataURL('image/jpeg', 0.7);
+                
+                // Kirim data foto yang sudah dikompres ke Livewire
+                @this.set('fotoCaptured', compressedImageData);
+                
+                this.stopCamera();
+                this.hasPhoto = true;
+            },
+
+            stopCamera() {
+                if (this.$refs.video && this.$refs.video.srcObject) {
+                    this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
+                }
+                this.isCameraOn = false;
+            },
+            
+            getLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            this.lat = position.coords.latitude;
+                            this.long = position.coords.longitude;
+                        },
+                        (error) => {
+                            this.locationError = 'Gagal mengambil lokasi. Pastikan GPS aktif.';
+                        },
+                        { enableHighAccuracy: true }
+                    );
+                } else {
+                    this.locationError = 'Browser Anda tidak mendukung Geolocation.';
+                }
+            },
+            
+            resetVisualState() {
+                this.stopCamera();
+                this.hasPhoto = false;
+            }
+         }"
+         x-init="getLocation()">
+        
+        <h1 class="text-2xl font-bold mb-6 text-white tracking-wide">FORM PRESENSI HARI INI</h1>
+
+        <!-- Notifikasi Berhasil -->
+        @if (session()->has('message'))
+            <div class="mb-6 p-4 bg-green-900/80 border border-green-500 text-green-200 rounded-xl flex items-center justify-between shadow-lg">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>{{ session('message') }}</span>
+                </div>
+                <button type="button" class="text-green-300 hover:text-white" onclick="this.parentElement.remove()">✕</button>
+            </div>
+        @endif
+
+        <!-- Card Utama Form Presensi -->
+        <form wire:submit.prevent="simpanPresensi(); resetVisualState();" class="bg-gray-800 p-6 rounded-xl border border-gray-700/60 shadow-xl mb-8 w-full transition-all duration-300">
+            
+            <!-- Tab Pilih Tipe Presensi (Masuk / Pulang) -->
+            <div class="mb-6 flex gap-2 border-b border-gray-700 pb-2">
+                <button type="button" wire:click="$set('tipePresensi', 'masuk')" class="px-4 py-2 rounded-t-lg text-sm font-medium flex items-center gap-2 transition {{ $tipePresensi === 'masuk' ? 'bg-gray-700 text-blue-400 border-b-2 border-blue-500' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                    Presensi MASUK
+                </button>
+                <button type="button" wire:click="$set('tipePresensi', 'pulang')" class="px-4 py-2 rounded-t-lg text-sm font-medium flex items-center gap-2 transition {{ $tipePresensi === 'pulang' ? 'bg-gray-700 text-orange-400 border-b-2 border-orange-500' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                    Presensi PULANG
+                </button>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-6 items-start">
+                
+                <!-- Kamera Box -->
+                <div class="flex flex-col gap-3 w-full lg:w-80 flex-shrink-0">
+                    <div class="w-full h-64 bg-gray-900 border-2 border-dashed border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-400 relative overflow-hidden shadow-inner group">
+                        <video x-show="isCameraOn" x-ref="video" autoplay playsinline class="w-full h-full object-cover"></video>
+                        
+                        <template x-if="hasPhoto && !isCameraOn">
+                            <img src="{{ $fotoCaptured }}" class="w-full h-full object-cover transition-opacity duration-300">
+                        </template>
+
+                        <div x-show="!isCameraOn && !hasPhoto" class="flex flex-col items-center p-4 text-center">
+                            <svg class="w-12 h-12 mb-3 text-gray-600 group-hover:text-emerald-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                            <span class="text-xs uppercase tracking-wider text-gray-500 font-semibold group-hover:text-gray-300">KAMERA STANDBY</span>
+                            <p class="text-[10px] text-gray-600 mt-1">Klik tombol di bawah untuk membuka kamera perangkat Anda</p>
+                        </div>
+
+                        <!-- Canvas Hidden (Digunakan untuk proses kompresi) -->
+                        <canvas x-ref="canvas" class="hidden"></canvas>
+                    </div>
+
+                    @error('fotoCaptured') 
+                        <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> 
+                    @enderror
+
+                    <!-- Tombol Kamera -->
+                    <div class="grid grid-cols-1 gap-2">
+                        <button type="button" x-show="!isCameraOn && !hasPhoto" @click="initCamera()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-lg text-sm flex items-center justify-center gap-2 shadow transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            BUKA KAMERA
+                        </button>
+                        <button type="button" x-show="isCameraOn" @click="takeSnap()" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg text-sm flex items-center justify-center gap-2 shadow animate-pulse">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                            AMBIL FOTO & KOMPRES
+                        </button>
+                        <button type="button" x-show="hasPhoto && !isCameraOn" @click="initCamera()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 px-4 rounded-lg text-sm flex items-center justify-center gap-2">
+                            AMBIL ULANG FOTO
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Detail & Input Data -->
+                <div class="flex flex-col space-y-4 w-full flex-1">
+                    
+                    <!-- Indicator Status GPS / Geolocation -->
+                    <div class="p-4 bg-gray-900 border border-gray-700 rounded-lg text-xs shadow-inner">
+                        <template x-if="lat && long">
+                            <div class="flex items-center gap-2 text-green-400 font-mono">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                <span>Lokasi Terdeteksi: <span x-text="lat"></span>, <span x-text="long"></span></span>
+                            </div>
+                        </template>
+                        <template x-if="!lat || !long">
+                            <div class="flex items-center gap-2 text-yellow-400 font-mono">
+                                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span>⏳ Mendeteksi koordinat GPS Anda...</span>
+                            </div>
+                        </template>
+                        @error('latitude') 
+                            <span class="text-red-400 text-xs block mt-2 p-1.5 bg-red-950 border border-red-800 rounded">{{ $message }}</span> 
+                        @enderror
+                    </div>
+
+                    <!-- Input Logbook (Hanya Tampil & Wajib untuk Presensi PULANG) -->
+                    <div x-show="$wire.tipePresensi === 'pulang'" x-collapse x-cloak>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1.5">LOGBOOK HARIAN <span class="text-red-500">*</span></label>
+                        <textarea 
+                            wire:model="logbook" 
+                            rows="5" 
+                            placeholder="Tuliskan catatan detail mengenai hasil kegiatan atau tugas magang Anda hari ini (minimal 10 karakter)..." 
+                            class="bg-gray-900 border @error('logbook') border-red-500 @else border-gray-700 @enderror text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-3 resize-none shadow-inner transition"></textarea>
+                        @error('logbook') 
+                            <span class="text-red-400 text-xs mt-1.5 block">{{ $message }}</span> 
+                        @enderror
+                    </div>
+
+                    <!-- Info Box Presensi Masuk -->
+                    <div x-show="$wire.tipePresensi === 'masuk'" x-collapse class="p-3.5 bg-gray-900/50 border border-gray-700/50 rounded-lg text-xs text-gray-400 italic flex items-start gap-2">
+                        <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Untuk presensi masuk, Anda hanya perlu mengambil foto jepretan kamera terbaru. Logbook harian tidak perlu diisi saat presensi masuk.</span>
+                    </div>
+
+                    <!-- Submit Button Dinamis -->
+                    <button 
+                        type="submit" 
+                        class="w-full text-white font-semibold rounded-lg text-sm px-5 py-3 shadow-md transition-all flex items-center justify-center gap-2 {{ $tipePresensi === 'pulang' ? 'bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:ring-orange-800' : 'bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-800' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        KIRIM PRESENSI {{ strtoupper($tipePresensi) }} SEKARANG
+                    </button>
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+PresensiController.php
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+class PresensiController extends Controller
+{
+    public function store(Request $request)
+    {
+        // 1. Ambil data gambar Base64 dari request
+        $imageParts = explode(";base64,", $request->foto);
+        $imageBase64 = base64_decode($imageParts[1]);
+
+        // 2. Buat nama file unik
+        $fileName = 'presensi/' . uniqid() . '.jpg';
+
+        // 3. Simpan file gambar ke storage publik (storage/app/public/presensi)
+        Storage::disk('public')->put($fileName, $imageBase64);
+
+        // 4. Ambil array riwayat presensi yang sudah ada di session
+        $riwayat = session()->get('riwayat_presensi', []);
+
+        // 5. Masukkan data baru ke array (simpan PATH file, BUKAN string base64)
+        $riwayat[] = [
+            'id' => count($riwayat) + 1,
+            'nama' => $request->nama,
+            'foto' => $fileName,
+            // Gunakan now() agar mengikuti timezone config/app.php
+            'waktu' => now()->format('Y-m-d H:i:s'), 
+        ];
+
+        session()->put('riwayat_presensi', $riwayat);
+
+        return redirect()->back()->with('success', 'Presensi berhasil disimpan!');
+    }
+}
+
+index.blade.php
+@if(session()->has('riwayat_presensi'))
+    <ul>
+        @foreach(session('riwayat_presensi') as $item)
+            <li>
+                <p>Nama: {{ $item['nama'] }}</p>
+                <!-- Menampilkan gambar berdasarkan path yang disimpan -->
+                <img src="{{ asset('storage/' . $item['foto']) }}" alt="Foto Presensi" width="150">
+            </li>
+        @endforeach
+    </ul>
+@endif
+
+Riwayat.php
+<?php
+
+namespace App\Livewire\User;
+
+use Livewire\Component;
+use Carbon\Carbon;
+
+class Riwayat extends Component
+{
+    public $search = '';
+    public $filterStatus = 'semua';
+    public $selectedFoto = null;
+
+    /**
+     * Mengambil URL/Path foto berdasarkan ID riwayat
+     */
+    public function lihatFoto($id)
+    {
+        $riwayatData = session()->get('riwayat_presensi', $this->getDefaultRiwayat());
+        $item = collect($riwayatData)->firstWhere('id', $id);
+        
+        if ($item) {
+            $this->selectedFoto = is_array($item) ? ($item['foto'] ?? null) : ($item->foto ?? null);
+        }
+    }
+
+    /**
+     * Data dummy cadangan jika Session riwayat_presensi masih kosong
+     */
+    private function getDefaultRiwayat()
+    {
+        return [
+            [
+                'id' => 1,
+                'nama' => 'Jonathan',
+                'sekolah' => 'Institut Bisnis dan Informatika Bogor',
+                'tanggal' => 'Jumat, 24/07/2026',
+                'jam_masuk' => '2026-07-24 07:55:00',
+                'jam_pulang' => '2026-07-24 16:05:00',
+                'status' => 'HADIR',
+                'logbook' => 'Mengimplementasikan komponen UI presensi terpisah, menangani integrasi kamera real-time, dan perekaman geolocation GPS via Alpine.js.',
+                'foto' => null,
+                'latitude' => '-6.5971',
+                'longitude' => '106.8060'
+            ]
+        ];
+    }
+
+    public function render()
+    {
+        // 1. Ambil data dari Session, jika belum ada gunakan default dummy
+        $riwayatData = session()->get('riwayat_presensi', $this->getDefaultRiwayat());
+
+        // 2. Format & Transformasi Data
+        $dataFiltered = collect($riwayatData)
+            ->map(function ($item) {
+                $item = (object) $item;
+
+                // Helper untuk parsing format jam menggunakan Carbon secara aman
+                $formatJam = function ($time) {
+                    if (empty($time) || $time === '-') {
+                        return '-';
+                    }
+                    try {
+                        return Carbon::parse($time)->format('H:i') . ' WIB';
+                    } catch (\Exception $e) {
+                        return $time; // Fallback jika format teks jam biasa (misal: "08:00 WIB")
+                    }
+                };
+
+                return [
+                    'id'         => $item->id ?? null,
+                    'nama'       => $item->nama ?? '-',
+                    'sekolah'    => $item->sekolah ?? '-',
+                    'tanggal'    => $item->tanggal ?? '-',
+                    'jam_masuk'  => $formatJam($item->jam_masuk ?? null),
+                    'jam_pulang' => $formatJam($item->jam_pulang ?? null),
+                    'status'     => $item->status ?? '-',
+                    'logbook'    => $item->logbook ?? '-',
+                    'foto'       => $item->foto ?? null,
+                    'latitude'   => $item->latitude ?? null,
+                    'longitude'  => $item->longitude ?? null,
+                ];
+            })
+            // 3. Filter Berdasarkan Pencarian (Search) dan Filter Status
+            ->filter(function ($item) {
+                $matchSearch = empty($this->search) || 
+                    str_contains(strtolower($item['logbook']), strtolower($this->search)) ||
+                    str_contains(strtolower($item['tanggal']), strtolower($this->search));
+                    
+                $matchStatus = ($this->filterStatus === 'semua') || 
+                    (strtoupper($item['status']) === strtoupper($this->filterStatus));
+
+                return $matchSearch && $matchStatus;
+            });
+
+        return view('livewire.user.riwayat', [
+            'dataRiwayat' => $dataFiltered
+        ])->layout('layouts.user');
+    }
+}
+
+riwayat.blade.php
+<div>
+    <div class="w-full mx-auto max-w-7xl" x-data="{ openModal: false }">
+        
+        <!-- Header Judul -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-gray-700 pb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-white tracking-wide">RIWAYAT PRESENSI</h1>
+                <p class="text-xs text-gray-400 mt-1">Daftar lengkap catatan kehadiran dan logbook harian Anda selama masa magang.</p>
+            </div>
+
+            <!-- Ringkasan Statistik Singkat -->
+            <div class="flex gap-3 text-xs w-full sm:w-auto flex-shrink-0">
+                <div class="bg-gray-800 border border-gray-700/60 p-3 rounded-lg text-center flex-1 sm:flex-initial shadow">
+                    <span class="text-gray-400 block mb-0.5">Total Hadir</span>
+                    <span class="text-green-400 font-bold text-xl">2 <span class="text-xs font-normal">Hari</span></span>
+                </div>
+                <div class="bg-gray-800 border border-gray-700/60 p-3 rounded-lg text-center flex-1 sm:flex-initial shadow">
+                    <span class="text-gray-400 block mb-0.5">Izin / Sakit</span>
+                    <span class="text-yellow-400 font-bold text-xl">0 <span class="text-xs font-normal">Hari</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Filter & Pencarian -->
+        <div class="bg-gray-800 p-5 rounded-xl border border-gray-700/60 shadow-lg mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between transition-all duration-300">
+            <div class="w-full sm:w-80 relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input 
+                    type="text" 
+                    wire:model.live.debounce.300ms="search" 
+                    placeholder="Cari logbook, tanggal, atau status..." 
+                    class="bg-gray-900 border border-gray-700 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-9 p-2.5 shadow-inner">
+            </div>
+
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <label class="text-xs text-gray-400 font-medium whitespace-nowrap">Filter Status:</label>
+                <select wire:model.live="filterStatus" class="bg-gray-900 border border-gray-700 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-inner transition cursor-pointer">
+                    <option value="semua">Semua Status Kehadiran</option>
+                    <option value="hadir">Status: HADIR</option>
+                    <option value="izin">Status: IZIN</option>
+                    <option value="sakit">Status: SAKIT</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Section Tabel Riwayat -->
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700/60 shadow-xl w-full mb-8 min-h-[400px]">
+            <div class="relative overflow-x-auto shadow-md rounded-lg">
+                <table class="w-full text-sm text-left text-gray-400">
+                    <thead class="text-xs text-gray-200 uppercase bg-gray-700 border-b border-gray-600">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 whitespace-nowrap">HARI / TANGGAL</th>
+                            <th scope="col" class="px-6 py-4">JAM MASUK / PULANG</th>
+                            <th scope="col" class="px-6 py-4">KEHADIRAN</th>
+                            <th scope="col" class="px-6 py-4">KOORDINAT GPS</th>
+                            <th scope="col" class="px-6 py-4 text-center">FOTO</th>
+                            <th scope="col" class="px-6 py-4 max-w-sm">LOGBOOK HARIAN</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700/60">
+                        @forelse ($dataRiwayat as $item)
+                            <tr class="bg-gray-800 hover:bg-gray-750/50 transition-colors duration-150">
+                                <td class="px-6 py-4 font-medium text-white whitespace-nowrap">{{ $item['tanggal'] }}</td>
+                                
+                                <!-- Kolom Jam Masuk & Jam Pulang -->
+                                <td class="px-6 py-4 text-xs font-mono whitespace-nowrap">
+                                    <div class="flex items-center gap-1.5 text-green-400 mb-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                                        <span>In: {{ $item['jam_masuk'] ?? '-' }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 text-orange-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                                        <span>Out: {{ $item['jam_pulang'] ?? '-' }}</span>
+                                    </div>
+                                </td>
+
+                                <!-- Kolom Kehadiran dengan Ikon Statis -->
+                                <td class="px-6 py-4">
+                                    @if(strtoupper($item['status']) == 'HADIR')
+                                        <span class="bg-green-950 text-green-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-green-800 flex items-center gap-1.5 w-fit">
+                                            <span class="h-2 w-2 rounded-full bg-green-500 inline-block"></span>
+                                            HADIR
+                                        </span>
+                                    @elseif(strtoupper($item['status']) == 'IZIN')
+                                        <span class="bg-yellow-950 text-yellow-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-yellow-800 flex items-center gap-1.5 w-fit">
+                                            <span class="h-2 w-2 rounded-full bg-yellow-500 inline-block"></span>
+                                            IZIN
+                                        </span>
+                                    @else
+                                        <span class="bg-red-950 text-red-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-red-800 flex items-center gap-1.5 w-fit">
+                                            <span class="h-2 w-2 rounded-full bg-red-500 inline-block"></span>
+                                            SAKIT
+                                        </span>
+                                    @endif
+                                </td>
+
+                                <td class="px-6 py-4 text-xs font-mono text-gray-300">
+                                    {{ $item['latitude'] ?? '-' }}, {{ $item['longitude'] ?? '-' }}
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    @if($item['foto'])
+                                        <button type="button" wire:click="lihatFoto({{ $item['id'] }})" @click="openModal = true" class="text-blue-400 hover:text-blue-300 transition p-1.5 bg-gray-700/50 rounded-lg border border-gray-700 hover:border-blue-500 hover:shadow">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        </button>
+                                    @else
+                                        <span class="text-gray-600 text-xs">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 max-w-sm text-xs text-gray-300 leading-relaxed">{{ $item['logbook'] ?? 'Tidak mengisi logbook (Presensi Masuk)' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center text-gray-500 text-xs">
+                                    <svg class="w-10 h-10 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    Data riwayat presensi tidak ditemukan atau masih kosong.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal Pop-up Foto Presensi -->
+        <div x-show="openModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 transition-opacity duration-300" x-cloak x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 max-w-md w-full text-center shadow-2xl transition-transform duration-300" @click.away="openModal = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="scale-95" x-transition:enter-end="scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="scale-100" x-transition:leave-end="scale-95">
+                <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
+                    <h3 class="text-lg font-bold text-white">Bukti Foto Presensi</h3>
+                    <button @click="openModal = false" class="text-gray-500 hover:text-white transition">✕</button>
+                </div>
+                <div class="w-full h-64 bg-gray-900 rounded-lg flex items-center justify-center border border-gray-700 mb-4 overflow-hidden shadow-inner">
+                    @if ($selectedFoto)
+                        <img src="{{ $selectedFoto }}" class="w-full h-full object-cover">
+                    @else
+                        <div class="flex flex-col items-center p-4 text-center text-gray-600">
+                            <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span class="text-sm">Foto tidak tersedia atau belum diambil untuk data dummy ini</span>
+                        </div>
+                    @endif
+                </div>
+                <button type="button" @click="openModal = false" class="w-full bg-gray-700 hover:bg-gray-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">Tutup Preview Foto</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+web.php
+<?php
+
+use App\Livewire\Components\Bottomnav;
+use App\Models\project;
+use App\Livewire\Dashboard\Dashboard;
+use App\Livewire\Dashboard\ManajemenAkun;
+use App\Livewire\Dashboard\ManajemenPkl;
+use App\Livewire\Dashboard\MonitoringAbsensi;
+use App\Livewire\Dashboard\UploadFile\Nilai;
+use App\Livewire\Dashboard\UploadFile\Sertifikat;
+use App\Livewire\Dashboard\UploadFile\SuratPenerimaanMagang;
+use App\Livewire\Login;
+
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Route;
+
+use App\Livewire\User\Presensi;
+use App\Livewire\User\Riwayat;
+
+// Route::get('/', function () {
+//     return view('components.header');
+// });
+
+// Route::livewire('/home', 'pages::components.header');
+Route::get('/', Login::class)->name('header');
+Route::get('/dashboard', Dashboard::class)->name('dashboard');
+Route::get('/manajemen-akun', ManajemenAkun::class)->name('manajemen-akun');
+Route::get('/manajemen-pkl', ManajemenPkl::class)->name('manajemen-pkl');
+Route::get('/monitoring-absensi', MonitoringAbsensi::class)->name('monitoring-absensi');
+Route::get('/project/{project}/download', function (project $project) {
+    abort_unless($project->file_project, 404);
+    return Storage::download($project->file_project);
+})->name('project.download');
+Route::get('/surat-penerimaan-magang', SuratPenerimaanMagang::class)->name('surat-penerimaan-magang');
+Route::get('/sertifikat', Sertifikat::class)->name('sertifikat');
+Route::get('/nilai', Nilai::class)->name('nilai');
+Route::get('/bottomnav', Bottomnav::class)->name('bottomnav');
+
+Route::get('/user/presensi', Presensi::class)->name('user.presensi');
+Route::get('/user/riwayat', Riwayat::class)->name('user.riwayat');
+
+user.blade.php
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>{{ $title ?? 'E-Presensi PKL' }}</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Scripts & Styles (Vite / Tailwind) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased min-h-screen flex flex-col sm:flex-row">
+
+    <!-- SIDEBAR MOBILE OVERLAY -->
+    <div x-data="{ sidebarOpen: false }" class="relative z-50 sm:hidden">
+        
+        <!-- Topbar Mobile -->
+        <div class="bg-gray-900 border-b border-gray-800 p-4 flex items-center justify-between w-full">
+            <h1 class="text-lg font-bold text-white tracking-wider">E-PRESENSI PKL</h1>
+            <button @click="sidebarOpen = !sidebarOpen" class="text-gray-400 hover:text-white focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mobile Drawer Sidebar -->
+        <div x-show="sidebarOpen" x-cloak class="fixed inset-0 bg-black/80 backdrop-blur-sm" @click="sidebarOpen = false"></div>
+        <aside x-show="sidebarOpen" x-cloak class="fixed top-0 left-0 w-64 h-full bg-gray-900 border-r border-gray-800 p-5 flex flex-col justify-between transition-all duration-300">
+            <div>
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-xl font-bold text-white tracking-wider">E-PRESENSI PKL</h2>
+                    <button @click="sidebarOpen = false" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+                
+                <!-- Navigation Links (Mobile) -->
+                <nav class="space-y-2">
+                    <a href="{{ route('user.presensi') }}" 
+                       class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.presensi') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span>Presensi</span>
+                    </a>
+                    <a href="{{ route('user.riwayat') }}" 
+                       class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.riwayat') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Riwayat</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="border-t border-gray-800 pt-4">
+                <button class="flex items-center gap-3 px-4 py-3 w-full text-left text-gray-400 hover:text-red-400 hover:bg-gray-800/50 rounded-xl text-sm font-medium transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- SIDEBAR DESKTOP -->
+    <aside class="hidden sm:flex w-64 bg-gray-900 border-r border-gray-800/80 flex-col justify-between h-screen sticky top-0 flex-shrink-0">
+        <div class="p-5">
+            <!-- App Brand Header -->
+            <div class="flex items-center gap-3 mb-8 px-2">
+                <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-600/30">
+                    P
+                </div>
+                <h1 class="text-base font-bold text-white tracking-wider">E-PRESENSI PKL</h1>
+            </div>
+
+            <!-- Navigation Links (Desktop) -->
+            <nav class="space-y-1.5">
+                <a href="{{ route('user.presensi') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.presensi') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/60' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <span>Presensi</span>
+                </a>
+
+                <a href="{{ route('user.riwayat') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.riwayat') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/60' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Riwayat</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Sidebar Bottom Footer -->
+        <div class="p-4 border-t border-gray-800/80">
+            <button class="flex items-center gap-3 px-4 py-3 w-full text-left text-gray-400 hover:text-red-400 hover:bg-red-950/20 rounded-xl text-sm font-medium transition group">
+                <svg class="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- CONTENT WRAPPER -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        
+        <!-- Top Navbar Header -->
+        <header class="bg-gray-900/50 backdrop-blur-md border-b border-gray-800/80 px-6 py-3.5 flex items-center justify-end sticky top-0 z-40">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-blue-500/30">
+                    JO
+                </div>
+                <span class="text-sm font-medium text-gray-200">Jonathan</span>
+            </div>
+        </header>
+
+        <!-- Main Slot Livewire View Page -->
+        <main class="p-6 lg:p-8 flex-1">
+            {{ $slot }}
+        </main>
+    </div>
+
+    @livewireScripts
+</body>
+</html>
