@@ -2,10 +2,12 @@
 
 namespace App\Livewire\User;
 
+use App\Models\log_book;
 use App\Models\LogBook;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-
+#[Layout('layouts.user')]
 class Riwayat extends Component
 {
     use WithPagination;
@@ -87,7 +89,7 @@ class Riwayat extends Component
     {
         $userId = auth()->id();
 
-        $logBooks = LogBook::with(['presensi', 'user'])
+        $logBooks = log_book::with(['presensi', 'user'])
             ->where('user_id', $userId)
             ->when($this->search, function ($query) {
                 $query->where('kegiatan', 'like', '%' . $this->search . '%')
@@ -120,8 +122,19 @@ class Riwayat extends Component
             ];
         });
 
+        // Statistik total (murni total keseluruhan, tidak terpengaruh pagination/filter)
+        $totalHadir = log_book::where('user_id', $userId)
+            ->whereHas('presensi', fn ($q) => $q->where('status_kehadiran', 'hadir'))
+            ->count();
+
+        $totalIzinSakit = log_book::where('user_id', $userId)
+            ->whereHas('presensi', fn ($q) => $q->whereIn('status_kehadiran', ['izin', 'sakit']))
+            ->count();
+
         return view('livewire.user.riwayat', [
             'dataRiwayat' => $dataRiwayat,
-        ])->layout('layouts.user');
+            'totalHadir' => $totalHadir,
+            'totalIzinSakit' => $totalIzinSakit,
+        ]);
     }
 }

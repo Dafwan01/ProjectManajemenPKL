@@ -1,85 +1,140 @@
 <div>
     <div class="w-full mx-auto max-w-7xl" 
-         x-data="{ 
-            openModal: false, 
-            isCameraOn: false, 
-            hasPhoto: false,
-            lat: @entangle('latitude'),
-            long: @entangle('longitude'),
-            locationError: '',
+     x-data="{ 
+        openModal: false, 
+        isCameraOn: false, 
+        hasPhoto: false,
+        lat: @entangle('latitude'),
+        long: @entangle('longitude'),
+        locationError: '',
 
-            initCamera() {
-                this.isCameraOn = true;
-                this.hasPhoto = false;
-                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } })
-                    .then(stream => {
-                        this.$refs.video.srcObject = stream;
-                    })
-                    .catch(err => {
-                        alert('Kamera tidak dapat diakses atau diizinkan browser!');
-                        this.isCameraOn = false;
-                    });
-            },
-            
-            takeSnap() {
-                let video = this.$refs.video;
-                let canvas = this.$refs.canvas;
-                
-                // Logika Kompresi Foto
-                let maxWidth = 800;
-                let width = video.videoWidth || 640;
-                let height = video.videoHeight || 480;
+        // State Face Detection
+        faceDetector: null,
+        faceDetected: false,
+        isModelLoading: false,
+        detectionInterval: null,
 
-                if (width > maxWidth) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                }
+        async loadFaceModel() {
+            if (this.faceDetector) return; // sudah ke-load, tidak perlu ulang
 
-                canvas.width = width;
-                canvas.height = height;
+            this.isModelLoading = true;
+            try {
+                await tf.setBackend('webgl');
+                await tf.ready();
 
-                let context = canvas.getContext('2d');
-                context.drawImage(video, 0, 0, width, height);
-                
-                let compressedImageData = canvas.toDataURL('image/jpeg', 0.7);
-                
-                @this.set('fotoCaptured', compressedImageData);
-                
-                this.stopCamera();
-                this.hasPhoto = true;
-            },
-
-            stopCamera() {
-                if (this.$refs.video && this.$refs.video.srcObject) {
-                    this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
-                }
-                this.isCameraOn = false;
-            },
-            
-            getLocation() {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            this.lat = position.coords.latitude;
-                            this.long = position.coords.longitude;
-                        },
-                        (error) => {
-                            this.locationError = 'Gagal mengambil lokasi. Pastikan GPS aktif.';
-                        },
-                        { enableHighAccuracy: true }
-                    );
-                } else {
-                    this.locationError = 'Browser Anda tidak mendukung Geolocation.';
-                }
-            },
-            
-            resetVisualState() {
-                this.stopCamera();
-                this.hasPhoto = false;
+                const model = faceDetection.SupportedModels.MediaPipeFaceDetector;
+                this.faceDetector = await faceDetection.createDetector(model, {
+                    runtime: 'mediapipe',
+                    solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection',
+                    maxFaces: 1,
+                });
+            } catch (err) {
+                console.error('Gagal load model face detection:', err);
+                alert('Gagal memuat model deteksi wajah. Coba refresh halaman.');
             }
-         }"
-         x-init="getLocation()">
+            this.isModelLoading = false;
+        },
+
+        async initCamera() {
+            this.isCameraOn = true;
+            this.hasPhoto = false;
+            this.faceDetected = false;
+
+            await this.loadFaceModel();
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } })
+                .then(stream => {
+                    this.$refs.video.srcObject = stream;
+                    this.startFaceDetectionLoop();
+                })
+                .catch(err => {
+                    alert('Kamera tidak dapat diakses atau diizinkan browser!');
+                    this.isCameraOn = false;
+                });
+        },
+
+        startFaceDetectionLoop() {
+            if (this.detectionInterval) clearInterval(this.detectionInterval);
+
+            this.detectionInterval = setInterval(async () => {
+                if (!this.faceDetector || !this.$refs.video || !this.isCameraOn) return;
+
+                try {
+                    const faces = await this.faceDetector.estimateFaces(this.$refs.video);
+                    this.faceDetected = faces.length > 0;
+                } catch (err) {
+                    // diamkan, kadang video belum siap di frame pertama
+                }
+            }, 500); // cek tiap 0.5 detik
+        },
         
+        takeSnap() {
+            if (!this.faceDetected) {
+                alert('Wajah belum terdeteksi! Pastikan wajah Anda terlihat jelas di kamera.');
+                return;
+            }
+
+            let video = this.$refs.video;
+            let canvas = this.$refs.canvas;
+            
+            let maxWidth = 800;
+            let width = video.videoWidth || 640;
+            let height = video.videoHeight || 480;
+
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            let context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, width, height);
+            
+            let compressedImageData = canvas.toDataURL('image/jpeg', 0.7);
+            
+            @this.set('fotoCaptured', compressedImageData);
+            
+            this.stopCamera();
+            this.hasPhoto = true;
+        },
+
+        stopCamera() {
+            if (this.detectionInterval) {
+                clearInterval(this.detectionInterval);
+                this.detectionInterval = null;
+            }
+            if (this.$refs.video && this.$refs.video.srcObject) {
+                this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            this.isCameraOn = false;
+            this.faceDetected = false;
+        },
+        
+        getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        this.lat = position.coords.latitude;
+                        this.long = position.coords.longitude;
+                    },
+                    (error) => {
+                        this.locationError = 'Gagal mengambil lokasi. Pastikan GPS aktif.';
+                    },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                this.locationError = 'Browser Anda tidak mendukung Geolocation.';
+            }
+        },
+        
+        resetVisualState() {
+            this.stopCamera();
+            this.hasPhoto = false;
+        }
+     }"
+     x-init="getLocation()">
         <h1 class="text-2xl font-bold mb-6 text-white tracking-wide">FORM PRESENSI HARI INI</h1>
 
         <!-- Notifikasi Berhasil -->
