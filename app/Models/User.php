@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\UserDivisi;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\DetailJadwal;
 use App\Models\Project;
+use App\Models\Nilai;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -27,7 +29,7 @@ class User extends Authenticatable
         'tanggal_mulai',
         'tanggal_Akhir',
         'role',
-        'nilai',
+        'divisi',
         'surat_penerimaan',
         'foto',
         'skill',
@@ -47,6 +49,7 @@ class User extends Authenticatable
         // Casting Enum di sini
         'role' => UserRole::class,
         'status' => UserStatus::class,
+        'divisi' => UserDivisi::class,
     ];
 
     public function detailJadwals()
@@ -58,4 +61,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Project::class, 'user_id', 'user_id');
     }
+
+      public function nilais()
+    {
+        return $this->hasMany(Nilai::class, 'user_id', 'user_id');
+    }
+
+    public function nilai()
+{
+    return $this->hasOne(Nilai::class, 'user_id', 'user_id');
+}
 }

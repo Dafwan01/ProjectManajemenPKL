@@ -10,6 +10,8 @@ use App\Livewire\Dashboard\UploadFile\Nilai;
 use App\Livewire\Dashboard\UploadFile\Sertifikat;
 use App\Livewire\Dashboard\UploadFile\SuratPenerimaanMagang;
 use App\Livewire\Login;
+use App\Livewire\Dashboard\PermohonanIzin;
+use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
@@ -40,3 +42,4 @@ Route::get('/bottomnav', Bottomnav::class)->name('bottomnav');
 Route::get('/user/presensi', Presensi::class)->name('user.presensi');
 Route::get('/user/riwayat', Riwayat::class)->name('user.riwayat');
 Route::get('/user/izin-sakit', IzinSakit::class)->name('user.izin-sakit');
+Route::get('/permohonan-izin', PermohonanIzin::class)->name('permohonan-izin');

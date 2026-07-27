@@ -42,9 +42,9 @@
                 <tr>
                     <th scope="col" class="px-6 py-3">Nama</th>
                     <th scope="col" class="px-6 py-3">Asal Sekolah</th>
-                    <th scope="col" class="px-6 py-3">Hari</th>
                     <th scope="col" class="px-6 py-3">Kehadiran</th>
-                    <th scope="col" class="px-6 py-3">Foto</th>
+                    <th scope="col" class="px-6 py-3">Jam Masuk</th>
+                    <th scope="col" class="px-6 py-3">Jam Keluar</th>
                     <th scope="col" class="px-6 py-3">Logbook</th>
                 </tr>
             </thead>
@@ -56,7 +56,6 @@
                                 {{ $logBook->user->nama }}
                             </th>
                             <td class="px-6 py-4">{{ $logBook->user->asal_sekolah ?? '-' }}</td>
-                            <td class="px-6 py-4">{{ $presensi->tanggal?->format('d-m-Y') ?? '-' }}</td>
                             <td class="px-6 py-4">
                                 <span class="capitalize px-2 py-1 text-xs font-semibold rounded 
                                     @if($presensi->status_kehadiran?->value === 'hadir')
@@ -70,16 +69,11 @@
                                     {{ $presensi->status_kehadiran?->value ?? '-' }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
-                                @if($presensi->foto_masuk)
-                                    <img src="{{ asset('storage/' . $presensi->foto_masuk) }}" alt="Foto Masuk" class="w-12 h-12 rounded">
-                                @else
-                                    <span class="text-gray-400">-</span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-sm max-w-xs">
-                                <span class="truncate block" title="{{ $logBook->kegiatan ?? '-' }}">{{ $logBook->kegiatan ?? '-' }}</span>
-                            </td>
+<td class="px-6 py-4">{{ $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) : '-' }}</td>
+<td class="px-6 py-4">{{ $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) : '-' }}</td>
+                           <td class="px-6 py-4 text-sm max-w-xs">
+    <span class="block whitespace-normal break-words">{{ $logBook->kegiatan ?? '-' }}</span>
+</td>
                         </tr>
                     @endforeach
                 @empty

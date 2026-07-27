@@ -28,32 +28,75 @@
             <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                 <tr>
                     <th scope="col" class="px-6 py-3">Nama</th>
-                    <th scope="col" class="px-6 py-3">asal sekolah</th>
+                    <th scope="col" class="px-6 py-3">Asal Sekolah</th>
                     <th scope="col" class="px-6 py-3">Status</th>
                     <th scope="col" class="px-6 py-3">Tanggal Masuk</th>
-                    <th scope="col" class="px-6 py-3">Tanggal keluar</th>
-                    <th scope="col" class="px-6 py-3">Aksi</th>
+                    <th scope="col" class="px-6 py-3">Tanggal Keluar</th>
+                    <th scope="col" class="px-6 py-3">Mentor</th>
+                    <th scope="col" class="px-6 py-3 text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($users as $user)
-                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                         <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                             {{ $user->nama }}
                         </th>
                         <td class="px-6 py-4">{{ $user->asal_sekolah }}</td>
-                        <td class="px-6 py-4"><span class="capitalize px-2 py-1 text-xs rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">{{ $user->status }}</span></td>
+                 <td class="px-6 py-4 align-middle">
+    @php
+        $isAktif = strtolower($user->status?->value ?? '') === 'aktif';
+    @endphp
+    <span class="inline-flex items-center justify-center min-w-[90px] whitespace-nowrap capitalize px-3 py-1 text-xs font-semibold rounded-full {{ $isAktif ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
+        {{ $user->status }}
+    </span>
+</td>
                         <td class="px-6 py-4">{{ optional($user->tanggal_mulai)->format('d M Y') }}</td>
                         <td class="px-6 py-4">{{ optional($user->tanggal_Akhir)->format('d M Y') ?? '-' }}</td>
-                        <td class="px-6 py-4 flex flex-wrap gap-2">
-                            <button type="button" wire:click="openEditProfile({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</button>
-                            <button type="button" wire:click="openJadwalModal({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">jadwal masuk</button>
-                            <button type="button" wire:click="openProjectModal({{ $user->user_id }})" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Project</button>
+                        <td class="px-6 py-4">{{ $user->mentor }}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-center gap-1">
+                                <!-- Edit -->
+                                <button 
+                                    type="button" 
+                                    wire:click="openEditProfile({{ $user->user_id }})" 
+                                    title="Edit Profil"
+                                    class="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+
+                                <!-- Jadwal -->
+                                <button 
+                                    type="button" 
+                                    wire:click="openJadwalModal({{ $user->user_id }})" 
+                                    title="Jadwal Masuk"
+                                    class="p-2 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-gray-400 dark:hover:text-indigo-400 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </button>
+
+                                <!-- Project -->
+                                <button 
+                                    type="button" 
+                                    wire:click="openProjectModal({{ $user->user_id }})" 
+                                    title="Detail Project"
+                                    class="p-2 rounded-lg text-gray-500 hover:text-purple-600 hover:bg-purple-50 dark:text-gray-400 dark:hover:text-purple-400 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">Tidak ada data ditemukan.</td>
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">Tidak ada data ditemukan.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -79,11 +122,12 @@
             </div>
         </div>
     @endif
+
     @if($showProjectModal)
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6" @click="$event.target === $el && $wire.closeProjectModal()" wire:key="project-modal-{{ $selectedUserId }}">
-        <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800" @click.stop>
-            @livewire('form.project', ['userId' => $selectedUserId], key('project-modal-' . ($selectedUserId ?? 'new')))
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6" @click="$event.target === $el && $wire.closeProjectModal()" wire:key="project-modal-{{ $selectedUserId }}">
+            <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800" @click.stop>
+                @livewire('form.project', ['userId' => $selectedUserId], key('project-modal-' . ($selectedUserId ?? 'new')))
+            </div>
         </div>
-    </div>
-@endif
+    @endif
 </div>

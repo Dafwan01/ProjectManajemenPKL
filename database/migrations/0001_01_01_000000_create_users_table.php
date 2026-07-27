@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserDivisi;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -21,12 +22,12 @@ return new class extends Migration
                   ->default(UserStatus::AKTIF->value);
                   
             $table->enum('role', array_column(UserRole::cases(), 'value'));
+            $table->enum('divisi', array_column(UserDivisi::cases(), 'value'))->nullable();
 
             $table->string('email')->unique();
             $table->string('password');
             $table->timestamp('tanggal_mulai')->useCurrent();
             $table->date('tanggal_Akhir')->nullable();
-            $table->string('nilai')->nullable();
             $table->string('surat_penerimaan')->nullable();
             $table->rememberToken();
             $table->string('foto')->nullable();
