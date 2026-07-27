@@ -1,5 +1,7 @@
 <?php
 
+
+use App\Livewire\Components\CetakRekapAbsensi;
 use App\Livewire\Components\Bottomnav;
 use App\Models\project;
 use App\Livewire\Dashboard\Dashboard;
@@ -11,6 +13,7 @@ use App\Livewire\Dashboard\UploadFile\Sertifikat;
 use App\Livewire\Dashboard\UploadFile\SuratPenerimaanMagang;
 use App\Livewire\Login;
 use App\Livewire\Dashboard\PermohonanIzin;
+use App\Livewire\Dashboard\RekapAbsensi;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +39,9 @@ Route::get('/surat-penerimaan-magang', SuratPenerimaanMagang::class)->name('sura
 Route::get('/sertifikat', Sertifikat::class)->name('sertifikat');
 Route::get('/nilai', Nilai::class)->name('nilai');
 Route::get('/bottomnav', Bottomnav::class)->name('bottomnav');
+Route::get('/rekap-absensi',RekapAbsensi::class)->name('rekap-absensi');
+Route::get('/cetak-rekap-absensi/{userId}', CetakRekapAbsensi::class)
+    ->name('cetak.rekap-absensi');
 
 Route::get('/user/presensi', Presensi::class)->name('user.presensi');
 Route::get('/user/riwayat', Riwayat::class)->name('user.riwayat');

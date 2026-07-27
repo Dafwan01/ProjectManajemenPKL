@@ -47,6 +47,10 @@ class Header extends Component
         return redirect()->route('permohonan-izin');
     }
 
+    public function GoToRekap(){
+        return redirect()->route('rekap-absensi');
+    }
+
     public function render()
     {
         return view('livewire.components.header');
