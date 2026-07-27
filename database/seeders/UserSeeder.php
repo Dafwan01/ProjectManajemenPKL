@@ -24,6 +24,7 @@ class UserSeeder extends Seeder
             'status' => UserStatus::AKTIF,
             'asal_sekolah' => 'SMK Negeri 1',
             'mentor' => 'Budi Santoso',
+            'divisi' => 'APTIKA',
         ]);
 
         User::create([
@@ -34,6 +35,7 @@ class UserSeeder extends Seeder
             'status' => UserStatus::AKTIF,
             'asal_sekolah' => '-',
             'mentor' => '-',
+               'divisi' => 'APTIKA',
         ]);
 
         User::create([
@@ -45,6 +47,7 @@ class UserSeeder extends Seeder
             'asal_sekolah' => 'SMK Negeri 2 Jakarta',
             'mentor' => 'Budi Santoso',
             'skill' => 'Laravel, React, MySQL',
+               'divisi' => 'APTIKA',
         ]);
 
         User::create([
@@ -56,6 +59,7 @@ class UserSeeder extends Seeder
             'asal_sekolah' => 'SMK Negeri 3 Bandung',
             'mentor' => 'Bambang Sutrisno',
             'skill' => 'PHP, Vue, PostgreSQL',
+               'divisi' => 'APTIKA',
         ]);
 
         User::create([
@@ -67,6 +71,7 @@ class UserSeeder extends Seeder
             'asal_sekolah' => 'SMK Negeri 1 Surabaya',
             'mentor' => 'Cahyani Putri',
             'skill' => 'Java, Spring Boot, MongoDB',
+               'divisi' => 'APTIKA',
         ]);
     }
 }
