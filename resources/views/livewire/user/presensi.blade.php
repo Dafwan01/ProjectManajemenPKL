@@ -1,35 +1,51 @@
 <div>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
+    
+    <!-- Deklarasikan instance Wasm di luar Alpine Proxy -->
+    <script>
+        let faceDetectorInstance = null;
+    </script>
+
     <div class="w-full mx-auto max-w-7xl" 
+         wire:ignore.self
          x-data="{ 
-            openModal: false, 
             isCameraOn: false, 
             hasPhoto: false,
-            lat: @entangle('latitude'),
-            long: @entangle('longitude'),
             locationError: '',
 
-            // State Face Detection
             faceDetected: false,
             isModelLoading: false,
             modelsLoaded: false,
-            detectionInterval: null,
+            animFrameId: null,
             isDetecting: false,
 
             async loadFaceModel() {
-    if (this.modelsLoaded) return;
+                if (this.modelsLoaded) return;
 
-    this.isModelLoading = true;
-    try {
-        const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-        this.modelsLoaded = true;
-        console.log('Model face-api berhasil dimuat.');
-    } catch (err) {
-        console.error('Gagal load model face-api:', err);
-        alert('Gagal memuat model deteksi wajah. Coba refresh halaman.');
-    }
-    this.isModelLoading = false;
-},
+                this.isModelLoading = true;
+                try {
+                    faceDetectorInstance = new FaceDetection({
+                        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
+                    });
+
+                    faceDetectorInstance.setOptions({
+                        model: 'short',
+                        minDetectionConfidence: 0.6,
+                    });
+
+                    faceDetectorInstance.onResults((results) => {
+                        this.faceDetected = !!(results.detections && results.detections.length > 0);
+                    });
+
+                    await faceDetectorInstance.initialize();
+                    this.modelsLoaded = true;
+                } catch (err) {
+                    console.error('Gagal load model MediaPipe:', err);
+                    alert('Gagal memuat model deteksi wajah. Coba refresh halaman.');
+                } finally {
+                    this.isModelLoading = false;
+                }
+            },
 
             async initCamera() {
                 this.isCameraOn = true;
@@ -38,108 +54,115 @@
 
                 await this.loadFaceModel();
 
-                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } })
-                    .then(stream => {
-                        this.$refs.video.srcObject = stream;
-                        this.startFaceDetectionLoop();
-                    })
-                    .catch(err => {
-                        alert('Kamera tidak dapat diakses atau diizinkan browser!');
-                        this.isCameraOn = false;
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } 
                     });
+                    
+                    this.$refs.video.srcObject = stream;
+                    this.$refs.video.onloadedmetadata = () => {
+                        this.$refs.video.play();
+                        this.detectLoop();
+                    };
+                } catch (err) {
+                    alert('Kamera tidak dapat diakses atau izin ditolak!');
+                    this.isCameraOn = false;
+                }
             },
 
-        startFaceDetectionLoop() {
-    if (this.detectionInterval) clearInterval(this.detectionInterval);
+            async detectLoop() {
+                if (!this.isCameraOn || !faceDetectorInstance || !this.$refs.video) return;
 
-    this.detectionInterval = setInterval(async () => {
-        if (this.isDetecting) return;
-        if (!this.modelsLoaded || !this.$refs.video || !this.isCameraOn) return;
+                if (!this.isDetecting && this.$refs.video.readyState >= 2) {
+                    this.isDetecting = true;
+                    try {
+                        await faceDetectorInstance.send({ image: this.$refs.video });
+                    } catch (e) {
+                        console.error('Error MediaPipe Frame:', e);
+                    }
+                    this.isDetecting = false;
+                }
 
-        this.isDetecting = true;
-        try {
-            const detection = await faceapi.detectSingleFace(
-                this.$refs.video,
-                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.4 })
-            );
-            this.faceDetected = !!detection;
-        } catch (err) {
-            console.error('Error saat deteksi:', err);
-        }
-        this.isDetecting = false;
-    }, 700); // sedikit naikkan interval karena model ini lebih berat dari tinyFaceDetector
-},
-            
+                setTimeout(() => {
+                    if (this.isCameraOn) {
+                        this.animFrameId = requestAnimationFrame(() => this.detectLoop());
+                    }
+                }, 200); 
+            },
+
             takeSnap() {
-                if (!this.faceDetected) {
-                    alert('Wajah belum terdeteksi! Pastikan wajah Anda terlihat jelas di kamera.');
-                    return;
-                }
-
-                let video = this.$refs.video;
-                let canvas = this.$refs.canvas;
+                if (!this.$refs.video || !this.$refs.canvas) return;
                 
-                let maxWidth = 800;
-                let width = video.videoWidth || 640;
-                let height = video.videoHeight || 480;
-
-                if (width > maxWidth) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-
-                let context = canvas.getContext('2d');
-                context.drawImage(video, 0, 0, width, height);
+                const video = this.$refs.video;
+                const canvas = this.$refs.canvas;
                 
-                let compressedImageData = canvas.toDataURL('image/jpeg', 0.7);
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
                 
-                @this.set('fotoCaptured', compressedImageData);
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
-                this.stopCamera();
+                this.$wire.fotoCaptured = canvas.toDataURL('image/jpeg');
+                
                 this.hasPhoto = true;
+                this.isCameraOn = false;
+                this.stopCamera();
             },
 
             stopCamera() {
-                if (this.detectionInterval) {
-                    clearInterval(this.detectionInterval);
-                    this.detectionInterval = null;
-                }
-                setTimeout(() => {
-                    if (this.$refs.video && this.$refs.video.srcObject) {
-                        this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
-                    }
-                }, 100);
                 this.isCameraOn = false;
-                this.faceDetected = false;
-            },
-            
-            getLocation() {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            this.lat = position.coords.latitude;
-                            this.long = position.coords.longitude;
-                        },
-                        (error) => {
-                            this.locationError = 'Gagal mengambil lokasi. Pastikan GPS aktif.';
-                        },
-                        { enableHighAccuracy: true }
-                    );
-                } else {
-                    this.locationError = 'Browser Anda tidak mendukung Geolocation.';
+                this.isDetecting = false;
+                
+                if (this.$refs.video && this.$refs.video.srcObject) {
+                    const tracks = this.$refs.video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                }
+                
+                if (this.animFrameId) {
+                    cancelAnimationFrame(this.animFrameId);
                 }
             },
-            
-            resetVisualState() {
-                this.stopCamera();
-                this.hasPhoto = false;
+
+            getLocation() {
+                this.locationError = '';
+                
+                if (!navigator.geolocation) {
+                    this.locationError = 'Browser Anda tidak mendukung Geolocation.';
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        this.$wire.latitude = position.coords.latitude;
+                        this.$wire.longitude = position.coords.longitude;
+                    },
+                    (error) => {
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                this.locationError = 'Izin akses lokasi ditolak oleh pengguna/browser.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                this.locationError = 'Informasi lokasi tidak tersedia.';
+                                break;
+                            case error.TIMEOUT:
+                                this.locationError = 'Waktu permintaan lokasi habis (timeout).';
+                                break;
+                            default:
+                                this.locationError = 'Terjadi kesalahan saat mengambil lokasi.';
+                                break;
+                        }
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
             }
          }"
-         x-init="getLocation()">
-        
+         x-init="getLocation()"
+         x-on:unmount.window="stopCamera()">
+         
         <h1 class="text-2xl font-bold mb-6 text-white tracking-wide">FORM PRESENSI HARI INI</h1>
 
         <!-- Notifikasi Berhasil -->
@@ -171,8 +194,9 @@
             <div class="flex flex-col lg:flex-row gap-6 items-start">
                 
                 <!-- Kamera Box -->
-                <div class="flex flex-col gap-3 w-full lg:w-80 flex-shrink-0">
+                <div class="flex flex-col gap-3 w-full lg:w-80 flex-shrink-0" wire:ignore>
                     <div class="w-full h-64 bg-gray-900 border-2 border-dashed border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-400 relative overflow-hidden shadow-inner group">
+                        
                         <video x-show="isCameraOn" x-ref="video" autoplay playsinline muted class="w-full h-full object-cover"></video>
                         
                         <template x-if="hasPhoto && !isCameraOn">
@@ -186,48 +210,46 @@
                         </div>
 
                         <!-- Indikator Loading Model -->
-                        <div x-show="isCameraOn && isModelLoading" class="absolute inset-0 bg-black/70 flex items-center justify-center">
+                        <div x-show="isCameraOn && isModelLoading" class="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
                             <div class="flex flex-col items-center gap-2 text-white text-xs">
-                                <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <svg class="w-6 h-6 animate-spin text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                                 <span>Memuat model deteksi wajah...</span>
                             </div>
                         </div>
 
                         <!-- Indikator Status Wajah -->
-                        <div x-show="isCameraOn && !isModelLoading" class="absolute top-2 left-2 right-2 flex justify-center">
+                        <div x-show="isCameraOn && !isModelLoading" class="absolute top-2 left-2 right-2 flex justify-center z-10">
                             <span 
                                 x-show="faceDetected"
-                                class="px-3 py-1 bg-green-600/90 text-white text-xs font-semibold rounded-full flex items-center gap-1.5"
+                                class="px-3 py-1 bg-green-600/90 text-white text-xs font-semibold rounded-full flex items-center gap-1.5 shadow"
                             >
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                 Wajah Terdeteksi
                             </span>
                             <span 
                                 x-show="!faceDetected"
-                                class="px-3 py-1 bg-red-600/90 text-white text-xs font-semibold rounded-full flex items-center gap-1.5"
+                                class="px-3 py-1 bg-red-600/90 text-white text-xs font-semibold rounded-full flex items-center gap-1.5 shadow"
                             >
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                 Wajah Tidak Terdeteksi
                             </span>
                         </div>
 
-                        <!-- Canvas Hidden (Proses Kompresi) -->
+                        <!-- Canvas Hidden -->
                         <canvas x-ref="canvas" class="hidden"></canvas>
                     </div>
 
                     @error('fotoCaptured') 
-                        <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> 
+                        <span class="text-red-400 text-xs block">{{ $message }}</span> 
                     @enderror
 
                     <!-- Control Tombol Kamera -->
                     <div class="grid grid-cols-1 gap-2">
-                        <!-- Tombol Buka Kamera -->
                         <button type="button" x-show="!isCameraOn && !hasPhoto" @click="initCamera()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             <span>BUKA KAMERA</span>
                         </button>
 
-                        <!-- Tombol Ambil Foto (butuh wajah terdeteksi) -->
                         <button 
                             type="button" 
                             x-show="isCameraOn" 
@@ -240,8 +262,8 @@
                             <span x-text="faceDetected ? 'Ambil Foto' : 'Menunggu Wajah...'"></span>
                         </button>
 
-                        <!-- Tombol Ambil Ulang Foto -->
                         <button type="button" x-show="hasPhoto && !isCameraOn" @click="initCamera()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             <span>Ambil Ulang Foto</span>
                         </button>
                     </div>
@@ -252,18 +274,21 @@
                     
                     <!-- Indicator Status GPS / Geolocation -->
                     <div class="p-4 bg-gray-900 border border-gray-700 rounded-lg text-xs shadow-inner">
-                        <template x-if="lat && long">
+                        <template x-if="$wire.latitude && $wire.longitude">
                             <div class="flex items-center gap-2 text-green-400 font-mono">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                <span>Lokasi Terdeteksi: <span x-text="lat"></span>, <span x-text="long"></span></span>
+                                <span>Lokasi Terdeteksi: <span x-text="$wire.latitude"></span>, <span x-text="$wire.longitude"></span></span>
                             </div>
                         </template>
-                        <template x-if="!lat || !long">
+                        <template x-if="!$wire.latitude || !$wire.longitude">
                             <div class="flex items-center gap-2 text-yellow-400 font-mono">
                                 <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                                 <span>⏳ Mendeteksi koordinat GPS Anda...</span>
                             </div>
                         </template>
+
+                        <div x-show="locationError" class="text-red-400 mt-2 font-sans" x-text="locationError"></div>
+
                         @error('latitude') 
                             <span class="text-red-400 text-xs block mt-2 p-1.5 bg-red-950 border border-red-800 rounded">{{ $message }}</span> 
                         @enderror
@@ -275,7 +300,7 @@
                         <textarea 
                             wire:model="logbook" 
                             rows="5" 
-                            placeholder="Tuliskan catatan detail mengenai hasil kegiatan atau tugas magang Anda hari ini (minimal 10 karakter)..." 
+                            placeholder="Tuliskan catatan detail mengenai hasil kegiatan atau tugas Anda hari ini (minimal 10 karakter)..." 
                             class="bg-gray-900 border @error('logbook') border-red-500 @else border-gray-700 @enderror text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-3 resize-none shadow-inner transition"></textarea>
                         @error('logbook') 
                             <span class="text-red-400 text-xs mt-1.5 block">{{ $message }}</span> 
