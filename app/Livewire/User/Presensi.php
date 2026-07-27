@@ -11,54 +11,66 @@ class Presensi extends Component
     public $opd = 'Dinas Komunikasi dan Informatika';
     public $bidang = 'Magang Aplikasi Informatika';
     
-    public $status = 'Hadir';
+    // State Form
+    public $tipePresensi = 'masuk'; // 'masuk' atau 'pulang'
     public $logbook = '';
-    public $fotoCaptured = null; // Menampung base64 foto baru
-    public $selectedFoto = null;  // Menampung foto yang dipilih untuk preview modal
-
-    public $riwayat = [
-        [
-            'nama' => 'Jonathan',
-            'sekolah' => 'Institut Bisnis dan Informatika Bogor',
-            'tanggal' => 'Jumat, 24/07/2026',
-            'status' => 'HADIR',
-            'logbook' => 'Pengembangan antarmuka komponen UI Presensi dengan Livewire & Tailwind CSS.',
-            'foto' => null // Placeholder foto default/sampel
-        ]
-    ];
+    public $latitude = null;
+    public $longitude = null;
+    public $fotoCaptured = null;
 
     protected $messages = [
-        'logbook.required' => 'Logbook harian wajib diisi sebelum mengirim presensi!',
+        'latitude.required' => 'Koordinat lokasi belum terdeteksi. Izinkan akses lokasi di browser!',
+        'logbook.required'  => 'Logbook harian wajib diisi saat presensi pulang!',
+        'logbook.min'       => 'Isi logbook minimal 10 karakter.',
+        'fotoCaptured.required' => 'Foto wajib diambil sebelum mengirim presensi!',
     ];
 
     public function simpanPresensi()
     {
-        $this->validate([
-            'logbook' => 'required|min:5',
-        ]);
+        // Dynamic Validation Rules
+        $rules = [
+            'latitude'     => 'required',
+            'longitude'    => 'required',
+            'fotoCaptured' => 'required',
+        ];
 
-        // Tambahkan presensi baru ke riwayat beserta fotonya
-        array_unshift($this->riwayat, [
+        if ($this->tipePresensi === 'pulang') {
+            $rules['logbook'] = 'required|min:10';
+        }
+
+        $this->validate($rules);
+
+        // Ambil data riwayat yang sudah ada di Session (jika ada)
+        $riwayatSession = session()->get('riwayat_presensi', []);
+
+        // Buat data presensi baru
+        $dataBaru = [
+            'id' => count($riwayatSession) + 1,
             'nama' => $this->nama,
             'sekolah' => 'Institut Bisnis dan Informatika Bogor',
-            'tanggal' => date('l, d/m/Y'),
-            'status' => strtoupper($this->status),
-            'logbook' => $this->logbook,
-            'foto' => $this->fotoCaptured
-        ]);
+            'tanggal' => now()->translatedFormat('l, d/m/Y'),
+            'jam_masuk' => $this->tipePresensi === 'masuk' ? now()->format('H:i') . ' WIB' : '08:00 WIB',
+            'jam_pulang' => $this->tipePresensi === 'pulang' ? now()->format('H:i') . ' WIB' : '-',
+            'status' => 'HADIR',
+            'logbook' => $this->tipePresensi === 'pulang' ? $this->logbook : 'Presensi Masuk',
+            'foto' => $this->fotoCaptured,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude
+        ];
 
-        // Reset semua field form ke posisi Standby
-        $this->logbook = '';
-        $this->status = 'Hadir';
-        $this->fotoCaptured = null;
+        // Masukkan data baru ke urutan paling atas array
+        array_unshift($riwayatSession, $dataBaru);
 
-        session()->flash('message', 'Presensi berhasil dikirim!');
-    }
+        // Simpan kembali ke Session
+        session()->put('riwayat_presensi', $riwayatSession);
 
-    // Method untuk memilih foto mana yang ditampilkan di modal
-    public function lihatFoto($foto)
-    {
-        $this->selectedFoto = $foto;
+        $tipe = $this->tipePresensi;
+
+        // Reset Form
+        $this->reset(['logbook', 'fotoCaptured']);
+        $this->tipePresensi = 'masuk';
+
+        session()->flash('message', 'Presensi ' . strtoupper($tipe) . ' berhasil dikirim dan tersimpan!');
     }
 
     public function render()

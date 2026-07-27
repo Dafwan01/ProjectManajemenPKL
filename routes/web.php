@@ -10,10 +10,13 @@ use App\Livewire\Dashboard\UploadFile\Nilai;
 use App\Livewire\Dashboard\UploadFile\Sertifikat;
 use App\Livewire\Dashboard\UploadFile\SuratPenerimaanMagang;
 use App\Livewire\Login;
-use App\Livewire\User\Presensi;
-use Illuminate\Support\Facades\Storage;
 
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
+
+use App\Livewire\User\Presensi;
+use App\Livewire\User\Riwayat;
+use App\livewire\User\IzinSakit;
 
 // Route::get('/', function () {
 //     return view('components.header');
@@ -33,4 +36,7 @@ Route::get('/surat-penerimaan-magang', SuratPenerimaanMagang::class)->name('sura
 Route::get('/sertifikat', Sertifikat::class)->name('sertifikat');
 Route::get('/nilai', Nilai::class)->name('nilai');
 Route::get('/bottomnav', Bottomnav::class)->name('bottomnav');
-Route::get('/user/presensi', Presensi::class);
+
+Route::get('/user/presensi', Presensi::class)->name('user.presensi');
+Route::get('/user/riwayat', Riwayat::class)->name('user.riwayat');
+Route::get('/user/izin-sakit', IzinSakit::class)->name('user.izin-sakit');

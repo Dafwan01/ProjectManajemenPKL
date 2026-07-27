@@ -1,14 +1,17 @@
-<div> <!-- ELEMEN ROOT TUNGGAL LIVEWIRE -->
-
+<div>
     <div class="w-full mx-auto max-w-7xl" 
          x-data="{ 
             openModal: false, 
             isCameraOn: false, 
             hasPhoto: false,
+            lat: @entangle('latitude'),
+            long: @entangle('longitude'),
+            locationError: '',
+
             initCamera() {
                 this.isCameraOn = true;
                 this.hasPhoto = false;
-                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } })
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } })
                     .then(stream => {
                         this.$refs.video.srcObject = stream;
                     })
@@ -17,45 +20,71 @@
                         this.isCameraOn = false;
                     });
             },
+            
             takeSnap() {
                 let video = this.$refs.video;
                 let canvas = this.$refs.canvas;
                 
-                // Set resolusi maksimum agar file tidak terlalu besar (Max width 640px)
-                let maxWidth = 640;
-                let scale = maxWidth / (video.videoWidth || 640);
-                canvas.width = maxWidth;
-                canvas.height = (video.videoHeight || 480) * scale;
+                // Logika Kompresi Foto
+                let maxWidth = 800;
+                let width = video.videoWidth || 640;
+                let height = video.videoHeight || 480;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
 
                 let context = canvas.getContext('2d');
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                context.drawImage(video, 0, 0, width, height);
                 
-                // Kompres gambar ke format JPEG dengan kualitas 0.65 (Ukuran file turun ke ~60KB)
-                let imageData = canvas.toDataURL('image/jpeg', 0.65);
+                let compressedImageData = canvas.toDataURL('image/jpeg', 0.7);
                 
-                @this.set('fotoCaptured', imageData);
+                @this.set('fotoCaptured', compressedImageData);
                 
                 this.stopCamera();
                 this.hasPhoto = true;
             },
+
             stopCamera() {
                 if (this.$refs.video && this.$refs.video.srcObject) {
                     this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
                 }
                 this.isCameraOn = false;
             },
-            resetForm() {
+            
+            getLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            this.lat = position.coords.latitude;
+                            this.long = position.coords.longitude;
+                        },
+                        (error) => {
+                            this.locationError = 'Gagal mengambil lokasi. Pastikan GPS aktif.';
+                        },
+                        { enableHighAccuracy: true }
+                    );
+                } else {
+                    this.locationError = 'Browser Anda tidak mendukung Geolocation.';
+                }
+            },
+            
+            resetVisualState() {
                 this.stopCamera();
                 this.hasPhoto = false;
             }
-         }">
+         }"
+         x-init="getLocation()">
         
-        <!-- Header Judul -->
-        <h1 class="text-2xl font-bold mb-6 text-white tracking-wide">PRESENSI</h1>
+        <h1 class="text-2xl font-bold mb-6 text-white tracking-wide">FORM PRESENSI HARI INI</h1>
 
-        <!-- Alert Notifikasi Flash Message -->
+        <!-- Notifikasi Berhasil -->
         @if (session()->has('message'))
-            <div class="mb-6 p-4 bg-green-900/80 border border-green-500 text-green-200 rounded-xl flex items-center justify-between">
+            <div class="mb-6 p-4 bg-green-900/80 border border-green-500 text-green-200 rounded-xl flex items-center justify-between shadow-lg">
                 <div class="flex items-center gap-2">
                     <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     <span>{{ session('message') }}</span>
@@ -64,172 +93,115 @@
             </div>
         @endif
 
-        <!-- Section Info Profil User -->
-        <div class="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8 bg-gray-800 p-6 rounded-xl border border-gray-700/60 shadow-lg w-full">
-            <div class="w-28 h-28 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-3xl text-white shadow-inner flex-shrink-0">
-                JO
+        <!-- Card Utama Form Presensi -->
+        <form wire:submit.prevent="simpanPresensi(); resetVisualState();" class="bg-gray-800 p-6 rounded-xl border border-gray-700/60 shadow-xl mb-8 w-full transition-all duration-300">
+            
+            <!-- Tab Pilih Tipe Presensi (Masuk / Pulang) -->
+            <div class="mb-6 flex gap-2 border-b border-gray-700 pb-2">
+                <button type="button" wire:click="$set('tipePresensi', 'masuk')" class="px-4 py-2 rounded-t-lg text-sm font-medium flex items-center gap-2 transition {{ $tipePresensi === 'masuk' ? 'bg-gray-700 text-blue-400 border-b-2 border-blue-500' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                    Presensi MASUK
+                </button>
+                <button type="button" wire:click="$set('tipePresensi', 'pulang')" class="px-4 py-2 rounded-t-lg text-sm font-medium flex items-center gap-2 transition {{ $tipePresensi === 'pulang' ? 'bg-gray-700 text-orange-400 border-b-2 border-orange-500' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                    Presensi PULANG
+                </button>
             </div>
 
-            <div class="space-y-2 text-sm md:text-base w-full">
-                <div class="flex"><span class="w-24 text-gray-400 font-medium">Nama</span><span class="mr-2">:</span><span class="font-semibold text-white">{{ $nama }}</span></div>
-                <div class="flex"><span class="w-24 text-gray-400 font-medium">Jabatan</span><span class="mr-2">:</span><span class="text-gray-200">{{ $jabatan }}</span></div>
-                <div class="flex"><span class="w-24 text-gray-400 font-medium">OPD</span><span class="mr-2">:</span><span class="text-gray-200">{{ $opd }}</span></div>
-                <div class="flex"><span class="w-24 text-gray-400 font-medium">Bidang</span><span class="mr-2">:</span><span class="text-gray-200">{{ $bidang }}</span></div>
-            </div>
-        </div>
-
-        <!-- Section Kamera Real-time & Form Presensi -->
-        <form wire:submit.prevent="simpanPresensi(); resetForm();" class="bg-gray-800 p-6 rounded-xl border border-gray-700/60 shadow-lg mb-8 w-full">
             <div class="flex flex-col lg:flex-row gap-6 items-start">
                 
-                <!-- Box Kamera / Preview Gambar -->
-                <div class="flex flex-col gap-3 w-full lg:w-80">
-                    <div class="w-full h-64 bg-gray-900 border-2 border-dashed border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-400 shadow-inner relative overflow-hidden">
-                        
-                        <!-- Video Stream saat Kamera Aktif -->
+                <!-- Kamera Box -->
+                <div class="flex flex-col gap-3 w-full lg:w-80 flex-shrink-0">
+                    <div class="w-full h-64 bg-gray-900 border-2 border-dashed border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-400 relative overflow-hidden shadow-inner group">
                         <video x-show="isCameraOn" x-ref="video" autoplay playsinline class="w-full h-full object-cover"></video>
                         
-                        <!-- Preview Gambar Hasil Jepretan -->
                         <template x-if="hasPhoto && !isCameraOn">
-                            <img src="{{ $fotoCaptured }}" class="w-full h-full object-cover">
+                            <img src="{{ $fotoCaptured }}" class="w-full h-full object-cover transition-opacity duration-300">
                         </template>
 
-                        <!-- Standby State saat Kamera Belum Aktif / Setelah Form Di-reset -->
-                        <div x-show="!isCameraOn && !hasPhoto" class="flex flex-col items-center">
-                            <svg class="w-12 h-12 mb-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-                            <span class="text-xs uppercase tracking-wider text-gray-500 font-semibold">KAMERA STANDBY</span>
+                        <div x-show="!isCameraOn && !hasPhoto" class="flex flex-col items-center p-4 text-center">
+                            <svg class="w-12 h-12 mb-3 text-gray-600 group-hover:text-emerald-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                            <span class="text-xs uppercase tracking-wider text-gray-500 font-semibold group-hover:text-gray-300">KAMERA STANDBY</span>
+                            <p class="text-[10px] text-gray-600 mt-1">Klik tombol di bawah untuk membuka kamera perangkat Anda</p>
                         </div>
 
-                        <!-- Hidden Canvas untuk memproses capture gambar -->
+                        <!-- Canvas Hidden (Proses Kompresi) -->
                         <canvas x-ref="canvas" class="hidden"></canvas>
                     </div>
 
-                    <!-- Tombol Kontrol Kamera -->
-                    <div>
-                        <button type="button" x-show="!isCameraOn && !hasPhoto" @click="initCamera()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg text-sm flex items-center justify-center gap-2 shadow-md transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 002-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                            BUKA KAMERA
+                    @error('fotoCaptured') 
+                        <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> 
+                    @enderror
+
+                    <!-- Control Tombol Kamera -->
+                    <div class="grid grid-cols-1 gap-2">
+                        <!-- Tombol Buka Kamera (Saat Kamera Belum Aktif & Belum Ada Foto) -->
+                        <button type="button" x-show="!isCameraOn && !hasPhoto" @click="initCamera()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            <span>BUKA KAMERA</span>
                         </button>
 
-                        <button type="button" x-show="isCameraOn" @click="takeSnap()" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm flex items-center justify-center gap-2 shadow-md animate-pulse transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-                            AMBIL FOTO / JEPRET
+                        <!-- Tombol Ambil Foto (Pengganti Tombol Baru Anda Saat Kamera Aktif) -->
+                        <button type="button" x-show="isCameraOn" @click="takeSnap()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <span>Ambil Foto</span>
                         </button>
 
-                        <button type="button" x-show="hasPhoto && !isCameraOn" @click="initCamera()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg text-sm flex items-center justify-center gap-2 transition">
-                            AMBIL ULANG FOTO
+                        <!-- Tombol Ambil Ulang Foto (Saat Foto Sudah Berhasil Diambil) -->
+                        <button type="button" x-show="hasPhoto && !isCameraOn" @click="initCamera()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
+                            <span>Ambil Ulang Foto</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Control Waktu, Status & Logbook -->
+                <!-- Detail & Input Data -->
                 <div class="flex flex-col space-y-4 w-full flex-1">
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <div x-data="{ time: '' }" x-init="setInterval(() => { time = new Date().toLocaleTimeString('id-ID') + ' WIB' }, 1000)" class="bg-gray-900 border border-gray-700 text-center py-2.5 px-6 rounded-lg font-mono text-lg font-bold text-blue-400 shadow-inner flex-1" x-text="time || '00:00:00 WIB'">
-                        </div>
-
-                        <div class="bg-gray-900 border border-gray-700 text-center py-2.5 px-6 rounded-lg font-mono text-base text-gray-300 shadow-inner flex-1">
-                            {{ date('d/m/Y') }}
-                        </div>
-                    </div>
-
-                    <select wire:model="status" class="bg-gray-900 border border-gray-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                        <option value="Hadir">Hadir</option>
-                        <option value="Izin">Izin</option>
-                        <option value="Sakit">Sakit</option>
-                    </select>
-
-                    <!-- Input Logbook Harian -->
-                    <div>
-                        <textarea 
-                            wire:model.live="logbook" 
-                            rows="2" 
-                            placeholder="Tuliskan catatan logbook harian Anda (wajib diisi)..." 
-                            class="bg-gray-900 border @error('logbook') border-red-500 @else border-gray-700 @enderror text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 resize-none">
-                        </textarea>
-                        @error('logbook') 
-                            <span class="text-red-400 text-xs mt-1 block">{{ $message }}</span> 
+                    
+                    <!-- Indicator Status GPS / Geolocation -->
+                    <div class="p-4 bg-gray-900 border border-gray-700 rounded-lg text-xs shadow-inner">
+                        <template x-if="lat && long">
+                            <div class="flex items-center gap-2 text-green-400 font-mono">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                <span>Lokasi Terdeteksi: <span x-text="lat"></span>, <span x-text="long"></span></span>
+                            </div>
+                        </template>
+                        <template x-if="!lat || !long">
+                            <div class="flex items-center gap-2 text-yellow-400 font-mono">
+                                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span>⏳ Mendeteksi koordinat GPS Anda...</span>
+                            </div>
+                        </template>
+                        @error('latitude') 
+                            <span class="text-red-400 text-xs block mt-2 p-1.5 bg-red-950 border border-red-800 rounded">{{ $message }}</span> 
                         @enderror
                     </div>
 
-                    <button 
-                        type="submit" 
-                        @if(empty(trim($logbook))) disabled @endif
-                        class="w-full text-white font-medium rounded-lg text-sm px-5 py-2.5 text-center transition duration-200 
-                               @if(empty(trim($logbook))) 
-                                   bg-gray-600 cursor-not-allowed opacity-60 
-                               @else 
-                                   bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-800 shadow-md cursor-pointer 
-                               @endif">
-                        KIRIM PRESENSI
+                    <!-- Input Logbook (Khusus Presensi PULANG) -->
+                    <div x-show="$wire.tipePresensi === 'pulang'" x-collapse x-cloak>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1.5">LOGBOOK HARIAN <span class="text-red-500">*</span></label>
+                        <textarea 
+                            wire:model="logbook" 
+                            rows="5" 
+                            placeholder="Tuliskan catatan detail mengenai hasil kegiatan atau tugas magang Anda hari ini (minimal 10 karakter)..." 
+                            class="bg-gray-900 border @error('logbook') border-red-500 @else border-gray-700 @enderror text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-3 resize-none shadow-inner transition"></textarea>
+                        @error('logbook') 
+                            <span class="text-red-400 text-xs mt-1.5 block">{{ $message }}</span> 
+                        @enderror
+                    </div>
+
+                    <!-- Info Box Presensi Masuk -->
+                    <div x-show="$wire.tipePresensi === 'masuk'" x-collapse class="p-3.5 bg-gray-900/50 border border-gray-700/50 rounded-lg text-xs text-gray-400 italic flex items-start gap-2">
+                        <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Untuk presensi masuk, Anda hanya perlu mengambil foto jepretan kamera terbaru. Logbook harian tidak perlu diisi saat presensi masuk.</span>
+                    </div>
+
+                    <!-- Tombol Submit Presensi (Tombol Baru Anda) -->
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-xl transition shadow-lg shadow-green-600/30 flex items-center justify-center gap-2">
+                        <span>Kirim Presensi</span>
                     </button>
                 </div>
             </div>
         </form>
 
-        <!-- Section Tabel Riwayat Presensi Interaktif -->
-        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700/60 shadow-lg w-full">
-            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">RIWAYAT PRESENSI</h2>
-            
-            <div class="relative overflow-x-auto shadow-md rounded-lg">
-                <table class="w-full text-sm text-left text-gray-400">
-                    <thead class="text-xs text-gray-200 uppercase bg-gray-700">
-                        <tr>
-                            <th scope="col" class="px-6 py-3.5">NAMA PESERTA</th>
-                            <th scope="col" class="px-6 py-3.5">ASAL SEKOLAH</th>
-                            <th scope="col" class="px-6 py-3.5">HARI / TANGGAL</th>
-                            <th scope="col" class="px-6 py-3.5">KEHADIRAN</th>
-                            <th scope="col" class="px-6 py-3.5">FOTO</th>
-                            <th scope="col" class="px-6 py-3.5">LOG BOOK HARIAN</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-700/60">
-                        @foreach ($riwayat as $index => $item)
-                            <tr class="bg-gray-800 hover:bg-gray-750 transition-colors">
-                                <td class="px-6 py-4 font-medium text-white whitespace-nowrap">{{ $item['nama'] }}</td>
-                                <td class="px-6 py-4">{{ $item['sekolah'] }}</td>
-                                <td class="px-6 py-4">{{ $item['tanggal'] }}</td>
-                                <td class="px-6 py-4">
-                                    @if($item['status'] == 'HADIR')
-                                        <span class="bg-green-950 text-green-400 text-xs font-semibold px-3 py-1 rounded-md border border-green-800">HADIR</span>
-                                    @elseif($item['status'] == 'IZIN')
-                                        <span class="bg-yellow-950 text-yellow-400 text-xs font-semibold px-3 py-1 rounded-md border border-yellow-800">IZIN</span>
-                                    @else
-                                        <span class="bg-red-950 text-red-400 text-xs font-semibold px-3 py-1 rounded-md border border-red-800">SAKIT</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4">
-                                    @if($item['foto'])
-                                        <button type="button" wire:click="lihatFoto({{ $index }})" @click="openModal = true" class="text-blue-400 hover:text-blue-300">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        </button>
-                                    @else
-                                        <span class="text-gray-500 text-xs">-</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4">{{ $item['logbook'] }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Modal Visual Preview Foto (Pop-Up) -->
-        <div x-show="openModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" x-cloak>
-            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 max-w-md w-full text-center">
-                <h3 class="text-lg font-bold text-white mb-4">Bukti Foto Presensi</h3>
-                <div class="w-full h-64 bg-gray-900 rounded-lg flex items-center justify-center border border-gray-700 mb-4 overflow-hidden">
-                    @if ($selectedFoto)
-                        <img src="{{ $selectedFoto }}" class="w-full h-full object-cover">
-                    @else
-                        <span class="text-gray-500 text-sm">Foto tidak tersedia</span>
-                    @endif
-                </div>
-                <button type="button" @click="openModal = false" class="bg-gray-700 hover:bg-gray-600 text-white px-5 py-2 rounded-lg text-sm">Tutup</button>
-            </div>
-        </div>
-
     </div>
-
 </div>
