@@ -10,18 +10,21 @@ class Map extends Component
 {
     public function render()
     {
-        // Ambil data absensi hari ini beserta data user-nya
-        $absensiHariIni = presensi::with('user')
-            ->whereDate('created_at', Carbon::today())
+        // Ambil data absensi hari ini beserta data user-nya lewat logBooks
+        $absensiHariIni = presensi::with('logBooks.user')
+            ->whereDate('tanggal', Carbon::today())
             ->get()
-            ->map(function ($item) {
-                return [
-                    'nama' => $item->user->name ?? 'Pengguna',
-                    'sekolah' => $item->user->asal_sekolah ?? '-',
-                    'jam' => $item->jam_masuk ?? $item->created_at->format('H:i'),
-                    'lat' => (float) $item->latitude,
-                    'lng' => (float) $item->longitude,
-                ];
+            ->flatMap(function ($presensi) {
+                return $presensi->logBooks->map(function ($logBook) use ($presensi) {
+                    return [
+                        'nama' => $logBook->user->nama ?? 'Pengguna',
+                        'sekolah' => $logBook->user->asal_sekolah ?? '-',
+                        'jam_masuk' => $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) : '-',
+                        'jam_keluar' => $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) : '-',
+                        'lat' => (float) $presensi->latitude,
+                        'lng' => (float) $presensi->longitude,
+                    ];
+                });
             });
 
         return view('livewire.components.map', [

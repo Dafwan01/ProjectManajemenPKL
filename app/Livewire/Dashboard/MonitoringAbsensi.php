@@ -27,9 +27,8 @@ class MonitoringAbsensi extends Component
         $this->resetPage();
     }
 
-  public function openMap()
+public function openMap()
 {
-    // Eager load relasi logBooks beserta user-nya
     $dataPresensi = Presensi::with(['logBooks.user'])
         ->whereDate('tanggal', $this->tanggal)
         ->whereNotNull('latitude')
@@ -37,23 +36,14 @@ class MonitoringAbsensi extends Component
         ->get();
 
     $this->locations = $dataPresensi->map(function ($item) {
-        // Ambil logbook pertama dari presensi ini jika ada
         $logBook = $item->logBooks->first();
         $user = $logBook ? $logBook->user : null;
 
-        // Jika presensi punya relasi langsung ke user, pakai ini sebagai cadangan:
-        // $user = $user ?? $item->user; 
-
         return [
-            // Ambil nama dari user (atau ganti $user->name jika kolomnya 'name')
-            'nama' => $user->nama ?? $user->name ?? 'Tanpa Nama',
+            'nama' => $user->nama ?? 'Tanpa Nama',
             'sekolah' => $user->asal_sekolah ?? '-',
-            
-            // Format jam absen dari created_at atau atribut jam
-            'jam' => $item->absen_masuk
-                ? Carbon::parse($item->absen_masuk)->format('H:i') 
-                : ($item->created_at ? $item->created_at->format('H:i') : '-'),
-                
+            'jam_masuk' => $item->absen_masuk ? substr($item->absen_masuk, 0, 5) : '-',
+            'jam_keluar' => $item->absen_keluar ? substr($item->absen_keluar, 0, 5) : '-',
             'lat' => (float) $item->latitude,
             'lng' => (float) $item->longitude,
         ];
@@ -61,7 +51,6 @@ class MonitoringAbsensi extends Component
 
     $this->showMap = true;
 
-    // Trigger event ke AlpineJS untuk render marker
     $this->dispatch('init-leaflet-map', locations: $this->locations);
 }
 

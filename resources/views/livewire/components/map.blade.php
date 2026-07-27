@@ -44,7 +44,8 @@
                                     <div class='p-1'>
                                         <b class='text-sm text-gray-900'>${loc.nama}</b><br>
                                         <span class='text-xs text-gray-600'>🏫 ${loc.sekolah}</span><br>
-                                        <span class='text-xs text-blue-600 font-semibold'>⏰ Jam: ${loc.jam} WIB</span>
+                                        <span class='text-xs text-blue-600 font-semibold'>⏰ Jam Masuk: ${loc.jam_masuk} WIB</span> <br>
+                                        <span class='text-xs text-blue-600 font-semibold'>⏰ Jam Keluar: ${loc.jam_keluar} WIB</span>
                                     </div>
                                 `);
                                 bounds.push([loc.lat, loc.lng]);
