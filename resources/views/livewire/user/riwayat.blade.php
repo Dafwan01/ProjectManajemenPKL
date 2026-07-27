@@ -1,6 +1,6 @@
 <div>
     <div class="w-full mx-auto max-w-7xl">
-        
+
         <!-- Header Judul -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-gray-700 pb-4">
             <div>
@@ -12,20 +12,27 @@
             <div class="flex gap-3 text-xs w-full sm:w-auto flex-shrink-0">
                 <div class="bg-gray-800 border border-gray-700/60 p-3 rounded-lg text-center flex-1 sm:flex-initial shadow">
                     <span class="text-gray-400 block mb-0.5">Total Hadir</span>
-                    <span class="text-green-400 font-bold text-xl">2 <span class="text-xs font-normal">Hari</span></span>
+                    <span class="text-green-400 font-bold text-xl">{{ $totalHadir }} <span class="text-xs font-normal">Hari</span></span>
                 </div>
                 <div class="bg-gray-800 border border-gray-700/60 p-3 rounded-lg text-center flex-1 sm:flex-initial shadow">
                     <span class="text-gray-400 block mb-0.5">Izin / Sakit</span>
-                    <span class="text-yellow-400 font-bold text-xl">0 <span class="text-xs font-normal">Hari</span></span>
+                    <span class="text-yellow-400 font-bold text-xl">{{ $totalIzinSakit }} <span class="text-xs font-normal">Hari</span></span>
                 </div>
             </div>
         </div>
 
         <!-- Flash Message Notification -->
         @if (session()->has('message'))
-            <div class="mb-4 p-3 bg-green-900/50 border border-green-600 text-green-300 text-xs rounded-lg flex items-center justify-between">
+            <div x-data="{ show: true }" x-show="show" class="mb-4 p-3 bg-green-900/50 border border-green-600 text-green-300 text-xs rounded-lg flex items-center justify-between">
                 <span>{{ session('message') }}</span>
-                <button type="button" class="text-green-400 hover:text-white" @click="$el.parentElement.remove()">✕</button>
+                <button type="button" class="text-green-400 hover:text-white" @click="show = false">✕</button>
+            </div>
+        @endif
+
+        @if (session()->has('error'))
+            <div x-data="{ show: true }" x-show="show" class="mb-4 p-3 bg-red-900/50 border border-red-600 text-red-300 text-xs rounded-lg flex items-center justify-between">
+                <span>{{ session('error') }}</span>
+                <button type="button" class="text-red-400 hover:text-white" @click="show = false">✕</button>
             </div>
         @endif
 
@@ -68,7 +75,7 @@
                         @forelse ($dataRiwayat as $item)
                             <tr class="bg-gray-800 hover:bg-gray-750/50 transition-colors duration-150">
                                 <td class="px-6 py-4 font-medium text-white whitespace-nowrap">{{ $item['tanggal'] }}</td>
-                                
+
                                 <!-- Kolom Jam Masuk & Jam Pulang -->
                                 <td class="px-6 py-4 text-xs font-mono whitespace-nowrap">
                                     <div class="flex items-center gap-1.5 text-green-400 mb-1">
@@ -93,10 +100,15 @@
                                             <span class="h-2 w-2 rounded-full bg-yellow-500 inline-block"></span>
                                             IZIN
                                         </span>
-                                    @else
+                                    @elseif(strtoupper($item['status']) == 'SAKIT')
                                         <span class="bg-red-950 text-red-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-red-800 flex items-center gap-1.5 w-fit">
                                             <span class="h-2 w-2 rounded-full bg-red-500 inline-block"></span>
                                             SAKIT
+                                        </span>
+                                    @else
+                                        <span class="bg-gray-700 text-gray-300 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-gray-600 flex items-center gap-1.5 w-fit">
+                                            <span class="h-2 w-2 rounded-full bg-gray-500 inline-block"></span>
+                                            {{ $item['status'] }}
                                         </span>
                                     @endif
                                 </td>
@@ -128,6 +140,11 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-4">
+                {{ $dataRiwayat->links() }}
             </div>
         </div>
 
