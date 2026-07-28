@@ -6,13 +6,15 @@ use App\Models\log_book;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+
 #[Layout('layouts.user')]
 class Riwayat extends Component
 {
     use WithPagination;
 
-    public $search = '';
     public $filterStatus = 'semua';
+    public $tanggalMulai = '';
+    public $tanggalSelesai = '';
 
     // State Edit Logbook
     public $editingId = null;
@@ -28,19 +30,35 @@ class Riwayat extends Component
         'editingLogbook.min'      => 'Logbook minimal 10 karakter.',
     ];
 
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
+    public function mount()
+{
+    $this->tanggalMulai = now()->startOfMonth()->format('Y-m-d');
+    $this->tanggalSelesai = now()->format('Y-m-d');
+}
 
     public function updatingFilterStatus()
     {
         $this->resetPage();
     }
 
-    /**
-     * Membuka modal edit dan menyiapkan data logbook yang dipilih
-     */
+    public function updatingTanggalMulai()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingTanggalSelesai()
+    {
+        $this->resetPage();
+    }
+
+    public function resetFilterTanggal()
+    {
+        $this->tanggalMulai = '';
+        $this->tanggalSelesai = '';
+        $this->resetPage();
+    }
+
+
     public function editLogbook($id)
     {
         $logBook = log_book::find($id);
@@ -52,16 +70,12 @@ class Riwayat extends Component
         }
     }
 
-    /**
-     * Menyimpan perubahan logbook ke database
-     */
     public function updateLogbook()
     {
         $this->validate();
 
         $logBook = log_book::findOrFail($this->editingId);
 
-        // Pastikan user cuma bisa edit logbook miliknya sendiri
         if ($logBook->user_id !== auth()->id()) {
             session()->flash('error', 'Anda tidak memiliki akses untuk mengedit logbook ini.');
             $this->closeModal();
@@ -90,15 +104,19 @@ class Riwayat extends Component
 
         $logBooks = log_book::with(['presensi', 'user'])
             ->where('user_id', $userId)
-            ->when($this->search, function ($query) {
-                $query->where('kegiatan', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('presensi', function ($q) {
-                        $q->whereDate('tanggal', 'like', '%' . $this->search . '%');
-                    });
-            })
             ->when($this->filterStatus !== 'semua', function ($query) {
                 $query->whereHas('presensi', function ($q) {
                     $q->where('status_kehadiran', strtolower($this->filterStatus));
+                });
+            })
+            ->when($this->tanggalMulai, function ($query) {
+                $query->whereHas('presensi', function ($q) {
+                    $q->whereDate('tanggal', '>=', $this->tanggalMulai);
+                });
+            })
+            ->when($this->tanggalSelesai, function ($query) {
+                $query->whereHas('presensi', function ($q) {
+                    $q->whereDate('tanggal', '<=', $this->tanggalSelesai);
                 });
             })
             ->latest('log_book_id')
@@ -121,7 +139,6 @@ class Riwayat extends Component
             ];
         });
 
-        // Statistik total (murni total keseluruhan, tidak terpengaruh pagination/filter)
         $totalHadir = log_book::where('user_id', $userId)
             ->whereHas('presensi', fn ($q) => $q->where('status_kehadiran', 'hadir'))
             ->count();
