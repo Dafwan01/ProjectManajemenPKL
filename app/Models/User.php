@@ -9,6 +9,7 @@ use App\Livewire\User\Presensi;
 use App\Models\DetailJadwal;
 use App\Models\Project;
 use App\Models\Nilai;
+use App\Models\file;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -72,7 +73,12 @@ class User extends Authenticatable
 {
     return $this->hasOne(Nilai::class, 'user_id', 'user_id');
 }
-    public function presensi(){
+    public function presensis(){
         return $this->hasOne(Presensi::class, 'user_id','user_id');
+    }
+
+      public function files()
+    {
+        return $this->hasMany(file::class, 'user_id', 'user_id');
     }
 }
