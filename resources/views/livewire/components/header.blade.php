@@ -1,6 +1,6 @@
 <div class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white">
 
-  <!-- SIDEBAR (Permanen di desktop, otomatis sembunyi di mobile) -->
+  <!-- SIDEBAR -->
   <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0 bg-gray-50 dark:bg-gray-800 border-e border-gray-200 dark:border-gray-700" aria-label="Sidebar">
      <div class="h-full px-3 py-4 overflow-y-auto">
         <a href="https://v3.flowbite.com/" class="flex items-center ps-2.5 mb-5">
@@ -10,7 +10,7 @@
         <ul class="space-y-2 font-medium">
            <!-- 1. Dashboard -->
            <li>
-              <a href="#" wire:click="GoToDashboard" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                  <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21">
                     <path d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z"/>
                     <path d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z"/>
@@ -20,7 +20,7 @@
            </li>
            <!-- 2. Melihat Absensi -->
            <li>
-              <a href="#" wire:click="GoToMonitoringAbsensi" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <a href="{{ route('monitoring-absensi') }}" wire:navigate class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                  <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5H4v10h12V7H6zm2 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/>
                  </svg>
@@ -29,14 +29,14 @@
            </li>
            <!-- 3. Manajemen Anak PKL -->
            <li>
-              <a href="#" wire:click="GoToMamnajemenPkl" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <a href="{{ route('manajemen-pkl') }}" wire:navigate class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                  <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-1.815-4.236 4 4 0 015.815 3.236v3h-4zM5.815 10.764A5.972 5.972 0 004 15v3H0v-3a4 4 0 015.815-3.236z"/>
                  </svg>
                  <span class="flex-1 ms-3 whitespace-nowrap">Manajemen Anak PKL</span>
               </a>
            </li>
-          
+
            <!-- 4. Upload File -->
            <li>
             <button type="button" class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-example" data-collapse-toggle="dropdown-example">
@@ -50,19 +50,20 @@
             </button>
             <ul id="dropdown-example" class="hidden py-2 space-y-2">
                   <li>
-                     <a href="#" wire:click="GoToSertifikat" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Sertifikat</a>
+                     <a href="{{ route('sertifikat') }}" wire:navigate class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Sertifikat</a>
                   </li>
                   <li>
-                     <a href="#" wire:click="GoToNilai" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Nilai</a>
+                     <a href="{{ route('nilai') }}" wire:navigate class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Nilai</a>
                   </li>
                   <li>
-                     <a href="#" wire:click="GoToSuratPenerimaanMagang" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Surat Penerimaan Magang</a>
+                     <a href="{{ route('surat-penerimaan-magang') }}" wire:navigate class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Surat Penerimaan Magang</a>
                   </li>
             </ul>
          </li>
+
            <!-- 5. Manajemen Akun -->
            <li>
-              <a href="#" wire:click="GoToManajemenAkun" wire:navigate class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <a href="{{ route('manajemen-akun') }}" wire:navigate class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                  <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 10a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
                  </svg>
@@ -70,8 +71,9 @@
               </a>
            </li>
 
-             <li>
-              <a href="#" wire:click="GoToRekap" wire:navigate class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+           <!-- Rekap Absensi -->
+           <li>
+              <a href="{{ route('rekap-absensi') }}" wire:navigate class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                  <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 10a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
                  </svg>
@@ -79,17 +81,19 @@
               </a>
            </li>
 
-         <li>
-    <a href="#" wire:click="GoToPermohonanIzin" wire:navigate class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-        <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-        </svg>
-        <span class="flex-1 ms-3 whitespace-nowrap">Permohonan Izin/Sakit</span>
-    </a>
-</li>
+           <!-- Permohonan Izin/Sakit -->
+           <li>
+              <a href="{{ route('permohonan-izin') }}" wire:navigate class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                  </svg>
+                  <span class="flex-1 ms-3 whitespace-nowrap">Permohonan Izin/Sakit</span>
+              </a>
+           </li>
+
            <!-- 6. Log Out -->
            <li>
-              <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <a href="{{ route('logout') }}" wire:navigate class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                  <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h7a1 1 0 100-2H4V5h6a1 1 0 100-2H3zm8.707 3.293a1 1 0 00-1.414 1.414L12.586 10l-2.293 2.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414l-3-3z" clip-rule="evenodd"/>
                  </svg>
@@ -100,32 +104,29 @@
      </div>
   </aside>
 
-  <!-- AREA KONTEN (Otomatis bergeser di desktop berkat sm:ml-64) -->
+  <!-- AREA KONTEN -->
   <div class="sm:ml-64">
      
      <!-- HEADER / NAVBAR -->
      <header class="bg-[#F6F6F6] dark:bg-gray-800 flex justify-between items-center w-full h-14 px-4 border-b border-gray-200 dark:border-gray-700">
          
-         <!-- Tombol Burger Bawaan Flowbite (sm:hidden agar otomatis hilang di desktop) -->
          <div>
              <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600 sm:hidden">
                 <span class="sr-only">Toggle sidebar</span>
                 <i class="fa-solid fa-bars text-lg"></i>
              </button>
          </div>
-       
-         <!-- Profil User -->
-       <div class="flex items-center gap-2 h-full">
-    <img 
-        src="{{ auth()->user()->foto ? asset('storage/' . auth()->user()->foto) : asset('images/profile-placeholder.png') }}" 
-        alt="Foto Profil" 
-        class="w-7 h-7 rounded-full object-cover"
-    >
-    <p class="text-sm font-medium">{{ auth()->user()->nama ?? 'Guest' }}</p>
-</div>
+
+         <div class="flex items-center gap-2 h-full">
+             <img 
+                src="{{ auth()->user()->foto ? asset('storage/' . auth()->user()->foto) : asset('images/profile-placeholder.png') }}" 
+                alt="Foto Profil" 
+                class="w-7 h-7 rounded-full object-cover"
+             >
+             <p class="text-sm font-medium">{{ auth()->user()->nama ?? 'Guest' }}</p>
+         </div>
      </header>
 
-     <!-- ISI KONTEN UTAMA -->
      <main class="p-4">
          {{ $slot ?? '' }}
      </main>

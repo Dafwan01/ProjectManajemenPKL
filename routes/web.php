@@ -49,3 +49,12 @@ Route::get('/user/izin-sakit', IzinSakit::class)->name('user.izin-sakit');
 Route::get('/permohonan-izin', PermohonanIzin::class)->name('permohonan-izin');
 Route::get('/cetak-nilai/{userId}', \App\Livewire\Components\CetakNilai::class)
     ->name('cetak.nilai');
+
+
+
+    Route::post('/logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/');
+})->name('logout');
