@@ -4,6 +4,8 @@ namespace App\Livewire\User;
 
 use App\Models\log_book;
 use App\Models\presensi as PresensiModel;
+use App\Models\User;
+use App\Enums\UserRole;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str; // <-- Tambahkan import Str
@@ -39,6 +41,16 @@ class Presensi extends Component
         $this->cekStatusPresensi();
     }
 
+    private function currentUser()
+    {
+        return Auth::user() ?? User::where('role', UserRole::PKL)->first();
+    }
+
+    private function currentUserId()
+    {
+        return $this->currentUser()?->user_id;
+    }
+
     private function cekStatusPresensi()
     {
         $presensiHariIni = $this->getPresensiHariIni();
@@ -55,7 +67,7 @@ class Presensi extends Component
 
     private function getPresensiHariIni()
     {
-        return PresensiModel::where('user_id', Auth::id())
+        return PresensiModel::where('user_id', $this->currentUserId())
             ->whereDate('tanggal', Carbon::today()->toDateString())
             ->first();
     }
@@ -92,8 +104,14 @@ class Presensi extends Component
         }
 
         // 4. Format Nama File: namauser-tanggal-masuk/pulang.jpg
-        $user = Auth::user();
-        $namaUserSlug = Str::slug($user->name); // Mengubah misal "Ahmad Dani" jadi "ahmad-dani"
+        $user = $this->currentUser();
+
+        if (! $user) {
+            session()->flash('warning', 'Tidak ada user yang tersedia untuk presensi.');
+            return;
+        }
+
+        $namaUserSlug = Str::slug($user->nama ?? 'user'); // Mengubah misal "Ahmad Dani" jadi "ahmad-dani"
         $tanggalHariIni = Carbon::today()->format('Y-m-d');
         $tipe = $this->tipePresensi; // 'masuk' atau 'pulang'
 

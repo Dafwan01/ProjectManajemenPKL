@@ -59,6 +59,12 @@
                         <span>Riwayat</span>
                     </a>
 
+                    <a href="{{ route('user.dokumen') }}" 
+                       class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.dokumen') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span>Upload File</span>
+                    </a>
+
                     <a href="{{ route('user.izin-sakit') }}" 
                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.izin-sakit') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -101,10 +107,22 @@
                     <span>Riwayat</span>
                 </a>
 
+                <a href="{{ route('user.profile') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/60' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <span>Profile</span>
+                </a>
+
                 <a href="{{ route('user.izin-sakit') }}" 
                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.izin-sakit') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/60' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     <span>Izin / Sakit</span>
+                </a>
+
+                <a href="{{ route('user.dokumen') }}" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.dokumen') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/60' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <span>Upload File</span>
                 </a>
             </nav>
         </div>
@@ -123,21 +141,21 @@
         
         <!-- Top Navbar Header -->
      <header class="bg-gray-900/50 backdrop-blur-md border-b border-gray-800/80 px-6 py-3.5 flex items-center justify-end sticky top-0 z-40">
-    <div class="flex items-center gap-3">
-        @if (auth()->user()?->foto)
-            <img 
-                src="{{ asset('storage/' . auth()->user()->foto) }}" 
-                alt="Foto Profil" 
-                class="w-8 h-8 rounded-full object-cover ring-2 ring-blue-500/30"
-            >
-        @else
-            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-blue-500/30">
-                {{ auth()->user() ? strtoupper(substr(auth()->user()->nama, 0, 2)) : '?' }}
-            </div>
-        @endif
-        <span class="text-sm font-medium text-gray-200">{{ auth()->user()?->nama ?? 'Guest' }}</span>
-    </div>
-</header>
+        <a href="{{ route('user.profile') }}" class="flex items-center gap-3 text-gray-100 hover:text-white transition">
+            @if (auth()->user()?->foto)
+                <img 
+                    src="{{ asset('storage/' . auth()->user()->foto) }}" 
+                    alt="Foto Profil" 
+                    class="w-8 h-8 rounded-full object-cover ring-2 ring-blue-500/30"
+                >
+            @else
+                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-blue-500/30">
+                    {{ auth()->user() ? strtoupper(substr(auth()->user()->nama, 0, 2)) : '?' }}
+                </div>
+            @endif
+            <span class="text-sm font-medium text-gray-200">{{ auth()->user()?->nama ?? 'Guest' }}</span>
+        </a>
+    </header>
 
         <!-- Main Slot Livewire View Page -->
         <main class="p-6 lg:p-8 flex-1">

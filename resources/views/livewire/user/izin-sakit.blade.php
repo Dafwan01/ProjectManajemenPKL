@@ -27,7 +27,7 @@
                     
                     <!-- Dropdown Tipe Pengajuan -->
                     <div>
-                        <label for="tipePengajuan" class="block text-[11px] font-medium text-gray-300 mb-1">Tipe Ketidakhadiran</label>
+                        <label for="tipePengajuan" class="block text-[11px] font-medium text-gray-300 mb-1">Tipe Pengajuan</label>
                         <div class="relative">
                             <select 
                                 id="tipePengajuan" 
@@ -35,6 +35,7 @@
                                 class="w-full bg-gray-900 border border-gray-700 text-white text-xs rounded-lg px-3 py-2 pr-8 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer">
                                 <option value="izin">Izin</option>
                                 <option value="sakit">Sakit</option>
+                                <option value="absen">Absen</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,16 +92,65 @@
                 </div>
 
                 <!-- Baris 3: Tombol Submit Compact -->
-                <div class="flex justify-end pt-1">
+                <div class="flex flex-col items-end gap-2 pt-1">
+                    <p class="text-[10px] text-gray-400 italic">Silakan pilih jenis pengajuan dan lengkapi alasan keterangan.</p>
                     <button 
                         type="submit" 
                         class="w-full sm:w-auto text-white bg-blue-600 hover:bg-blue-500 focus:ring-2 focus:ring-blue-800 font-medium rounded-lg text-xs px-5 py-2.5 transition duration-150 flex items-center justify-center gap-2 shadow-md">
-                        <span wire:loading.remove wire:target="kirimPengajuan">Kirim Pengajuan {{ ucfirst($tipePengajuan) }}</span>
+                        <span wire:loading.remove wire:target="kirimPengajuan">
+                            {{ $tipePengajuan === 'absen' ? 'Kirim Pengajuan Absen' : 'Kirim Pengajuan ' . ucfirst($tipePengajuan) }}
+                        </span>
                         <span wire:loading wire:target="kirimPengajuan">Mengirim Data...</span>
                     </button>
                 </div>
             </form>
         </div>
 
+        <!-- Riwayat Pengajuan -->
+        <div class="w-full mx-auto max-w-4xl mt-8">
+            <div class="mb-4 border-b border-gray-800 pb-3">
+                <h2 class="text-lg font-bold text-white tracking-wide">Riwayat Pengajuan</h2>
+                <p class="text-xs text-gray-400 mt-0.5">Daftar pengajuan izin, sakit, dan absen yang sudah pernah dikirim.</p>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-gray-700/60 bg-gray-900 shadow-sm">
+                <table class="min-w-full text-left text-xs text-gray-300">
+                    <thead class="bg-gray-800 text-gray-400 uppercase text-[10px] tracking-wider">
+                        <tr>
+                            <th class="px-3 py-3">Nama</th>
+                            <th class="px-3 py-3">Tanggal</th>
+                            <th class="px-3 py-3">Tipe</th>
+                            <th class="px-3 py-3">Alasan</th>
+                            <th class="px-3 py-3">Status Pengajuan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($riwayat as $item)
+                            @php
+                                $statusPengajuan = $item['status_pengajuan'] ?? 'pending';
+                                $statusBadge = match($statusPengajuan) {
+                                    'diterima' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
+                                    'ditolak'  => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+                                    default    => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+                                };
+                            @endphp
+                            <tr class="border-t border-gray-800 hover:bg-gray-800/70 transition-colors">
+                                <td class="px-3 py-3 text-gray-200 w-1/5">{{ $item['nama'] }}</td>
+                                <td class="px-3 py-3 text-gray-200 w-1/5">{{ $item['tanggal'] }}</td>
+                                <td class="px-3 py-3 capitalize">{{ strtolower($item['status']) }}</td>
+                                <td class="px-3 py-3 text-gray-300 truncate max-w-[25rem]">{{ $item['logbook'] }}</td>
+                                <td class="px-3 py-3">
+                                    <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-semibold rounded-full {{ $statusBadge }} capitalize">{{ $statusPengajuan }}</span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-3 py-4 text-center text-gray-500">Belum ada pengajuan yang tersimpan.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>

@@ -28,6 +28,7 @@ use App\Livewire\User\IzinSakit;
 
 // Route::livewire('/home', 'pages::components.header');
 Route::get('/', Login::class)->name('header');
+Route::get('/login', Login::class)->name('login');
 Route::get('/dashboard', Dashboard::class)->name('dashboard');
 Route::get('/manajemen-akun', ManajemenAkun::class)->name('manajemen-akun');
 Route::get('/manajemen-pkl', ManajemenPkl::class)->name('manajemen-pkl');
@@ -46,6 +47,9 @@ Route::get('/cetak-rekap-absensi/{userId}', \App\Livewire\Components\CetakRekapA
 Route::get('/user/presensi', Presensi::class)->name('user.presensi');
 Route::get('/user/riwayat', Riwayat::class)->name('user.riwayat');
 Route::get('/user/izin-sakit', IzinSakit::class)->name('user.izin-sakit');
+Route::get('/user/profile', \App\Livewire\User\Profile::class)->name('user.profile');
+Route::get('/user/dokumen', \App\Livewire\User\Dokumen::class)->name('user.dokumen');
+
 Route::get('/permohonan-izin', PermohonanIzin::class)->name('permohonan-izin');
 Route::get('/cetak-nilai/{userId}', \App\Livewire\Components\CetakNilai::class)
     ->name('cetak.nilai');

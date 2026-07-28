@@ -10,13 +10,14 @@ class IzinSakit extends Component
     public $sekolah = 'IBI Kesatuan';
 
     // State Form
-    public $tipePengajuan = 'izin'; // default 'izin' atau 'sakit'
+    public $tipePengajuan = 'izin'; // default 'izin', 'sakit', atau 'absen'
     public $tanggalMulai = '';
     public $tanggalSelesai = '';
     public $alasan = '';
+    public $riwayat = [];
 
     protected $rules = [
-        'tipePengajuan'  => 'required|in:izin,sakit',
+        'tipePengajuan'  => 'required|in:izin,sakit,absen',
         'tanggalMulai'   => 'required|date',
         'tanggalSelesai' => 'required|date|after_or_equal:tanggalMulai',
         'alasan'         => 'required|min:10',
@@ -36,6 +37,7 @@ class IzinSakit extends Component
     {
         $this->tanggalMulai = now()->format('Y-m-d');
         $this->tanggalSelesai = now()->format('Y-m-d');
+        $this->riwayat = session()->get('riwayat_presensi', []);
     }
 
     public function kirimPengajuan()
@@ -53,35 +55,42 @@ class IzinSakit extends Component
             ? \Carbon\Carbon::parse($this->tanggalMulai)->translatedFormat('l, d/m/Y')
             : $tglMulaiFormatted . ' - ' . $tglSelesaiFormatted;
 
-        // Data baru pengajuan
+        $statusLabel = $this->tipePengajuan === 'absen'
+            ? 'ABSEN'
+            : strtoupper($this->tipePengajuan);
+
         $dataBaru = [
-            'id'         => count($riwayatSession) + 1,
-            'nama'       => $this->nama,
-            'sekolah'    => $this->sekolah,
-            'tanggal'    => $rangeTanggal,
-            'jam_masuk'  => '-',
-            'jam_pulang' => '-',
-            'status'     => strtoupper($this->tipePengajuan), // IZIN atau SAKIT
-            'logbook'    => '[' . strtoupper($this->tipePengajuan) . '] ' . $this->alasan,
-            'latitude'   => null,
-            'longitude'  => null,
+            'id'               => count($riwayatSession) + 1,
+            'nama'             => $this->nama,
+            'sekolah'          => $this->sekolah,
+            'tanggal'          => $rangeTanggal,
+            'jam_masuk'        => '-',
+            'jam_pulang'       => '-',
+            'status'           => $statusLabel,
+            'status_pengajuan' => 'pending',
+            'logbook'          => '[' . $statusLabel . '] ' . $this->alasan,
+            'latitude'         => null,
+            'longitude'        => null,
         ];
 
         // Masukkan ke urutan paling atas
         array_unshift($riwayatSession, $dataBaru);
         session()->put('riwayat_presensi', $riwayatSession);
+        $this->riwayat = $riwayatSession;
 
         // Reset input form
         $this->reset(['alasan']);
         $this->tanggalMulai = now()->format('Y-m-d');
         $this->tanggalSelesai = now()->format('Y-m-d');
 
-        session()->flash('message', 'Pengajuan ' . strtoupper($this->tipePengajuan) . ' berhasil dikirim!');
+        session()->flash('message', 'Pengajuan ' . ($this->tipePengajuan === 'absen' ? 'ABSEN' : strtoupper($this->tipePengajuan)) . ' berhasil dikirim!');
     }
 
     public function render()
     {
-        return view('livewire.user.izin-sakit')
+        return view('livewire.user.izin-sakit', [
+            'riwayat' => $this->riwayat,
+        ])
             ->layout('layouts.user');
     }
 }
