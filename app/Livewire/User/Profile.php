@@ -5,11 +5,16 @@ namespace App\Livewire\User;
 use App\Models\User;
 use App\Enums\UserRole;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Profile extends Component
 {
+    use WithFileUploads;
+
     public ?User $user = null;
     public $nama;
     public $email;
@@ -21,6 +26,11 @@ class Profile extends Component
     public $password;
     public $confirm_password;
     public bool $editing = false;
+
+    // Foto profil
+    public $fotoUpload = null;   // untuk upload file biasa
+    public $fotoCaptured = null; // untuk hasil jepretan kamera (base64)
+    public bool $showPhotoOptions = false;
 
     protected function rules()
     {
@@ -38,6 +48,7 @@ class Profile extends Component
             'tanggal_akhir' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
             'password' => ['nullable', 'string', 'min:8', 'same:confirm_password'],
             'confirm_password' => ['nullable', 'string'],
+            'fotoUpload' => ['nullable', 'image', 'max:2048'],
         ];
     }
 
@@ -49,6 +60,8 @@ class Profile extends Component
         'tanggal_akhir.after_or_equal' => 'Tanggal akhir harus sama atau setelah tanggal mulai.',
         'password.min' => 'Password minimal 8 karakter.',
         'password.same' => 'Password dan konfirmasi password harus sama.',
+        'fotoUpload.image' => 'File harus berupa gambar.',
+        'fotoUpload.max' => 'Ukuran gambar maksimal 2MB.',
     ];
 
     public function mount()
@@ -75,6 +88,9 @@ class Profile extends Component
 
     public function updated($propertyName)
     {
+        if ($propertyName === 'fotoUpload' || $propertyName === 'fotoCaptured') {
+            return;
+        }
         $this->validateOnly($propertyName);
     }
 
@@ -86,7 +102,15 @@ class Profile extends Component
     public function cancelEditing()
     {
         $this->editing = false;
+        $this->fotoUpload = null;
+        $this->fotoCaptured = null;
+        $this->showPhotoOptions = false;
         $this->fillProfileFields();
+    }
+
+    public function togglePhotoOptions()
+    {
+        $this->showPhotoOptions = ! $this->showPhotoOptions;
     }
 
     public function saveProfile()
@@ -107,11 +131,53 @@ class Profile extends Component
             $updateData['password'] = $validated['password'];
         }
 
+        // Simpan foto kalau ada perubahan (upload file atau hasil kamera)
+        $fotoPath = $this->simpanFoto();
+        if ($fotoPath) {
+            $updateData['foto'] = $fotoPath;
+        }
+
         $this->user->update($updateData);
         $this->editing = false;
+        $this->fotoUpload = null;
+        $this->fotoCaptured = null;
+        $this->showPhotoOptions = false;
 
         session()->flash('message', 'Profil berhasil diperbarui.');
         $this->fillProfileFields();
+    }
+
+    private function simpanFoto(): ?string
+    {
+        $namaFile = Str::slug($this->user->nama) . '-profile';
+
+        // Hapus foto lama kalau ada, biar tidak numpuk
+        $hapusFotoLama = function () {
+            if ($this->user->foto && Storage::disk('public')->exists($this->user->foto)) {
+                Storage::disk('public')->delete($this->user->foto);
+            }
+        };
+
+        // Prioritas: kalau ada upload file biasa
+        if ($this->fotoUpload) {
+            $hapusFotoLama();
+            $extension = $this->fotoUpload->getClientOriginalExtension();
+            $path = $this->fotoUpload->storeAs('profile', $namaFile . '.' . $extension, 'public');
+            return $path;
+        }
+
+        // Kalau ada hasil jepretan kamera (base64)
+        if ($this->fotoCaptured) {
+            $hapusFotoLama();
+            $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $this->fotoCaptured);
+            $imageData = base64_decode($imageData);
+
+            $path = 'profile/' . $namaFile . '.jpg';
+            Storage::disk('public')->put($path, $imageData);
+            return $path;
+        }
+
+        return null;
     }
 
     public function render()

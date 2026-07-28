@@ -3,8 +3,6 @@
 namespace App\Livewire\User;
 
 use App\Models\log_book;
-use App\Models\User;
-use App\Enums\UserRole;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -33,10 +31,10 @@ class Riwayat extends Component
     ];
 
     public function mount()
-{
-    $this->tanggalMulai = now()->startOfMonth()->format('Y-m-d');
-    $this->tanggalSelesai = now()->format('Y-m-d');
-}
+    {
+        $this->tanggalMulai = now()->startOfMonth()->format('Y-m-d');
+        $this->tanggalSelesai = now()->format('Y-m-d');
+    }
 
     public function updatingFilterStatus()
     {
@@ -60,7 +58,9 @@ class Riwayat extends Component
         $this->resetPage();
     }
 
-
+    /**
+     * Membuka modal edit dan menyiapkan data logbook yang dipilih
+     */
     public function editLogbook($id)
     {
         $logBook = log_book::find($id);
@@ -72,12 +72,16 @@ class Riwayat extends Component
         }
     }
 
+    /**
+     * Menyimpan perubahan logbook ke database
+     */
     public function updateLogbook()
     {
         $this->validate();
 
         $logBook = log_book::findOrFail($this->editingId);
 
+        // Pastikan user cuma bisa edit logbook miliknya sendiri
         if ($logBook->user_id !== auth()->id()) {
             session()->flash('error', 'Anda tidak memiliki akses untuk mengedit logbook ini.');
             $this->closeModal();
@@ -102,7 +106,7 @@ class Riwayat extends Component
 
     public function render()
     {
-        $userId = $this->currentUserId();
+        $userId = auth()->id();
 
         $logBooks = log_book::with(['presensi', 'user'])
             ->where('user_id', $userId)
@@ -138,10 +142,10 @@ class Riwayat extends Component
                 'logbook'    => $logBook->kegiatan ?? '-',
                 'latitude'   => $presensi->latitude ?? null,
                 'longitude'  => $presensi->longitude ?? null,
-                'is_session' => false,
             ];
         });
 
+        // Statistik total (murni total keseluruhan, tidak terpengaruh pagination/filter)
         $totalHadir = log_book::where('user_id', $userId)
             ->whereHas('presensi', fn ($q) => $q->where('status_kehadiran', 'hadir'))
             ->count();
@@ -152,30 +156,8 @@ class Riwayat extends Component
 
         return view('livewire.user.riwayat', [
             'dataRiwayat' => $dataRiwayat,
-            'sessionRiwayat' => $sessionRiwayat,
             'totalHadir' => $totalHadir,
             'totalIzinSakit' => $totalIzinSakit,
         ]);
-    }
-
-    private function parseSessionTanggal($tanggal)
-    {
-        try {
-            $tanggal = trim($tanggal);
-            if (str_contains($tanggal, ' - ')) {
-                [$start, $end] = explode(' - ', $tanggal, 2);
-            } else {
-                $parts = explode(', ', $tanggal);
-                $start = trim(end($parts));
-                $end = $start;
-            }
-
-            $startDate = \Carbon\Carbon::createFromFormat('d/m/Y', trim($start));
-            $endDate = \Carbon\Carbon::createFromFormat('d/m/Y', trim($end));
-
-            return ['start' => $startDate, 'end' => $endDate];
-        } catch (\Exception $e) {
-            return ['start' => null, 'end' => null];
-        }
     }
 }
