@@ -14,6 +14,7 @@ return new class extends Migration
     {
         Schema::create('presensis', function (Blueprint $table) {
             $table->id('presensi_id');
+            $table->foreignId("user_id")->constrained('users', 'user_id')->onDelete('cascade');
             $table->string('foto_masuk')->nullable();
             $table->string('foto_keluar')->nullable();
             $table->date('tanggal')->nullable();

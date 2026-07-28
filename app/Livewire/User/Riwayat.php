@@ -3,7 +3,6 @@
 namespace App\Livewire\User;
 
 use App\Models\log_book;
-use App\Models\LogBook;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -44,7 +43,7 @@ class Riwayat extends Component
      */
     public function editLogbook($id)
     {
-        $logBook = LogBook::find($id);
+        $logBook = log_book::find($id);
 
         if ($logBook) {
             $this->editingId = $logBook->log_book_id;
@@ -60,7 +59,7 @@ class Riwayat extends Component
     {
         $this->validate();
 
-        $logBook = LogBook::findOrFail($this->editingId);
+        $logBook = log_book::findOrFail($this->editingId);
 
         // Pastikan user cuma bisa edit logbook miliknya sendiri
         if ($logBook->user_id !== auth()->id()) {

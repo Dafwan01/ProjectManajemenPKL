@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\UserDivisi;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Livewire\User\Presensi;
 use App\Models\DetailJadwal;
 use App\Models\Project;
 use App\Models\Nilai;
@@ -71,4 +72,7 @@ class User extends Authenticatable
 {
     return $this->hasOne(Nilai::class, 'user_id', 'user_id');
 }
+    public function presensi(){
+        return $this->hasOne(Presensi::class, 'user_id','user_id');
+    }
 }

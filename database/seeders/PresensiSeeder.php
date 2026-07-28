@@ -25,6 +25,7 @@ class PresensiSeeder extends Seeder
             $longitude = $centerLng + (mt_rand(-50, 50) / 100000);
 
             presensi::create([
+                'user_id'=>($i % 3) + 3, 
                 'foto_masuk' => 'presensis/foto_masuk_' . $i . '.jpg',
                 'foto_keluar' => $i % 2 === 0 ? 'presensis/foto_keluar_' . $i . '.jpg' : null,
                 'tanggal' => '2026-07-27',

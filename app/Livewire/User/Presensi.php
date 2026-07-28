@@ -2,35 +2,78 @@
 
 namespace App\Livewire\User;
 
+use App\Models\log_book;
+use App\Models\presensi as PresensiModel;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str; // <-- Tambahkan import Str
 use Livewire\Component;
+use Carbon\Carbon;
 
 class Presensi extends Component
 {
-    public $nama = 'Jonathan';
-    public $jabatan = 'PKL';
-    public $opd = 'Dinas Komunikasi dan Informatika';
-    public $bidang = 'Magang Aplikasi Informatika';
-    
-    // State Form
-    public $tipePresensi = 'masuk'; // 'masuk' atau 'pulang'
+    public $tipePresensi = 'masuk';
     public $logbook = '';
     public $latitude = null;
     public $longitude = null;
     public $fotoCaptured = null;
 
+    // Flag status presensi hari ini
+    public $sudahAbsenMasuk = false;
+    public $sudahAbsenKeluar = false;
+
+    private $targetLat = -6.595181;
+    private $targetLng = 106.793836;
+    private $maxRadiusMeters = 10000000;
+
     protected $messages = [
-        'latitude.required' => 'Koordinat lokasi belum terdeteksi. Izinkan akses lokasi di browser!',
-        'logbook.required'  => 'Logbook harian wajib diisi saat presensi pulang!',
-        'logbook.min'       => 'Isi logbook minimal 10 karakter.',
+        'latitude.required'     => 'Koordinat lokasi belum terdeteksi. Izinkan akses lokasi di browser!',
+        'longitude.required'    => 'Koordinat lokasi belum terdeteksi.',
+        'logbook.required'      => 'Logbook harian wajib diisi saat presensi pulang!',
+        'logbook.min'           => 'Isi logbook minimal 10 karakter.',
         'fotoCaptured.required' => 'Foto wajib diambil sebelum mengirim presensi!',
     ];
 
+    public function mount()
+    {
+        $this->cekStatusPresensi();
+    }
+
+    private function cekStatusPresensi()
+    {
+        $presensiHariIni = $this->getPresensiHariIni();
+
+        if ($presensiHariIni) {
+            $this->sudahAbsenMasuk = !is_null($presensiHariIni->absen_masuk);
+            $this->sudahAbsenKeluar = !is_null($presensiHariIni->absen_keluar);
+
+            if ($this->sudahAbsenMasuk && !$this->sudahAbsenKeluar) {
+                $this->tipePresensi = 'pulang';
+            }
+        }
+    }
+
+    private function getPresensiHariIni()
+    {
+        return PresensiModel::where('user_id', Auth::id())
+            ->whereDate('tanggal', Carbon::today()->toDateString())
+            ->first();
+    }
+
     public function simpanPresensi()
     {
-        // Dynamic Validation Rules
+        $presensiHariIni = $this->getPresensiHariIni();
+
+        // 1. Cek jika sudah selesai semua presensi hari ini
+        if ($presensiHariIni && $presensiHariIni->absen_masuk && $presensiHariIni->absen_keluar) {
+            session()->flash('warning', 'Anda sudah menyelesaikan presensi masuk dan keluar untuk hari ini!');
+            return;
+        }
+
+        // 2. Validasi Input Form
         $rules = [
-            'latitude'     => 'required',
-            'longitude'    => 'required',
+            'latitude'     => 'required|numeric',
+            'longitude'    => 'required|numeric',
             'fotoCaptured' => 'required',
         ];
 
@@ -40,37 +83,103 @@ class Presensi extends Component
 
         $this->validate($rules);
 
-        // Ambil data riwayat yang sudah ada di Session (jika ada)
-        $riwayatSession = session()->get('riwayat_presensi', []);
+        // 3. Validasi Geofencing
+        $distance = $this->calculateDistance($this->latitude, $this->longitude, $this->targetLat, $this->targetLng);
 
-        // Buat data presensi baru
-        $dataBaru = [
-            'id' => count($riwayatSession) + 1,
-            'nama' => $this->nama,
-            'sekolah' => 'Institut Bisnis dan Informatika Bogor',
-            'tanggal' => now()->translatedFormat('l, d/m/Y'),
-            'jam_masuk' => $this->tipePresensi === 'masuk' ? now()->format('H:i') . ' WIB' : '08:00 WIB',
-            'jam_pulang' => $this->tipePresensi === 'pulang' ? now()->format('H:i') . ' WIB' : '-',
-            'status' => 'HADIR',
-            'logbook' => $this->tipePresensi === 'pulang' ? $this->logbook : 'Presensi Masuk',
-            'foto' => $this->fotoCaptured,
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude
-        ];
+        if ($distance > $this->maxRadiusMeters) {
+            $this->addError('latitude', "Gagal presensi! Anda berada {$distance} meter di luar area Balai Kota Bogor.");
+            return;
+        }
 
-        // Masukkan data baru ke urutan paling atas array
-        array_unshift($riwayatSession, $dataBaru);
+        // 4. Format Nama File: namauser-tanggal-masuk/pulang.jpg
+        $user = Auth::user();
+        $namaUserSlug = Str::slug($user->name); // Mengubah misal "Ahmad Dani" jadi "ahmad-dani"
+        $tanggalHariIni = Carbon::today()->format('Y-m-d');
+        $tipe = $this->tipePresensi; // 'masuk' atau 'pulang'
 
-        // Simpan kembali ke Session
-        session()->put('riwayat_presensi', $riwayatSession);
+        $namaFile = "{$namaUserSlug}-{$tanggalHariIni}-{$tipe}.jpg";
+        $fotoPath = $this->simpanFotoBase64($this->fotoCaptured, $namaFile);
 
-        $tipe = $this->tipePresensi;
+        // 5. Eksekusi Simpan Data
+        if ($this->tipePresensi === 'masuk') {
+            
+            if ($presensiHariIni && $presensiHariIni->absen_masuk) {
+                session()->flash('warning', 'Anda sudah melakukan presensi MASUK hari ini!');
+                return;
+            }
 
-        // Reset Form
+            PresensiModel::create([
+                'user_id'          => $user->id,
+                'tanggal'          => $tanggalHariIni,
+                'absen_masuk'      => now()->format('H:i:s'),
+                'foto_masuk'       => $fotoPath,
+                'status_kehadiran' => 'hadir',
+                'latitude'         => $this->latitude,
+                'longitude'        => $this->longitude,
+            ]);
+
+            session()->flash('message', 'Presensi MASUK berhasil dikirim!');
+
+        } else {
+            
+            if (!$presensiHariIni || !$presensiHariIni->absen_masuk) {
+                session()->flash('warning', 'Anda belum melakukan presensi MASUK hari ini!');
+                return;
+            }
+
+            if ($presensiHariIni->absen_keluar) {
+                session()->flash('warning', 'Anda sudah melakukan presensi PULANG hari ini!');
+                return;
+            }
+
+            $presensiHariIni->update([
+                'absen_keluar' => now()->format('H:i:s'),
+                'foto_keluar'  => $fotoPath,
+            ]);
+
+            log_book::create([
+                'presensi_id' => $presensiHariIni->presensi_id,
+                'user_id'     => $user->id,
+                'kegiatan'    => $this->logbook,
+            ]);
+
+            session()->flash('message', 'Presensi PULANG dan Logbook berhasil dikirim!');
+        }
+
+        // Reset Form & Refresh Status
         $this->reset(['logbook', 'fotoCaptured']);
-        $this->tipePresensi = 'masuk';
+        $this->cekStatusPresensi();
+    }
 
-        session()->flash('message', 'Presensi ' . strtoupper($tipe) . ' berhasil dikirim dan tersimpan!');
+    private function simpanFotoBase64($base64Image, $namaFile)
+    {
+        $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $base64Image);
+        $imageData = base64_decode($imageData);
+
+        $path = 'presensi/' . $namaFile;
+        
+        // Simpan file (otomatis menimpa jika nama file persis sama)
+        Storage::disk('public')->put($path, $imageData);
+
+        return $path;
+    }
+
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371000;
+
+        $latFrom = deg2rad($lat1);
+        $lonFrom = deg2rad($lon1);
+        $latTo = deg2rad($lat2);
+        $lonTo = deg2rad($lon2);
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+            cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+
+        return round($angle * $earthRadius);
     }
 
     public function render()

@@ -13,6 +13,7 @@ class presensi extends Model
     protected $primaryKey = 'presensi_id';
 
     protected $fillable = [
+        'user_id',
         'foto_masuk',
         'foto_keluar',
         'tanggal',
@@ -35,4 +36,10 @@ class presensi extends Model
     {
         return $this->hasMany(log_book::class, 'presensi_id', 'presensi_id');
     }
+
+    public function user()
+{
+    return $this->belongsTo(User::class, 'user_id', 'user_id');
+}
+
 }
