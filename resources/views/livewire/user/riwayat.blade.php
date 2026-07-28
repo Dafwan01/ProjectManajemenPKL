@@ -57,6 +57,61 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-700/60">
+                        @if(isset($sessionRiwayat) && $sessionRiwayat->count())
+                            @foreach ($sessionRiwayat as $item)
+                                <tr class="bg-gray-800 hover:bg-gray-750/50 transition-colors duration-150">
+                                    <td class="px-6 py-4 font-medium text-white whitespace-nowrap">{{ $item['tanggal'] }}</td>
+
+                                    <!-- Kolom Jam Masuk & Jam Pulang -->
+                                    <td class="px-6 py-4 text-xs font-mono whitespace-nowrap">
+                                        <div class="flex items-center gap-1.5 text-green-400 mb-1">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                                            <span>In: {{ $item['jam_masuk'] ?? '-' }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 text-orange-400">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                                            <span>Out: {{ $item['jam_pulang'] ?? '-' }}</span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Kolom Kehadiran -->
+                                    <td class="px-6 py-4">
+                                        @if(strtoupper($item['status']) == 'HADIR')
+                                            <span class="bg-green-950 text-green-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-green-800 flex items-center gap-1.5 w-fit">
+                                                <span class="h-2 w-2 rounded-full bg-green-500 inline-block"></span>
+                                                HADIR
+                                            </span>
+                                        @elseif(strtoupper($item['status']) == 'IZIN')
+                                            <span class="bg-yellow-950 text-yellow-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-yellow-800 flex items-center gap-1.5 w-fit">
+                                                <span class="h-2 w-2 rounded-full bg-yellow-500 inline-block"></span>
+                                                IZIN
+                                            </span>
+                                        @elseif(strtoupper($item['status']) == 'SAKIT')
+                                            <span class="bg-red-950 text-red-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-red-800 flex items-center gap-1.5 w-fit">
+                                                <span class="h-2 w-2 rounded-full bg-red-500 inline-block"></span>
+                                                SAKIT
+                                            </span>
+                                        @else
+                                            <span class="bg-gray-700 text-gray-300 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-gray-600 flex items-center gap-1.5 w-fit">
+                                                <span class="h-2 w-2 rounded-full bg-gray-500 inline-block"></span>
+                                                {{ $item['status'] }}
+                                            </span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Kolom Logbook Harian -->
+                                    <td class="px-6 py-4 max-w-sm text-xs text-gray-300 leading-relaxed">
+                                        {{ $item['logbook'] ?? 'Tidak mengisi logbook (Presensi Masuk)' }}
+                                    </td>
+
+                                    <!-- Kolom Aksi -->
+                                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                                        <span class="text-gray-400 text-[11px]">Dari pengajuan</span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endif
+
                         @forelse ($dataRiwayat as $item)
                             <tr class="bg-gray-800 hover:bg-gray-750/50 transition-colors duration-150">
                                 <td class="px-6 py-4 font-medium text-white whitespace-nowrap">{{ $item['tanggal'] }}</td>
@@ -116,12 +171,14 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-500 text-xs">
-                                    <svg class="w-10 h-10 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                    Data riwayat presensi tidak ditemukan atau masih kosong.
-                                </td>
-                            </tr>
+                            @if(!isset($sessionRiwayat) || $sessionRiwayat->count() === 0)
+                                <tr>
+                                    <td colspan="5" class="px-6 py-12 text-center text-gray-500 text-xs">
+                                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        Data riwayat presensi tidak ditemukan atau masih kosong.
+                                    </td>
+                                </tr>
+                            @endif
                         @endforelse
                     </tbody>
                 </table>

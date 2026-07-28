@@ -3,6 +3,8 @@
 namespace App\Livewire\User;
 
 use App\Models\log_book;
+use App\Models\User;
+use App\Enums\UserRole;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -100,7 +102,7 @@ class Riwayat extends Component
 
     public function render()
     {
-        $userId = auth()->id();
+        $userId = $this->currentUserId();
 
         $logBooks = log_book::with(['presensi', 'user'])
             ->where('user_id', $userId)
@@ -136,6 +138,7 @@ class Riwayat extends Component
                 'logbook'    => $logBook->kegiatan ?? '-',
                 'latitude'   => $presensi->latitude ?? null,
                 'longitude'  => $presensi->longitude ?? null,
+                'is_session' => false,
             ];
         });
 
@@ -149,8 +152,30 @@ class Riwayat extends Component
 
         return view('livewire.user.riwayat', [
             'dataRiwayat' => $dataRiwayat,
+            'sessionRiwayat' => $sessionRiwayat,
             'totalHadir' => $totalHadir,
             'totalIzinSakit' => $totalIzinSakit,
         ]);
+    }
+
+    private function parseSessionTanggal($tanggal)
+    {
+        try {
+            $tanggal = trim($tanggal);
+            if (str_contains($tanggal, ' - ')) {
+                [$start, $end] = explode(' - ', $tanggal, 2);
+            } else {
+                $parts = explode(', ', $tanggal);
+                $start = trim(end($parts));
+                $end = $start;
+            }
+
+            $startDate = \Carbon\Carbon::createFromFormat('d/m/Y', trim($start));
+            $endDate = \Carbon\Carbon::createFromFormat('d/m/Y', trim($end));
+
+            return ['start' => $startDate, 'end' => $endDate];
+        } catch (\Exception $e) {
+            return ['start' => null, 'end' => null];
+        }
     }
 }
