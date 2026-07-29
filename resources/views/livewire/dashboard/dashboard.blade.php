@@ -1,130 +1,154 @@
 <div>
-    <!-- Include Chart.js via CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <h1 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Dashboard</h1>
+    <!-- HEADER TITLE & SUBTITLE -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold tracking-tight text-white uppercase">Dashboard</h1>
+        <p class="text-sm text-slate-400 mt-1">Ringkasan statistik kehadiran dan aktivitas peserta PKL hari ini.</p>
+    </div>
 
     <!-- GRID CARDS METRIK -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
 
         <!-- Card 1: Peserta PKL -->
-        <div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="p-5 bg-[#0d1322] rounded-2xl border border-slate-800/80 shadow-md flex items-center justify-between">
             <div>
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">Peserta PKL</p>
-                <p class="text-2xl font-semibold text-gray-800 dark:text-white mt-1">{{ $totalPeserta }}</p>
+                <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Peserta PKL</p>
+                <p class="text-3xl font-bold text-white mt-2">{{ $totalPeserta }}</p>
             </div>
-            <div>
-                <img src="/images/profile-placeholder.png" alt="Icon Peserta" class="w-12 h-12 object-contain">
+            <div class="w-12 h-12 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-1.815-4.236 4 4 0 015.815 3.236v3h-4zM5.815 10.764A5.972 5.972 0 004 15v3H0v-3a4 4 0 015.815-3.236z"/>
+                </svg>
             </div>
         </div>
 
         <!-- Card 2: Hadir Hari Ini -->
-        <div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="p-5 bg-[#0d1322] rounded-2xl border border-slate-800/80 shadow-md flex items-center justify-between">
             <div>
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">Hadir Hari Ini</p>
-                <p class="text-2xl font-semibold text-gray-800 dark:text-white mt-1">{{ $hadirHariIni }}</p>
+                <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Hadir Hari Ini</p>
+                <p class="text-3xl font-bold text-emerald-400 mt-2">{{ $hadirHariIni }}</p>
             </div>
-            <div>
-                <img src="/images/profile-placeholder.png" alt="Icon Hadir" class="w-12 h-12 object-contain">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
             </div>
         </div>
 
         <!-- Card 3: Terlambat Hari Ini -->
-        <div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="p-5 bg-[#0d1322] rounded-2xl border border-slate-800/80 shadow-md flex items-center justify-between">
             <div>
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">Terlambat Hari Ini</p>
-                <p class="text-2xl font-semibold text-gray-800 dark:text-white mt-1">{{ $terlambatHariIni }}</p>
+                <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Terlambat Hari Ini</p>
+                <p class="text-3xl font-bold text-amber-400 mt-2">{{ $terlambatHariIni }}</p>
             </div>
-            <div>
-                <img src="/images/profile-placeholder.png" alt="Icon Terlambat" class="w-12 h-12 object-contain">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                </svg>
             </div>
         </div>
 
         <!-- Card 4: Izin / Sakit -->
-        <div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="p-5 bg-[#0d1322] rounded-2xl border border-slate-800/80 shadow-md flex items-center justify-between">
             <div>
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">Izin / Sakit</p>
-                <p class="text-2xl font-semibold text-gray-800 dark:text-white mt-1">{{ $izinSakitHariIni }}</p>
+                <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Izin / Sakit</p>
+                <p class="text-3xl font-bold text-sky-400 mt-2">{{ $izinSakitHariIni }}</p>
             </div>
-            <div>
-                <img src="/images/profile-placeholder.png" alt="Icon Izin" class="w-12 h-12 object-contain">
+            <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
             </div>
         </div>
 
         <!-- Card 5: WFH -->
-        <div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="p-5 bg-[#0d1322] rounded-2xl border border-slate-800/80 shadow-md flex items-center justify-between">
             <div>
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">WFH</p>
-                <p class="text-2xl font-semibold text-gray-800 dark:text-white mt-1">{{ $wfhHariIni }}</p>
+                <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">WFH</p>
+                <p class="text-3xl font-bold text-indigo-400 mt-2">{{ $wfhHariIni }}</p>
             </div>
-            <div>
-                <img src="/images/profile-placeholder.png" alt="Icon WFH" class="w-12 h-12 object-contain">
+            <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l1.293 1.293a1 1 0 001.414-1.414l-7-7z"/>
+                </svg>
             </div>
         </div>
 
         <!-- Card 6: WFO -->
-        <div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="p-5 bg-[#0d1322] rounded-2xl border border-slate-800/80 shadow-md flex items-center justify-between">
             <div>
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">WFO</p>
-                <p class="text-2xl font-semibold text-gray-800 dark:text-white mt-1">{{ $wfoHariIni }}</p>
+                <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">WFO</p>
+                <p class="text-3xl font-bold text-purple-400 mt-2">{{ $wfoHariIni }}</p>
             </div>
-            <div>
-                <img src="/images/profile-placeholder.png" alt="Icon WFO" class="w-12 h-12 object-contain">
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1a1 1 0 000 2h1a1 1 0 100-2H7zm0 4a1 1 0 000 2h1a1 1 0 100-2H7zm0 4a1 1 0 000 2h1a1 1 0 100-2H7zm5-8a1 1 0 000 2h1a1 1 0 100-2h-1zm0 4a1 1 0 000 2h1a1 1 0 100-2h-1zm0 4a1 1 0 000 2h1a1 1 0 100-2h-1z" clip-rule="evenodd"/>
+                </svg>
             </div>
         </div>
 
     </div>
 
     <!-- SECTION GRAFIK PIE -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Grafik Kehadiran Hari Ini</h2>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="p-6 bg-[#0d1322] rounded-2xl border border-slate-800/80 shadow-md" wire:ignore>
+            <h2 class="text-base font-bold text-white tracking-wide uppercase mb-1">Grafik Kehadiran Hari Ini</h2>
+            <p class="text-xs text-slate-400 mb-6">Persentase status presensi seluruh peserta PKL.</p>
             
-            <!-- Container Alpine.js untuk Chart -->
+            <!-- Container Chart dengan wire:ignore & Alpine -->
             <div 
                 class="relative h-72 flex justify-center items-center"
                 x-data="{
                     chart: null,
                     initChart() {
-                        const ctx = document.getElementById('kehadiranPieChart').getContext('2d');
-                        if (this.chart) {
-                            this.chart.destroy();
-                        }
-                        this.chart = new Chart(ctx, {
-                            type: 'pie',
-                            data: {
-                                labels: ['Hadir', 'Terlambat', 'Izin / Sakit', 'Belum Absen / Alpa'],
-                                datasets: [{
-                                    data: [
-                                        {{ $hadirHariIni }},
-                                        {{ $terlambatHariIni }},
-                                        {{ $izinSakitHariIni }},
-                                        {{ $alpaHariIni }}
-                                    ],
-                                    backgroundColor: [
-                                        '#10B981', // Hijau (Hadir)
-                                        '#F59E0B', // Kuning/Oranye (Terlambat)
-                                        '#3B82F6', // Biru (Izin/Sakit)
-                                        '#EF4444'  // Merah (Alpa/Belum Absen)
-                                    ],
-                                    borderWidth: 2,
-                                    borderColor: '#ffffff'
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'bottom',
-                                        labels: {
-                                            boxWidth: 12,
-                                            padding: 16,
-                                            font: { size: 12 }
+                        this.$nextTick(() => {
+                            const canvas = document.getElementById('kehadiranPieChart');
+                            if (!canvas || typeof Chart === 'undefined') return;
+
+                            const ctx = canvas.getContext('2d');
+                            if (this.chart) {
+                                this.chart.destroy();
+                            }
+
+                            this.chart = new Chart(ctx, {
+                                type: 'pie',
+                                data: {
+                                    labels: ['Hadir', 'Terlambat', 'Izin / Sakit', 'Belum Absen / Alpa'],
+                                    datasets: [{
+                                        data: [
+                                            {{ $hadirHariIni }},
+                                            {{ $terlambatHariIni }},
+                                            {{ $izinSakitHariIni }},
+                                            {{ $alpaHariIni }}
+                                        ],
+                                        backgroundColor: [
+                                            '#10B981',
+                                            '#F59E0B',
+                                            '#0284C7',
+                                            '#EF4444'
+                                        ],
+                                        borderWidth: 2,
+                                        borderColor: '#0d1322'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'bottom',
+                                            labels: {
+                                                boxWidth: 12,
+                                                padding: 20,
+                                                color: '#94a3b8',
+                                                font: { 
+                                                    size: 12,
+                                                    weight: '500'
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                            }
+                            });
                         });
                     }
                 }"
@@ -135,3 +159,6 @@
         </div>
     </div>
 </div>
+
+<!-- Pastikan Script CDN ditaruh di bawah atau menggunakan asset pusher -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
