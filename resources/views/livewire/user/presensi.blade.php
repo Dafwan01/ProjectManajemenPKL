@@ -14,13 +14,15 @@
             hasPhoto: false,
             photoPreview: null,
             locationError: '',
+            locationAccuracy: null,
+            watchId: null,
 
-            // Konfigurasi Geofencing Balai Kota Bogor
+            // Konfigurasi Geofencing Balai Kota Bogor (Di-set sangat besar untuk WFA)
             targetLat: -6.595181,
             targetLng: 106.793836,
-            maxRadiusMeters: 1000000,
+            maxRadiusMeters: 50000000, // 50.000 KM agar bebas WFA dari mana saja
             distance: null,
-            isWithinRadius: false,
+            isWithinRadius: true,
 
             // MediaPipe State
             faceDetected: false,
@@ -42,6 +44,7 @@
                 return Math.round(R * c);
             },
 
+            // Pengambilan Lokasi Akurat Menggunakan watchPosition
             getLocation() {
                 this.locationError = '';
                 
@@ -50,10 +53,17 @@
                     return;
                 }
 
-                navigator.geolocation.getCurrentPosition(
+                // Hentikan watch sebelumnya jika ada
+                if (this.watchId) {
+                    navigator.geolocation.clearWatch(this.watchId);
+                }
+
+                // Menggunakan watchPosition untuk mengunci koordinat presisi secara berkelanjutan
+                this.watchId = navigator.geolocation.watchPosition(
                     (position) => {
                         const lat = position.coords.latitude;
                         const lng = position.coords.longitude;
+                        this.locationAccuracy = Math.round(position.coords.accuracy); // Akurasi dalam meter
 
                         this.$wire.latitude = lat;
                         this.$wire.longitude = lng;
@@ -62,7 +72,9 @@
                         this.isWithinRadius = this.distance <= this.maxRadiusMeters;
 
                         if (!this.isWithinRadius) {
-                            this.locationError = `Anda berada di luar lokasi! Jarak saat ini: ${this.distance}m dari Balai Kota Bogor (Maks ${this.maxRadiusMeters}m).`;
+                            this.locationError = `Jarak Anda: ${this.distance}m dari pusat.`;
+                        } else {
+                            this.locationError = '';
                         }
                     },
                     (error) => {
@@ -71,17 +83,21 @@
                                 this.locationError = 'Izin lokasi ditolak. Harap izinkan akses lokasi pada browser.';
                                 break;
                             case error.POSITION_UNAVAILABLE:
-                                this.locationError = 'Informasi lokasi tidak tersedia.';
+                                this.locationError = 'Informasi lokasi tidak tersedia. Coba aktifkan GPS HP/Browser.';
                                 break;
                             case error.TIMEOUT:
-                                this.locationError = 'Waktu pengambilan lokasi habis (timeout).';
+                                this.locationError = 'Waktu pengambilan lokasi habis (timeout). Sinyal GPS lemah.';
                                 break;
                             default:
                                 this.locationError = 'Gagal mendapatkan lokasi GPS.';
                                 break;
                         }
                     },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    { 
+                        enableHighAccuracy: true, // Wajib paksa hardware GPS
+                        timeout: 20000,           // Waktu tunggu 20 detik
+                        maximumAge: 0             // Dilarang pakai cache lokasi lama
+                    }
                 );
             },
 
@@ -200,7 +216,7 @@
             }
          }"
          x-init="getLocation()"
-         x-on:unmount.window="stopCamera()">
+         x-on:unmount.window="stopCamera(); if(watchId) navigator.geolocation.clearWatch(watchId);">
          
         <h1 class="text-2xl font-bold mb-6 text-white tracking-wide">FORM PRESENSI HARI INI</h1>
 
@@ -314,19 +330,27 @@
                     <!-- Indicator Status GPS / Geofencing -->
                     <div class="p-4 bg-gray-900 border border-gray-700 rounded-lg text-xs shadow-inner">
                         <template x-if="$wire.latitude && $wire.longitude">
-                            <div class="flex items-center justify-between font-mono">
-                                <div class="flex items-center gap-2" :class="isWithinRadius ? 'text-green-400' : 'text-red-400'">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                    <span x-text="isWithinRadius ? 'Lokasi Valid (Balai Kota Bogor)' : 'Di Luar Area Balai Kota'"></span>
+                            <div class="flex flex-col gap-1 font-mono">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2" :class="isWithinRadius ? 'text-green-400' : 'text-red-400'">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                        <span>Status Lokasi Active (WFA Mode)</span>
+                                    </div>
+                                    <span class="text-gray-400" x-text="`${distance}m dari pusat`"></span>
                                 </div>
-                                <span class="text-gray-400" x-text="`${distance}m dari pusat`"></span>
+                                <div class="text-[10px] text-gray-400 flex justify-between mt-1 pt-1 border-t border-gray-800">
+                                    <span>Akurasi GPS: ±<span class="text-emerald-400 font-bold" x-text="locationAccuracy"></span> meter</span>
+                                    <button type="button" @click="getLocation()" class="text-blue-400 hover:underline cursor-pointer">Refresh GPS</button>
+                                </div>
                             </div>
                         </template>
 
                         <template x-if="!$wire.latitude || !$wire.longitude">
-                            <div class="flex items-center gap-2 text-yellow-400 font-mono">
-                                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                <span>⏳ Mendeteksi lokasi GPS Anda...</span>
+                            <div class="flex items-center justify-between text-yellow-400 font-mono">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    <span>⏳ Mengunci GPS presisi tinggi...</span>
+                                </div>
                             </div>
                         </template>
 
@@ -357,23 +381,22 @@
                     </div>
 
                     <!-- Tombol Submit Presensi -->
-                  <!-- Modifikasi Tombol Submit -->
-<button 
-    type="submit" 
-    :disabled="!isWithinRadius || ({{ $tipePresensi === 'masuk' && $sudahAbsenMasuk ? 'true' : 'false' }}) || ({{ $tipePresensi === 'pulang' && $sudahAbsenKeluar ? 'true' : 'false' }})"
-    :class="(isWithinRadius && !({{ $tipePresensi === 'masuk' && $sudahAbsenMasuk ? 'true' : 'false' }}) && !({{ $tipePresensi === 'pulang' && $sudahAbsenKeluar ? 'true' : 'false' }})) 
-            ? 'bg-green-600 hover:bg-green-500 cursor-pointer' 
-            : 'bg-gray-600 cursor-not-allowed opacity-50'"
-    class="w-full text-white font-bold py-3 px-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
-    
-    @if ($tipePresensi === 'masuk' && $sudahAbsenMasuk)
-        <span>Sudah Absen Masuk Hari Ini</span>
-    @elseif ($tipePresensi === 'pulang' && $sudahAbsenKeluar)
-        <span>Sudah Absen Pulang Hari Ini</span>
-    @else
-        <span x-text="isWithinRadius ? 'Kirim Presensi' : 'Di Luar Area Balai Kota'"></span>
-    @endif
-</button>
+                    <button 
+                        type="submit" 
+                        :disabled="!isWithinRadius || ({{ $tipePresensi === 'masuk' && $sudahAbsenMasuk ? 'true' : 'false' }}) || ({{ $tipePresensi === 'pulang' && $sudahAbsenKeluar ? 'true' : 'false' }})"
+                        :class="(isWithinRadius && !({{ $tipePresensi === 'masuk' && $sudahAbsenMasuk ? 'true' : 'false' }}) && !({{ $tipePresensi === 'pulang' && $sudahAbsenKeluar ? 'true' : 'false' }})) 
+                                ? 'bg-green-600 hover:bg-green-500 cursor-pointer' 
+                                : 'bg-gray-600 cursor-not-allowed opacity-50'"
+                        class="w-full text-white font-bold py-3 px-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                        
+                        @if ($tipePresensi === 'masuk' && $sudahAbsenMasuk)
+                            <span>Sudah Absen Masuk Hari Ini</span>
+                        @elseif ($tipePresensi === 'pulang' && $sudahAbsenKeluar)
+                            <span>Sudah Absen Pulang Hari Ini</span>
+                        @else
+                            <span x-text="isWithinRadius ? 'Kirim Presensi' : 'Di Luar Area Balai Kota'"></span>
+                        @endif
+                    </button>
                 </div>
             </div>
         </form>

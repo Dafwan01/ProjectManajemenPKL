@@ -37,29 +37,33 @@
               </a>
            </li>
 
-           <!-- 4. Upload File -->
-           <li>
-            <button type="button" class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-example" data-collapse-toggle="dropdown-example">
-                  <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm8 3.5a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0v-2.5zm2.22.72a.75.75 0 10-1.06-1.06L9.5 10.81 7.84 9.16a.75.75 0 00-1.06 1.06l2.2 2.2a.75.75 0 001.06 0l2.2-2.2z"/>
-                 </svg>
-                  <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Upload File</span>
-                  <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
-                  </svg>
-            </button>
-            <ul id="dropdown-example" class="hidden py-2 space-y-2">
-                  <li>
-                     <a href="{{ route('sertifikat') }}" wire:navigate class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Sertifikat</a>
-                  </li>
-                  <li>
-                     <a href="{{ route('nilai') }}" wire:navigate class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Nilai</a>
-                  </li>
-                  <li>
-                     <a href="{{ route('surat-penerimaan-magang') }}" wire:navigate class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Surat Penerimaan Magang</a>
-                  </li>
-            </ul>
-         </li>
+          <li x-data="{ open: false }">
+    <button 
+        type="button" 
+        @click="open = !open"
+        class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+    >
+        <svg class="w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm8 3.5a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0v-2.5zm2.22.72a.75.75 0 10-1.06-1.06L9.5 10.81 7.84 9.16a.75.75 0 00-1.06 1.06l2.2 2.2a.75.75 0 001.06 0l2.2-2.2z"/>
+        </svg>
+        <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Upload File</span>
+        <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-180': open }" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+        </svg>
+    </button>
+    
+    <ul x-show="open" x-cloak class="py-2 space-y-2">
+        <li>
+            <a href="{{ route('sertifikat') }}" wire:navigate class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Sertifikat</a>
+        </li>
+        <li>
+            <a href="{{ route('nilai') }}" wire:navigate class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Nilai</a>
+        </li>
+        <li>
+            <a href="{{ route('surat-penerimaan-magang') }}" wire:navigate class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Surat Penerimaan Magang</a>
+        </li>
+    </ul>
+</li>
 
            <!-- 5. Manajemen Akun -->
            <li>

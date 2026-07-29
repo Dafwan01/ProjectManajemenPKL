@@ -2,7 +2,11 @@
 
 namespace App\Livewire\Dashboard;
 
+use App\Models\PermohonanIzin as PermohonanIzinModel;
 use App\Models\presensi;
+use App\Models\log_book;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -22,7 +26,8 @@ class PermohonanIzin extends Component
 
     public function mount()
     {
-        $this->tanggal = now()->format('Y-m-d');
+        // Opsional: Kosongkan tanggal saat mount agar menampilkan semua permohonan secara default
+        $this->tanggal = '';
     }
 
     public function updatingSearch()
@@ -48,8 +53,7 @@ class PermohonanIzin extends Component
     public function openDetail($id)
     {
         $this->selectedId = $id;
-        // Panggil dengan full namespace \App\Models\PermohonanIzin
-        $permohonan = \App\Models\PermohonanIzin::findOrFail($id);
+        $permohonan = PermohonanIzinModel::findOrFail($id);
         $this->catatanAdmin = $permohonan->catatan_admin ?? '';
         $this->showDetailModal = true;
     }
@@ -63,7 +67,7 @@ class PermohonanIzin extends Component
 
   public function setujui($id)
 {
-    $permohonan = \App\Models\PermohonanIzin::findOrFail($id);
+    $permohonan = PermohonanIzinModel::with('user')->findOrFail($id);
 
     // 1. Update status permohonan izin
     $permohonan->update([
@@ -71,67 +75,91 @@ class PermohonanIzin extends Component
         'catatan_admin' => $this->catatanAdmin,
     ]);
 
-    $tanggal = $permohonan->tanggal->format('Y-m-d');
+    // Tentukan tanggal awal dan akhir
+    $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
+    $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
 
-    // 2. Cari presensi yang terhubung dengan logbook milik user pada tanggal tersebut
-    $presensi = \App\Models\presensi::whereHas('logBooks', function ($query) use ($permohonan) {
-        $query->where('user_id', $permohonan->user_id);
-    })->whereDate('tanggal', $tanggal)->first();
+    $period = CarbonPeriod::create($startDate, $endDate);
 
-    if ($presensi) {
-        // Jika data presensi sudah ada, update status kehadirannya
-        $presensi->update([
-            'status_kehadiran' => $permohonan->jenis,
-        ]);
-    } else {
-        // Jika belum ada record presensi pada tanggal tersebut, buat record presensi baru
-        $presensi = \App\Models\Presensi::create([
-            'tanggal' => $tanggal,
-            'status_kehadiran' => $permohonan->jenis,
-        ]);
+    // Tentukan status kehadiran berdasarkan Enum yang valid
+    // Jika tipe pengajuan 'absen', kita set sebagai 'hadir' sesuai instruksi
+    $jenisStr = strtolower($permohonan->jenis);
+    $statusKehadiran = ($jenisStr === 'absen') ? 'hadir' : $jenisStr;
 
-        // Hubungkan presensi baru ini dengan LogBook user
-        \App\Models\log_book::create([
-            'user_id' => $permohonan->user_id,
-            'presensi_id' => $presensi->presensi_id, // Sesuaikan dengan primary key tabel presensis
-            'kegiatan' => 'Izin/Sakit: ' . $permohonan->alasan,
-        ]);
+    foreach ($period as $date) {
+        $tglString = $date->format('Y-m-d');
+
+        // Cari presensi user di tanggal tersebut
+        $presensi = Presensi::where('user_id', $permohonan->user_id)
+            ->whereDate('tanggal', $tglString)
+            ->first();
+
+        if ($presensi) {
+            // Update status kehadiran jika data presensi sudah ada
+            $presensi->update([
+                'status_kehadiran' => $statusKehadiran,
+            ]);
+        } else {
+            // Buat record presensi baru dengan status kehadiran 'hadir' (jika pengajuan absen)
+            $presensiNew = Presensi::create([
+                'user_id'          => $permohonan->user_id,
+                'tanggal'          => $tglString,
+                'status_kehadiran' => $statusKehadiran,
+            ]);
+
+            // Catat ke LogBook
+            log_book::create([
+                'user_id'     => $permohonan->user_id,
+                'presensi_id' => $presensiNew->presensi_id ?? $presensiNew->id,
+                'kegiatan'    => '(' . strtoupper($permohonan->jenis) . ') ' . $permohonan->alasan,
+            ]);
+        }
     }
 
-    session()->flash('message', 'Permohonan ' . $permohonan->jenis . ' dari ' . $permohonan->user->nama . ' telah disetujui.');
+    $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
+    session()->flash('message', 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah disetujui.');
+    
     $this->closeDetail();
 }
 
     public function tolak($id)
     {
-        $permohonan = \App\Models\PermohonanIzin::findOrFail($id);
+        $permohonan = PermohonanIzinModel::with('user')->findOrFail($id);
+        
         $permohonan->update([
             'status' => 'ditolak',
             'catatan_admin' => $this->catatanAdmin,
         ]);
 
-        session()->flash('message', 'Permohonan ' . $permohonan->jenis . ' dari ' . $permohonan->user->nama . ' telah ditolak.');
+        $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
+        session()->flash('message', 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah ditolak.');
+        
         $this->closeDetail();
     }
 
     public function render()
     {
-        $permohonans = \App\Models\PermohonanIzin::with('user')
+        $permohonans = PermohonanIzinModel::with('user')
             ->when($this->search, function ($query) {
                 $query->whereHas('user', function ($q) {
-                    $q->where('nama', 'like', '%' . $this->search . '%');
+                    $q->where('nama', 'like', '%' . $this->search . '%')
+                      ->orWhere('name', 'like', '%' . $this->search . '%');
                 });
             })
             ->when($this->filterStatus, function ($query) {
                 $query->where('status', $this->filterStatus);
             })
             ->when($this->tanggal, function ($query) {
-                $query->whereDate('tanggal', $this->tanggal);
+                $query->where(function ($q) {
+                    $q->whereDate('tanggal_awal', '<=', $this->tanggal)
+                      ->whereDate('tanggal_akhir', '>=', $this->tanggal)
+                      ->orWhereDate('tanggal_permohonan', $this->tanggal);
+                });
             })
             ->latest('created_at')
             ->paginate(10);
 
-        $totalPending = \App\Models\PermohonanIzin::where('status', 'pending')->count();
+        $totalPending = PermohonanIzinModel::where('status', 'pending')->count();
 
         return view('livewire.dashboard.permohonan-izin', compact('permohonans', 'totalPending'));
     }

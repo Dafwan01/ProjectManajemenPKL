@@ -3,30 +3,42 @@
 namespace App\Livewire\User;
 
 use Livewire\Component;
+use App\Models\PermohonanIzin;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class IzinSakit extends Component
 {
-    public $nama = 'Jonathan';
-    public $sekolah = 'IBI Kesatuan';
+    public $nama = '';
+    public $sekolah = '';
 
     // State Form
-    public $tipePengajuan = 'izin'; // default 'izin', 'sakit', atau 'absen'
+    public $tipePengajuan = 'izin'; // 'izin', 'sakit', atau 'absen'
     public $tanggalMulai = '';
     public $tanggalSelesai = '';
     public $alasan = '';
-    public $riwayat = [];
 
-    protected $rules = [
-        'tipePengajuan'  => 'required|in:izin,sakit,absen',
-        'tanggalMulai'   => 'required|date',
-        'tanggalSelesai' => 'required|date|after_or_equal:tanggalMulai',
-        'alasan'         => 'required|min:10',
-    ];
+    // Aturan validasi
+    protected function rules()
+    {
+        $rules = [
+            'tipePengajuan' => 'required|in:izin,sakit,absen',
+            'tanggalMulai'  => 'required|date',
+            'alasan'        => 'required|min:10',
+        ];
+
+        // Jika BUKAN 'absen', wajibkan tanggalSelesai
+        if ($this->tipePengajuan !== 'absen') {
+            $rules['tanggalSelesai'] = 'required|date|after_or_equal:tanggalMulai';
+        }
+
+        return $rules;
+    }
 
     protected $messages = [
         'tipePengajuan.required'        => 'Pilih tipe ketidakhadiran.',
         'tipePengajuan.in'              => 'Tipe ketidakhadiran tidak valid.',
-        'tanggalMulai.required'         => 'Tanggal mulai wajib diisi.',
+        'tanggalMulai.required'         => 'Tanggal wajib diisi.',
         'tanggalSelesai.required'       => 'Tanggal selesai wajib diisi.',
         'tanggalSelesai.after_or_equal' => 'Tanggal selesai tidak boleh kurang dari tanggal mulai.',
         'alasan.required'               => 'Alasan/keterangan wajib diisi.',
@@ -35,62 +47,83 @@ class IzinSakit extends Component
 
     public function mount()
     {
-        $this->tanggalMulai = now()->format('Y-m-d');
-        $this->tanggalSelesai = now()->format('Y-m-d');
-        $this->riwayat = session()->get('riwayat_presensi', []);
+        $user = Auth::user();
+
+        if ($user) {
+            $this->nama = $user->name ?? $user->nama ?? 'Siswa';
+            $this->sekolah = $user->sekolah ?? $user->instansi ?? '-';
+        }
+
+        $today = now()->format('Y-m-d');
+        $this->tanggalMulai = $today;
+        $this->tanggalSelesai = $today;
+    }
+
+    public function updatedTipePengajuan($value)
+    {
+        if ($value === 'absen') {
+            $this->tanggalSelesai = $this->tanggalMulai;
+        }
+    }
+
+    public function updatedTanggalMulai($value)
+    {
+        if ($this->tipePengajuan === 'absen') {
+            $this->tanggalSelesai = $value;
+        }
     }
 
     public function kirimPengajuan()
     {
         $this->validate();
 
-        // Ambil data riwayat di Session
-        $riwayatSession = session()->get('riwayat_presensi', []);
+        $user = Auth::user();
 
-        // Format tanggal tampilan
-        $tglMulaiFormatted = \Carbon\Carbon::parse($this->tanggalMulai)->translatedFormat('d/m/Y');
-        $tglSelesaiFormatted = \Carbon\Carbon::parse($this->tanggalSelesai)->translatedFormat('d/m/Y');
-        
-        $rangeTanggal = ($tglMulaiFormatted === $tglSelesaiFormatted) 
-            ? \Carbon\Carbon::parse($this->tanggalMulai)->translatedFormat('l, d/m/Y')
-            : $tglMulaiFormatted . ' - ' . $tglSelesaiFormatted;
+        if (!$user) {
+            session()->flash('error', 'Anda harus login terlebih dahulu.');
+            return;
+        }
 
-        $statusLabel = $this->tipePengajuan === 'absen'
-            ? 'ABSEN'
-            : strtoupper($this->tipePengajuan);
+        // Tentukan tanggal akhir
+        $tglAkhir = ($this->tipePengajuan === 'absen') 
+            ? $this->tanggalMulai 
+            : $this->tanggalSelesai;
 
-        $dataBaru = [
-            'id'               => count($riwayatSession) + 1,
-            'nama'             => $this->nama,
-            'sekolah'          => $this->sekolah,
-            'tanggal'          => $rangeTanggal,
-            'jam_masuk'        => '-',
-            'jam_pulang'       => '-',
-            'status'           => $statusLabel,
-            'status_pengajuan' => 'pending',
-            'logbook'          => '[' . $statusLabel . '] ' . $this->alasan,
-            'latitude'         => null,
-            'longitude'        => null,
-        ];
+        // SIMPAN KE DATABASE TABEL permohonan_izins
+        PermohonanIzin::create([
+            'user_id'            => $user->id ?? $user->user_id,
+            'jenis'              => $this->tipePengajuan,
+            'tanggal_awal'       => $this->tanggalMulai,
+            'tanggal_akhir'      => $tglAkhir,
+            'tanggal_permohonan' => now()->format('Y-m-d'),
+            'alasan'             => $this->alasan,
+            'status'             => 'pending',
+        ]);
 
-        // Masukkan ke urutan paling atas
-        array_unshift($riwayatSession, $dataBaru);
-        session()->put('riwayat_presensi', $riwayatSession);
-        $this->riwayat = $riwayatSession;
-
-        // Reset input form
+        // Reset Form Input
         $this->reset(['alasan']);
-        $this->tanggalMulai = now()->format('Y-m-d');
-        $this->tanggalSelesai = now()->format('Y-m-d');
+        $today = now()->format('Y-m-d');
+        $this->tanggalMulai = $today;
+        $this->tanggalSelesai = $today;
 
-        session()->flash('message', 'Pengajuan ' . ($this->tipePengajuan === 'absen' ? 'ABSEN' : strtoupper($this->tipePengajuan)) . ' berhasil dikirim!');
+        session()->flash('message', 'Pengajuan ' . strtoupper($this->tipePengajuan) . ' berhasil dikirim ke admin!');
     }
 
     public function render()
     {
+        // Ambil riwayat pengajuan user langsung dari Database
+        $user = Auth::user();
+        $riwayat = [];
+
+        if ($user) {
+            $userId = $user->id ?? $user->user_id;
+            $riwayat = PermohonanIzin::where('user_id', $userId)
+                ->latest()
+                ->get();
+        }
+
         return view('livewire.user.izin-sakit', [
-            'riwayat' => $this->riwayat,
-        ])
-            ->layout('layouts.user');
+            'riwayat' => $riwayat,
+        ])->layout('layouts.user');
     }
 }

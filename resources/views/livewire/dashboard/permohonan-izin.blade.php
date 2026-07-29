@@ -1,6 +1,6 @@
 <div>
     <div class="flex items-center justify-between mb-4">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Permohonan Izin / Sakit</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Permohonan Izin / Sakit / Absen</h1>
         @if($totalPending > 0)
             <span class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,70 +65,87 @@
         </div>
 
         <table class="w-full table-fixed text-sm text-left text-gray-500 dark:text-gray-400">
-    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-        <tr>
-            <th scope="col" class="px-4 py-3 w-[14%]">Nama</th>
-            <th scope="col" class="px-4 py-3 w-[16%]">Asal Sekolah</th>
-            <th scope="col" class="px-4 py-3 w-[10%]">Jenis</th>
-            <th scope="col" class="px-4 py-3 w-[26%]">Alasan</th>
-            <th scope="col" class="px-4 py-3 w-[12%]">Status</th>
-            <th scope="col" class="px-4 py-3 w-[10%] text-center">Aksi</th>
-        </tr>
-    </thead>
-    <tbody>
-        @forelse($permohonans as $permohonan)
-            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors" wire:key="permohonan-{{ $permohonan->permohonan_id }}">
-                <th scope="row" class="px-4 py-4 font-medium text-gray-900 dark:text-white truncate">
-                    {{ $permohonan->user->nama }}
-                </th>
-                <td class="px-4 py-4 truncate">{{ $permohonan->user->asal_sekolah ?? '-' }}</td>
-                <td class="px-4 py-4">
-                    <span class="inline-flex items-center justify-center w-full capitalize px-2 py-1 text-xs font-semibold rounded-full {{ $permohonan->jenis === 'sakit' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' }}">
-                        {{ $permohonan->jenis }}
-                    </span>
-                </td>
-                <td class="px-4 py-4">
-                    <span class="block truncate" title="{{ $permohonan->alasan }}">{{ $permohonan->alasan }}</span>
-                </td>
-                <td class="px-4 py-4">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <tr>
+                    <th scope="col" class="px-4 py-3 w-[15%]">Nama</th>
+                    <th scope="col" class="px-4 py-3 w-[15%]">Tanggal / Rentang</th>
+                    <th scope="col" class="px-4 py-3 w-[10%]">Jenis</th>
+                    <th scope="col" class="px-4 py-3 w-[28%]">Alasan</th>
+                    <th scope="col" class="px-4 py-3 w-[12%]">Status</th>
+                    <th scope="col" class="px-4 py-3 w-[10%] text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($permohonans as $permohonan)
                     @php
-                        $statusColor = match($permohonan->status) {
-                            'disetujui' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-                            'ditolak' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-                            default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+                        $tglAwal = $permohonan->tanggal_awal ? \Carbon\Carbon::parse($permohonan->tanggal_awal)->format('d/m/Y') : \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->format('d/m/Y');
+                        $tglAkhir = $permohonan->tanggal_akhir ? \Carbon\Carbon::parse($permohonan->tanggal_akhir)->format('d/m/Y') : null;
+                        
+                        $tglTampilan = ($tglAkhir && $tglAwal !== $tglAkhir) 
+                            ? $tglAwal . ' - ' . $tglAkhir 
+                            : $tglAwal;
+
+                        $jenisColor = match($permohonan->jenis) {
+                            'sakit' => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+                            'absen' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+                            default => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
                         };
                     @endphp
-                    <span class="inline-flex items-center justify-center w-full capitalize px-2 py-1 text-xs font-semibold rounded-full {{ $statusColor }}">
-                        {{ $permohonan->status }}
-                    </span>
-                </td>
-                <td class="px-4 py-4 text-center">
-                    <button 
-                        type="button"
-                        wire:click="openDetail({{ $permohonan->permohonan_id }})"
-                        class="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 transition-colors"
-                        title="Lihat Detail"
-                    >
-                        <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                    </button>
-                </td>
-            </tr>
-        @empty
-            <tr>
-                <td colspan="7" class="px-4 py-4 text-center text-gray-500">Tidak ada permohonan ditemukan.</td>
-            </tr>
-        @endforelse
-    </tbody>
-</table>
+                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors" wire:key="permohonan-{{ $permohonan->permohonan_id }}">
+                        <th scope="row" class="px-4 py-4 font-medium text-gray-900 dark:text-white truncate">
+                            {{ $permohonan->user->nama ?? $permohonan->user->name ?? '-' }}
+                        </th>
+                        <td class="px-4 py-4 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            {{ $tglTampilan }}
+                        </td>
+                        <td class="px-4 py-4">
+                            <span class="inline-flex items-center justify-center w-full capitalize px-2 py-1 text-xs font-semibold rounded-full {{ $jenisColor }}">
+                                {{ $permohonan->jenis }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-4">
+                            <span class="block truncate" title="{{ $permohonan->alasan }}">{{ $permohonan->alasan }}</span>
+                        </td>
+                        <td class="px-4 py-4">
+                            @php
+                                $statusColor = match($permohonan->status) {
+                                    'disetujui' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+                                    'ditolak' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+                                    default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+                                };
+                            @endphp
+                            <span class="inline-flex items-center justify-center w-full capitalize px-2 py-1 text-xs font-semibold rounded-full {{ $statusColor }}">
+                                {{ $permohonan->status }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-4 text-center">
+                            <button 
+                                type="button"
+                                wire:click="openDetail({{ $permohonan->permohonan_id }})"
+                                class="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-700 transition-colors"
+                                title="Lihat Detail"
+                            >
+                                <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="px-4 py-4 text-center text-gray-500">Tidak ada permohonan ditemukan.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
 
         <div class="p-4">
             {{ $permohonans->links() }}
         </div>
     </div>
 
+    <!-- Modal Detail -->
     @if($showDetailModal)
         @php
             $permohonan = \App\Models\PermohonanIzin::with('user')->find($selectedId);
@@ -136,26 +153,41 @@
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6" @click="$event.target === $el && $wire.closeDetail()" wire:key="detail-modal-{{ $selectedId }}">
             <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800" @click.stop>
                 @if($permohonan)
+                    @php
+                        $tglMulaiFormatted = $permohonan->tanggal_awal ? \Carbon\Carbon::parse($permohonan->tanggal_awal)->translatedFormat('d F Y') : \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->translatedFormat('d F Y');
+                        $tglAkhirFormatted = $permohonan->tanggal_akhir ? \Carbon\Carbon::parse($permohonan->tanggal_akhir)->translatedFormat('d F Y') : null;
+                    @endphp
+
                     <div class="mb-6 border-b pb-4 dark:border-gray-700">
                         <h2 class="text-xl font-bold text-gray-900 dark:text-white">Detail Permohonan</h2>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ $permohonan->user->nama }} &bull; {{ $permohonan->user->asal_sekolah }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {{ $permohonan->user->nama ?? $permohonan->user->name ?? 'Pemohon' }} 
+                            &bull; 
+                            {{ $permohonan->user->sekolah ?? $permohonan->user->asal_sekolah ?? '-' }}
+                        </p>
                     </div>
 
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <span class="block mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">Jenis</span>
+                                <span class="block mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">Jenis Permohonan</span>
                                 <p class="text-sm font-semibold text-gray-900 dark:text-white capitalize">{{ $permohonan->jenis }}</p>
                             </div>
                             <div>
-                                <span class="block mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">Tanggal</span>
-                                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $permohonan->tanggal->format('d M Y') }}</p>
+                                <span class="block mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">Tanggal Tanggal/Rentang</span>
+                                <p class="text-sm font-semibold text-gray-900 dark:text-white">
+                                    @if($tglAkhirFormatted && $tglMulaiFormatted !== $tglAkhirFormatted)
+                                        {{ $tglMulaiFormatted }} s/d {{ $tglAkhirFormatted }}
+                                    @else
+                                        {{ $tglMulaiFormatted }}
+                                    @endif
+                                </p>
                             </div>
                         </div>
 
                         <div>
                             <span class="block mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">Alasan</span>
-                            <p class="text-sm text-gray-900 dark:text-white">{{ $permohonan->alasan }}</p>
+                            <p class="text-sm text-gray-900 dark:text-white leading-relaxed">{{ $permohonan->alasan }}</p>
                         </div>
 
                         @if($permohonan->lampiran)

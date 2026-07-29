@@ -11,7 +11,9 @@ class PermohonanIzin extends Model
 
     protected $fillable = [
         'user_id',
-        'tanggal',
+        'tanggal_permohonan',
+         'tanggal_awal',
+          'tanggal_akhir',
         'jenis',
         'alasan',
         'lampiran',

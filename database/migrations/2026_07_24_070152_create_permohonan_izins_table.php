@@ -11,8 +11,10 @@ return new class extends Migration
         Schema::create('permohonan_izins', function (Blueprint $table) {
             $table->id('permohonan_id');
             $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
-            $table->date('tanggal');
-            $table->enum('jenis', ['izin', 'sakit']);
+            $table->date('tanggal_permohonan');
+            $table->date('tanggal_awal')->nullable();;
+            $table->date('tanggal_akhir')->nullable();;
+            $table->enum('jenis', ['izin', 'sakit', 'absen']);
             $table->text('alasan');
             $table->string('lampiran')->nullable();
             $table->enum('status', ['pending', 'disetujui', 'ditolak'])->default('pending');

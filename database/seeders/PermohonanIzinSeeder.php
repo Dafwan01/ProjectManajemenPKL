@@ -42,7 +42,7 @@ class PermohonanIzinSeeder extends Seeder
 
                 PermohonanIzin::create([
                     'user_id' => $user->user_id,
-                    'tanggal' => now()->subDays(rand(0, 10))->format('Y-m-d'),
+                    'tanggal_permohonan' => now()->subDays(rand(0, 10))->format('Y-m-d'),
                     'jenis' => $jenis,
                     'alasan' => $jenis === 'izin'
                         ? $alasanIzin[array_rand($alasanIzin)]
