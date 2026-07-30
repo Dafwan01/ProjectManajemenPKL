@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -71,9 +72,15 @@ class ManajemenAkun extends Component
         return [];
     }
 
-    protected function rules()
+   protected function rules()
     {
         $allowedRoleValues = array_map(fn($role) => $role->value, $this->availableRoles);
+
+        // Definisi aturan password kompleksitas
+        $passwordRule = Password::min(8)
+            ->mixedCase() // Minimal 1 huruf besar & 1 huruf kecil
+            ->numbers()   // Minimal 1 angka
+            ->symbols();  // Minimal 1 karakter spesial (!@#$%^&* dll)
 
         return [
             'nama' => 'required|min:3',
@@ -83,8 +90,8 @@ class ManajemenAkun extends Component
             'asal_sekolah' => 'nullable|string',
             'mentor' => 'required|string',
             'password' => $this->isEditMode 
-                ? 'nullable|min:8|same:confirm_password' 
-                : 'required|min:8|same:confirm_password',
+                ? ['nullable', $passwordRule, 'same:confirm_password'] 
+                : ['required', $passwordRule, 'same:confirm_password'],
         ];
     }
 
@@ -99,7 +106,6 @@ class ManajemenAkun extends Component
         'divisi.required' => 'Silakan pilih divisi pengguna.',
         'mentor.required' => 'Mentor wajib dipilih atau diisi.',
         'password.required' => 'Password wajib diisi.',
-        'password.min' => 'Password minimal harus 8 karakter.',
         'password.same' => 'Konfirmasi password tidak cocok.',
     ];
 
