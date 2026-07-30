@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Enums\UserRole;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -17,11 +19,13 @@ class Login extends Component
     public bool $agreeTerms = false;
     public bool $showAgreementModal = false;
     
-    // State Captcha
+    // State Captcha & Rate Limiter Lockout
     public string $captchaInput = '';
     public string $captchaImage = '';
     public string $captchaCode = '';
     public string $errorMessage = '';
+    public bool $isLocked = false;
+    public int $secondsRemaining = 0;
 
     protected $rules = [
         'email' => 'required|email',
@@ -43,9 +47,29 @@ class Login extends Component
         $this->generateCaptcha();
     }
 
+    // Cek status rate limit saat email diubah
+    public function updatedEmail(): void
+    {
+        $this->checkRateLimitStatus();
+    }
+
+    private function checkRateLimitStatus(): void
+    {
+        if (empty($this->email)) return;
+
+        $throttleKey = Str::lower($this->email) . '|' . request()->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
+            $this->isLocked = true;
+            $this->secondsRemaining = RateLimiter::availableIn($throttleKey);
+        } else {
+            $this->isLocked = false;
+            $this->secondsRemaining = 0;
+        }
+    }
+
     public function generateCaptcha(): void
     {
-        // 1. Buat 5 karakter acak (tanpa Karakter membingungkan seperti 0, O, 1, I)
         $characters = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
         $code = '';
         for ($i = 0; $i < 5; $i++) {
@@ -53,26 +77,22 @@ class Login extends Component
         }
         $this->captchaCode = $code;
 
-        // 2. Buat Tampilan Visual Gambar Captcha menggunakan SVG
         $width = 220;
         $height = 65;
 
         $svg = "<svg width='{$width}' height='{$height}' xmlns='http://www.w3.org/2000/svg' style='background-color:#eff6ff; border-radius: 8px;'>";
 
-        // Tambahkan garis pengganggu (noise lines)
         for ($i = 0; $i < 6; $i++) {
             $x1 = rand(0, $width); $y1 = rand(0, $height);
             $x2 = rand(0, $width); $y2 = rand(0, $height);
             $svg .= "<line x1='{$x1}' y1='{$y1}' x2='{$x2}' y2='{$y2}' stroke='#93c5fd' stroke-width='1.5' opacity='0.7'/>";
         }
 
-        // Tambahkan titik-titik pengganggu (noise dots)
         for ($i = 0; $i < 30; $i++) {
             $cx = rand(0, $width); $cy = rand(0, $height);
             $svg .= "<circle cx='{$cx}' cy='{$cy}' r='1.5' fill='#3b82f6' opacity='0.4'/>";
         }
 
-        // Cetak Karakter dengan Rotasi & Posisi Acak
         $charArray = str_split($code);
         $x = 25;
         foreach ($charArray as $char) {
@@ -84,7 +104,6 @@ class Login extends Component
 
         $svg .= '</svg>';
 
-        // Convert ke format Data URI
         $this->captchaImage = 'data:image/svg+xml;base64,' . base64_encode($svg);
         $this->captchaInput = '';
     }
@@ -92,9 +111,21 @@ class Login extends Component
     public function login()
     {
         $this->errorMessage = '';
+
+        $throttleKey = Str::lower($this->email) . '|' . request()->ip();
+
+        // 1. Cek apakah user sedang terkunci
+        if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
+            $this->isLocked = true;
+            $this->secondsRemaining = RateLimiter::availableIn($throttleKey);
+            $this->errorMessage = "Terlalu banyak percobaan login yang salah. Silakan tunggu hingga hitungan mundur selesai.";
+            $this->generateCaptcha();
+            return;
+        }
+
         $this->validate();
 
-        // Cek captcha (Case Insensitive)
+        // Cek Captcha
         if (strtoupper(trim($this->captchaInput)) !== strtoupper($this->captchaCode)) {
             $this->addError('captchaInput', 'Kode captcha salah. Silakan coba lagi.');
             $this->generateCaptcha();
@@ -106,16 +137,30 @@ class Login extends Component
             'password' => $this->password,
         ];
 
+        // 2. Eksekusi Attempt Login
         if (!Auth::attempt($credentials, $this->remember)) {
-            $this->errorMessage = 'Email atau password salah.';
+            RateLimiter::hit($throttleKey, 60);
+
+            $attemptsLeft = RateLimiter::remaining($throttleKey, 3);
+
+            if ($attemptsLeft > 0) {
+                $this->errorMessage = "Email atau password salah. Sisa percobaan: {$attemptsLeft}x lagi.";
+            } else {
+                $this->isLocked = true;
+                $this->secondsRemaining = RateLimiter::availableIn($throttleKey);
+                $this->errorMessage = "Terlalu banyak percobaan login yang salah. Akses dikunci sementara selama 1 menit.";
+            }
+
             $this->generateCaptcha();
             return;
         }
 
+        // Jika berhasil login, reset limiter
+        RateLimiter::clear($throttleKey);
+
         request()->session()->regenerate();
 
         $user = Auth::user();
-
         $userRole = $user->role instanceof \UnitEnum ? $user->role->value : $user->role;
 
         if ($userRole === UserRole::PKL->value) {
@@ -140,12 +185,11 @@ class Login extends Component
         $this->showAgreementModal = false;
     }
 
-    // Method untuk menyetujui pernyataan langsung dari modal
-public function acceptTermsAndCloseModal(): void
-{
-    $this->agreeTerms = true;        // Otomatis checklist checkbox
-    $this->showAgreementModal = false; // Tutup modal
-}
+    public function acceptTermsAndCloseModal(): void
+    {
+        $this->agreeTerms = true;
+        $this->showAgreementModal = false;
+    }
 
     public function render()
     {
