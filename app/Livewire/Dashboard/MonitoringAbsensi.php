@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Dashboard;
 
+use App\Enums\UserRole;
 use App\Models\log_book;
 use App\Models\presensi;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -35,6 +37,24 @@ class MonitoringAbsensi extends Component
     public function updatingTanggal()
     {
         $this->resetPage();
+    }
+
+    /**
+     * Helper untuk mengecek apakah user yang login adalah Mentor secara aman
+     */
+    private function isMentorUser(): bool
+    {
+        $currentUser = Auth::user();
+        if (!$currentUser) {
+            return false;
+        }
+
+        // Ambil string value role secara konsisten (baik bertipe Enum maupun String)
+        $userRole = $currentUser->role instanceof \UnitEnum 
+            ? $currentUser->role->value 
+            : $currentUser->role;
+
+        return $userRole === UserRole::MENTOR->value;
     }
 
     // --- BUKA MODAL EDIT ---
@@ -103,9 +123,21 @@ class MonitoringAbsensi extends Component
         }
     }
 
+    // --- PETA LOKASI ---
     public function openMap()
     {
+        $currentUser = Auth::user();
+        $isMentor = $this->isMentorUser();
+
         $dataPresensi = presensi::with(['user', 'logBooks.user'])
+            ->whereHas('user', function ($query) use ($currentUser, $isMentor) {
+                $query->where('role', UserRole::PKL->value);
+
+                // Filter berdasarkan nama mentor jika pengakses adalah Mentor
+                if ($isMentor) {
+                    $query->where('mentor', $currentUser->nama);
+                }
+            })
             ->whereDate('tanggal', $this->tanggal)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
@@ -133,11 +165,20 @@ class MonitoringAbsensi extends Component
         $this->showMap = false;
     }
 
+    // --- RENDER COMPONENT ---
     public function render()
     {
+        $currentUser = Auth::user();
+        $isMentor = $this->isMentorUser();
+
         $presensis = presensi::with(['user', 'logBooks.user'])
-            ->whereHas('user', function ($query) {
-                $query->where('role', 'PKL');
+            ->whereHas('user', function ($query) use ($currentUser, $isMentor) {
+                $query->where('role', UserRole::PKL->value);
+
+                // Filter khusus anak bimbingan jika pengakses adalah Mentor
+                if ($isMentor) {
+                    $query->where('mentor', $currentUser->nama);
+                }
             })
             ->when($this->tanggal, function ($query) {
                 $query->whereDate('tanggal', $this->tanggal);

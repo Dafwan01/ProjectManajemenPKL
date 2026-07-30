@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth; // <-- Tambahkan import Auth
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -26,7 +27,7 @@ class ManajemenPkl extends Component
     public $asal_sekolah = '';
     public $mentor = '';
     public $tanggal_mulai = null;
-    public $tanggal_akhir = null; // Penambahan tanggal_akhir
+    public $tanggal_akhir = null;
     public $skill = '';
     public $password = '';
     public $confirm_password = '';
@@ -123,7 +124,7 @@ class ManajemenPkl extends Component
             'asal_sekolah' => $this->asal_sekolah ?: null,
             'mentor' => $this->mentor ?: null,
             'tanggal_mulai' => $this->tanggal_mulai ?: null,
-            'tanggal_Akhir' => $this->tanggal_akhir ?: null, // Menyesuaikan nama kolom A besar di Model
+            'tanggal_Akhir' => $this->tanggal_akhir ?: null,
         ];
 
         if (Schema::hasColumn('users', 'skill')) {
@@ -156,6 +157,13 @@ class ManajemenPkl extends Component
     {
         $this->resetFields();
         $this->isEditMode = false;
+
+        // Otomatis isi kolom mentor jika user yang login adalah Mentor
+        $currentUser = Auth::user();
+        if ($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value) {
+            $this->mentor = $currentUser->nama;
+        }
+
         $this->showEditProfileModal = true;
     }
 
@@ -175,7 +183,7 @@ class ManajemenPkl extends Component
         $this->asal_sekolah = $user->asal_sekolah;
         $this->mentor = $user->mentor;
         $this->tanggal_mulai = $this->formatDateForInput($user->tanggal_mulai);
-        $this->tanggal_akhir = $this->formatDateForInput($user->tanggal_Akhir); // Ambil dari tanggal_Akhir Model
+        $this->tanggal_akhir = $this->formatDateForInput($user->tanggal_Akhir);
         $this->skill = $user->skill ?? '';
 
         $this->isEditMode = true;
@@ -242,8 +250,14 @@ class ManajemenPkl extends Component
 
     public function render()
     {
+        $currentUser = Auth::user();
+
         $users = User::query()
             ->where('role', UserRole::PKL->value)
+            // Filter hanya user PKL yang dinaungi mentor ini jika yang login adalah Mentor
+            ->when($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value, function ($query) use ($currentUser) {
+                $query->where('mentor', $currentUser->nama);
+            })
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('nama', 'like', '%' . $this->search . '%')

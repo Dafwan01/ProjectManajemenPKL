@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Livewire\Dashboard\UploadFIle;
+namespace App\Livewire\Dashboard\UploadFile;
 
 use App\Enums\UserRole;
-use App\Models\User;
 use App\Models\file as FileModel;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -21,6 +22,23 @@ class SuratPenerimaanMagang extends Component
     public $files = [];
 
     protected $namaFileKategori = 'surat_penerimaan_magang';
+
+    /**
+     * Helper untuk mengecek apakah user yang login adalah Mentor secara aman
+     */
+    private function isMentorUser(): bool
+    {
+        $currentUser = Auth::user();
+        if (!$currentUser) {
+            return false;
+        }
+
+        $userRole = $currentUser->role instanceof \UnitEnum 
+            ? $currentUser->role->value 
+            : $currentUser->role;
+
+        return $userRole === UserRole::MENTOR->value;
+    }
 
     public function updatingSearch()
     {
@@ -69,8 +87,15 @@ class SuratPenerimaanMagang extends Component
 
     public function render()
     {
+        $currentUser = Auth::user();
+        $isMentor = $this->isMentorUser();
+
         $users = User::query()
             ->where('role', UserRole::PKL->value)
+            // Filter anak bimbingan jika pengakses adalah Mentor
+            ->when($isMentor, function ($query) use ($currentUser) {
+                $query->where('mentor', $currentUser->nama);
+            })
             ->with(['files' => function ($query) {
                 $query->where('nama_file', $this->namaFileKategori);
             }])

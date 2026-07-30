@@ -3,9 +3,10 @@
 namespace App\Livewire\Dashboard;
 
 use App\Enums\UserRole;
-use App\Models\User;
-use App\Models\presensi; 
 use App\Models\DetailJadwal;
+use App\Models\presensi; 
+use App\Models\User;
+use Illuminate\Support\Facades\Auth; // Import Auth Facade
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -14,23 +15,36 @@ class Dashboard extends Component
 {
     public function render()
     {
+        $currentUser = Auth::user();
+        $isMentor = $currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value;
+
         $today = now()->toDateString();
         $namaHariIni = $this->namaHariIndonesia(now()->dayOfWeekIso); // 1 (Senin) - 7 (Minggu)
 
-        $totalPeserta = User::where('role', UserRole::PKL->value)->count();
+        // Query dasar peserta PKL (Saring berdasarkan nama mentor jika yang login adalah Mentor)
+        $pklQuery = User::where('role', UserRole::PKL->value)
+            ->when($isMentor, function ($query) use ($currentUser) {
+                $query->where('mentor', $currentUser->nama);
+            });
 
-        // Hadir hari ini: presensi hari ini dengan status_kehadiran = hadir
-        $hadirHariIni = Presensi::whereDate('tanggal', $today)
+        $totalPeserta = (clone $pklQuery)->count();
+        $userIdsPkl = (clone $pklQuery)->pluck('user_id');
+
+        // Hadir hari ini: presensi hari ini dengan status_kehadiran = hadir (khusus user PKL yang relevan)
+        $hadirHariIni = presensi::whereIn('user_id', $userIdsPkl)
+            ->whereDate('tanggal', $today)
             ->where('status_kehadiran', 'hadir')
             ->count();
 
         // Terlambat hari ini
-        $terlambatHariIni = Presensi::whereDate('tanggal', $today)
+        $terlambatHariIni = presensi::whereIn('user_id', $userIdsPkl)
+            ->whereDate('tanggal', $today)
             ->where('status_kehadiran', 'terlambat')
             ->count();
 
         // Izin / Sakit hari ini
-        $izinSakitHariIni = Presensi::whereDate('tanggal', $today)
+        $izinSakitHariIni = presensi::whereIn('user_id', $userIdsPkl)
+            ->whereDate('tanggal', $today)
             ->whereIn('status_kehadiran', ['izin', 'sakit'])
             ->count();
 
@@ -38,9 +52,7 @@ class Dashboard extends Component
         $totalSudahAbsen = $hadirHariIni + $terlambatHariIni + $izinSakitHariIni;
         $alpaHariIni = max(0, $totalPeserta - $totalSudahAbsen);
 
-        // WFH & WFO hari ini: dari jadwal user PKL sesuai hari ini
-        $userIdsPkl = User::where('role', UserRole::PKL->value)->pluck('user_id');
-
+        // WFH & WFO hari ini: dari jadwal user PKL yang relevan
         $wfhHariIni = DetailJadwal::whereIn('user_id', $userIdsPkl)
             ->where('hari', $namaHariIni)
             ->whereHas('jadwal', function ($query) {
