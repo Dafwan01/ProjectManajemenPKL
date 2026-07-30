@@ -230,11 +230,19 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">Nama Mentor</label>
-                            <input type="text" wire:model="mentor" class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white text-sm px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition">
-                            @error('mentor') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
+                       <div>
+    <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+        Nama Mentor <span class="text-gray-400 dark:text-gray-500 font-normal">(Tidak dapat diubah)</span>
+    </label>
+    <input 
+        type="text" 
+        wire:model="mentor" 
+        disabled 
+        readonly
+        class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-200/70 dark:bg-gray-900/80 text-gray-500 dark:text-gray-400 text-sm px-4 py-3 cursor-not-allowed focus:outline-none transition"
+    >
+    @error('mentor') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+</div>
                         <div>
                             <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">Mulai Magang</label>
                             <input type="date" wire:model="tanggal_mulai" class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white text-sm px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition">

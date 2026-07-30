@@ -74,9 +74,6 @@ Route::get('/user/profile', Profile::class)->name('user.profile');
 Route::get('/user/dokumen', Dokumen::class)->name('user.dokumen');
 Route::get('/user/project', UserProject::class)->name('user.project');
 
-// Utility / Download Routes
-Route::get('/bottomnav', Bottomnav::class)->name('bottomnav');
-
 Route::get('/project/{id}/download', function ($id) {
     $project = ProjectModel::findOrFail($id);
 
