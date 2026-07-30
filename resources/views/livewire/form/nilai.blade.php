@@ -1,93 +1,110 @@
 <div class="w-full">
-    <div class="mb-6 border-b pb-4 dark:border-gray-700">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Input Nilai Magang</h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ $user->nama ?? '-' }}</p>
+    <!-- Header Modal -->
+    <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4">
+        <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Input Nilai Magang</h2>
+        <p class="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 mt-1">
+            {{ $user->nama ?? '-' }}
+        </p>
     </div>
 
-    <form wire:submit.prevent="simpan" class="space-y-5">
+    <!-- Form Input Nilai -->
+    <form wire:submit.prevent="simpan" class="space-y-4">
 
+        <!-- Kriteria 1 -->
         <div>
-            <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
-                1. Kedisiplinan dan Profesionalisme (Integritas Work Ethic)
+            <label for="kedisiplinan" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                1. Kedisiplinan & Profesionalisme (Integritas Work Ethic)
             </label>
             <input 
-                type="number" min="0" max="100"
+                type="number" min="0" max="100" id="kedisiplinan"
                 wire:model="kedisiplinan"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white @error('kedisiplinan') border-red-500 @enderror"
+                placeholder="0 - 100"
+                class="bg-gray-50 dark:bg-gray-800/60 border @error('kedisiplinan') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
             >
-            @error('kedisiplinan') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+            @error('kedisiplinan') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
         </div>
 
+        <!-- Kriteria 2 -->
         <div>
-            <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
-                2. Kemampuan Teknis dan Implementasi Tugas (Hard Skills)
+            <label for="kemampuan_teknis" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                2. Kemampuan Teknis & Implementasi Tugas (Hard Skills)
             </label>
             <input 
-                type="number" min="0" max="100"
+                type="number" min="0" max="100" id="kemampuan_teknis"
                 wire:model="kemampuan_teknis"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white @error('kemampuan_teknis') border-red-500 @enderror"
+                placeholder="0 - 100"
+                class="bg-gray-50 dark:bg-gray-800/60 border @error('kemampuan_teknis') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
             >
-            @error('kemampuan_teknis') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+            @error('kemampuan_teknis') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
         </div>
 
+        <!-- Kriteria 3 -->
         <div>
-            <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+            <label for="problem_solving" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 3. Kemampuan Logika Pemecahan Masalah (Problem Solving)
             </label>
             <input 
-                type="number" min="0" max="100"
+                type="number" min="0" max="100" id="problem_solving"
                 wire:model="problem_solving"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white @error('problem_solving') border-red-500 @enderror"
+                placeholder="0 - 100"
+                class="bg-gray-50 dark:bg-gray-800/60 border @error('problem_solving') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
             >
-            @error('problem_solving') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+            @error('problem_solving') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
         </div>
 
+        <!-- Kriteria 4 -->
         <div>
-            <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
-                4. Komunikasi dan Kerja Sama Tim (Soft Skills)
+            <label for="komunikasi_kerjasama" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                4. Komunikasi & Kerja Sama Tim (Soft Skills)
             </label>
             <input 
-                type="number" min="0" max="100"
+                type="number" min="0" max="100" id="komunikasi_kerjasama"
                 wire:model="komunikasi_kerjasama"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white @error('komunikasi_kerjasama') border-red-500 @enderror"
+                placeholder="0 - 100"
+                class="bg-gray-50 dark:bg-gray-800/60 border @error('komunikasi_kerjasama') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
             >
-            @error('komunikasi_kerjasama') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+            @error('komunikasi_kerjasama') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
         </div>
 
+        <!-- Kriteria 5 -->
         <div>
-            <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
-                5. Kualitas dan Ketepatan Waktu Output Kerja (Deliverables)
+            <label for="kualitas_ketepatan" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                5. Kualitas & Ketepatan Waktu Output Kerja (Deliverables)
             </label>
             <input 
-                type="number" min="0" max="100"
+                type="number" min="0" max="100" id="kualitas_ketepatan"
                 wire:model="kualitas_ketepatan"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white @error('kualitas_ketepatan') border-red-500 @enderror"
+                placeholder="0 - 100"
+                class="bg-gray-50 dark:bg-gray-800/60 border @error('kualitas_ketepatan') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
             >
-            @error('kualitas_ketepatan') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+            @error('kualitas_ketepatan') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
         </div>
 
+        <!-- Catatan Tambahan -->
         <div>
-            <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+            <label for="catatan" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Catatan Tambahan (Opsional)
             </label>
             <textarea 
+                id="catatan"
                 wire:model="catatan" rows="3"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                placeholder="Catatan evaluasi tambahan..."
+                class="bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
+                placeholder="Tulis catatan evaluasi atau masukan tambahan..."
             ></textarea>
         </div>
 
-        <div class="flex items-center justify-between gap-3 pt-4 border-t dark:border-gray-700">
+        <!-- Footer / Action Buttons -->
+        <div class="flex items-center justify-between gap-3 pt-5 border-t border-gray-200 dark:border-gray-800">
             <!-- Tombol Cetak PDF (Sisi Kiri) -->
             <div>
                 @if($sudahAdaNilai)
                     <a 
                         href="{{ route('cetak.nilai', ['userId' => $userId]) }}" 
                         target="_blank"
-                        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 transition"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 border border-red-200 dark:border-red-500/20 rounded-2xl transition"
                     >
-                        <svg class="w-4 h-4 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M5 2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.414A2 2 0 0 0 16.414 6L13 2.586A2 2 0 0 0 11.586 2H5Zm0 2h6v3a1 1 0 0 0 1 1h3v8H5V4Z"/>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         Cetak PDF
                     </a>
@@ -99,13 +116,13 @@
                 <button 
                     type="button"
                     wire:click="tutup"
-                    class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                    class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition"
                 >
                     Batal
                 </button>
                 <button 
                     type="submit"
-                    class="px-5 py-2.5 text-sm font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700"
+                    class="px-5 py-2.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-2xl shadow-md shadow-blue-600/20 transition"
                 >
                     Simpan
                 </button>
