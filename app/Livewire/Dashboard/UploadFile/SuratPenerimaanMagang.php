@@ -4,6 +4,7 @@ namespace App\Livewire\Dashboard\UploadFIle;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Models\file as FileModel;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -17,14 +18,15 @@ class SuratPenerimaanMagang extends Component
     use WithPagination, WithFileUploads;
 
     public string $search = '';
-    public $files = []; // menampung file per user_id sementara
+    public $files = [];
+
+    protected $namaFileKategori = 'surat_penerimaan_magang';
 
     public function updatingSearch()
     {
         $this->resetPage();
     }
 
-    // Dipanggil otomatis tiap kali salah satu input file di 'files' array berubah
     public function updatedFiles($value, $key)
     {
         $userId = $key;
@@ -38,18 +40,27 @@ class SuratPenerimaanMagang extends Component
         $user = User::findOrFail($userId);
         $file = $this->files[$userId];
 
-        if ($user->surat_penerimaan && Storage::disk('public')->exists($user->surat_penerimaan)) {
-            Storage::disk('public')->delete($user->surat_penerimaan);
+        $fileLama = FileModel::where('user_id', $userId)
+            ->where('nama_file', $this->namaFileKategori)
+            ->first();
+
+        if ($fileLama && Storage::disk('public')->exists($fileLama->file)) {
+            Storage::disk('public')->delete($fileLama->file);
         }
 
         $extension = $file->getClientOriginalExtension();
         $namaFile = Str::slug($user->nama) . '-suratpenerimaanmagang.' . $extension;
+        $path = $file->storeAs('files', $namaFile, 'public');
 
-        $path = $file->storeAs('suratpenerimaanmagang', $namaFile, 'public');
-
-        $user->update([
-            'surat_penerimaan' => $path,
-        ]);
+        FileModel::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'nama_file' => $this->namaFileKategori,
+            ],
+            [
+                'file' => $path,
+            ]
+        );
 
         unset($this->files[$userId]);
 
@@ -60,6 +71,9 @@ class SuratPenerimaanMagang extends Component
     {
         $users = User::query()
             ->where('role', UserRole::PKL->value)
+            ->with(['files' => function ($query) {
+                $query->where('nama_file', $this->namaFileKategori);
+            }])
             ->when($this->search, function ($query) {
                 $query->where('nama', 'like', '%' . $this->search . '%')
                       ->orWhere('email', 'like', '%' . $this->search . '%');

@@ -52,16 +52,14 @@
                                 {{ $user->nama }}
                             </th>
                             <td class="px-6 py-4 text-slate-400">{{ $user->asal_sekolah }}</td>
-                            <td class="px-6 py-4 align-middle">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium tracking-wide uppercase border
-                                    {{ $user->surat_penerimaan 
-                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
-                                    }}">
-                                    <span class="w-1.5 h-1.5 rounded-full {{ $user->surat_penerimaan ? 'bg-emerald-400' : 'bg-rose-400' }}"></span>
-                                    {{ $user->surat_penerimaan ? 'Sudah Upload' : 'Belum Upload' }}
-                                </span>
-                            </td>
+                           <td class="px-6 py-4">
+    @php
+        $suratFile = $user->files->first(); // sudah difilter di query jadi cuma kategori surat_penerimaan_magang
+    @endphp
+    <span class="capitalize px-2.5 py-0.5 text-xs font-semibold rounded {{ $suratFile ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
+        {{ $suratFile ? 'Sudah Upload' : 'Belum Upload' }}
+    </span>
+</td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center justify-center">
                                     <!-- Input File Tersembunyi -->

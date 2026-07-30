@@ -36,46 +36,47 @@
             </div>
         @endif
 
-        <!-- Section Filter -->
-        <div class="bg-gray-800 p-5 rounded-xl border border-gray-700/60 shadow-lg mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between transition-all duration-300">
-            
-            <!-- Filter Range Tanggal -->
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-                <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                <input 
-                    type="date" 
-                    wire:model.live="tanggalMulai"
-                    class="bg-gray-900 border border-gray-700 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-inner"
-                >
-                <span class="text-gray-500 text-xs">s/d</span>
-                <input 
-                    type="date" 
-                    wire:model.live="tanggalSelesai"
-                    class="bg-gray-900 border border-gray-700 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-inner"
-                >
+       <!-- Section Filter -->
+<div class="bg-gray-800 p-5 rounded-xl border border-gray-700/60 shadow-lg mb-6 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between transition-all duration-300">
+    
+    <!-- Filter Range Tanggal -->
+    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+        <svg class="w-4 h-4 text-gray-500 shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        
+        <input 
+            type="date" 
+            wire:model.live="tanggalMulai"
+            class="bg-gray-900 border border-gray-700 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-inner w-full sm:w-auto min-w-0 flex-1 sm:flex-initial"
+        >
+        <span class="text-gray-500 text-xs shrink-0">s/d</span>
+        <input 
+            type="date" 
+            wire:model.live="tanggalSelesai"
+            class="bg-gray-900 border border-gray-700 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-inner w-full sm:w-auto min-w-0 flex-1 sm:flex-initial"
+        >
 
-                @if($tanggalMulai || $tanggalSelesai)
-                    <button 
-                        type="button"
-                        wire:click="resetFilterTanggal"
-                        class="text-xs text-blue-400 hover:text-blue-300 whitespace-nowrap ml-1"
-                    >
-                        Reset
-                    </button>
-                @endif
-            </div>
+        @if($tanggalMulai || $tanggalSelesai)
+            <button 
+                type="button"
+                wire:click="resetFilterTanggal"
+                class="text-xs text-blue-400 hover:text-blue-300 whitespace-nowrap shrink-0"
+            >
+                Reset
+            </button>
+        @endif
+    </div>
 
-            <!-- Filter Status -->
-            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                <label class="text-xs text-gray-400 font-medium whitespace-nowrap">Filter Status:</label>
-                <select wire:model.live="filterStatus" class="bg-gray-900 border border-gray-700 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-inner transition cursor-pointer">
-                    <option value="semua">Semua Status Kehadiran</option>
-                    <option value="hadir">Status: HADIR</option>
-                    <option value="izin">Status: IZIN</option>
-                    <option value="sakit">Status: SAKIT</option>
-                </select>
-            </div>
-        </div>
+    <!-- Filter Status -->
+    <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+        <label class="text-xs text-gray-400 font-medium whitespace-nowrap shrink-0">Filter Status:</label>
+        <select wire:model.live="filterStatus" class="bg-gray-900 border border-gray-700 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-inner transition cursor-pointer w-full lg:w-auto">
+            <option value="semua">Semua Status Kehadiran</option>
+            <option value="hadir">Status: HADIR</option>
+            <option value="izin">Status: IZIN</option>
+            <option value="sakit">Status: SAKIT</option>
+        </select>
+    </div>
+</div>
 
         <!-- Section Tabel Riwayat -->
         <div class="bg-gray-800 p-6 rounded-xl border border-gray-700/60 shadow-xl w-full mb-8 min-h-[400px]">
@@ -134,7 +135,7 @@
 
                                 <!-- Kolom Logbook Harian -->
                                 <td class="px-6 py-4 max-w-sm text-xs text-gray-300 leading-relaxed">
-                                    {{ $item['logbook'] ?? 'Tidak mengisi logbook (Presensi Masuk)' }}
+                                    {{ $item['logbook'] ?? '-' }}
                                 </td>
 
                                 <!-- Kolom Aksi Edit -->

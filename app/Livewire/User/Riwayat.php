@@ -6,7 +6,7 @@ use App\Models\log_book;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-
+  use App\Models\presensi as PresensiModel;
 #[Layout('layouts.user')]
 class Riwayat extends Component
 {
@@ -104,60 +104,51 @@ class Riwayat extends Component
         $this->resetValidation();
     }
 
-    public function render()
-    {
-        $userId = auth()->id();
+  
 
-        $logBooks = log_book::with(['presensi', 'user'])
-            ->where('user_id', $userId)
-            ->when($this->filterStatus !== 'semua', function ($query) {
-                $query->whereHas('presensi', function ($q) {
-                    $q->where('status_kehadiran', strtolower($this->filterStatus));
-                });
-            })
-            ->when($this->tanggalMulai, function ($query) {
-                $query->whereHas('presensi', function ($q) {
-                    $q->whereDate('tanggal', '>=', $this->tanggalMulai);
-                });
-            })
-            ->when($this->tanggalSelesai, function ($query) {
-                $query->whereHas('presensi', function ($q) {
-                    $q->whereDate('tanggal', '<=', $this->tanggalSelesai);
-                });
-            })
-            ->latest('log_book_id')
-            ->paginate(10);
+public function render()
+{
+    $userId = auth()->id();
 
-        $dataRiwayat = $logBooks->through(function ($logBook) {
-            $presensi = $logBook->presensi;
+    $presensis = PresensiModel::with(['logBooks'])
+        ->where('user_id', $userId)
+        ->when($this->filterStatus !== 'semua', function ($query) {
+            $query->where('status_kehadiran', strtolower($this->filterStatus));
+        })
+        ->when($this->tanggalMulai, function ($query) {
+            $query->whereDate('tanggal', '>=', $this->tanggalMulai);
+        })
+        ->when($this->tanggalSelesai, function ($query) {
+            $query->whereDate('tanggal', '<=', $this->tanggalSelesai);
+        })
+        ->latest('presensi_id')
+        ->paginate(10);
 
-            return [
-                'id'         => $logBook->log_book_id,
-                'nama'       => $logBook->user->nama ?? '-',
-                'sekolah'    => $logBook->user->asal_sekolah ?? '-',
-                'tanggal'    => $presensi && $presensi->tanggal ? $presensi->tanggal->translatedFormat('l, d/m/Y') : '-',
-                'jam_masuk'  => $presensi && $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) . ' WIB' : '-',
-                'jam_pulang' => $presensi && $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) . ' WIB' : '-',
-                'status'     => $presensi ? strtoupper($presensi->status_kehadiran?->value ?? '-') : '-',
-                'logbook'    => $logBook->kegiatan ?? '-',
-                'latitude'   => $presensi->latitude ?? null,
-                'longitude'  => $presensi->longitude ?? null,
-            ];
-        });
+    $dataRiwayat = $presensis->through(function ($presensi) {
+        $logBook = $presensi->logBooks->first();
 
-        // Statistik total (murni total keseluruhan, tidak terpengaruh pagination/filter)
-        $totalHadir = log_book::where('user_id', $userId)
-            ->whereHas('presensi', fn ($q) => $q->where('status_kehadiran', 'hadir'))
-            ->count();
+        return [
+            'id'         => $logBook->log_book_id ?? null,
+            'tanggal'    => $presensi->tanggal ? $presensi->tanggal->translatedFormat('l, d/m/Y') : '-',
+            'jam_masuk'  => $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) . ' WIB' : '-',
+            'jam_pulang' => $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) . ' WIB' : '-',
+            'status'     => strtoupper($presensi->status_kehadiran?->value ?? '-'),
+            'logbook'    => $logBook->kegiatan ?? null, // null berarti belum diisi (masih presensi masuk)
+        ];
+    });
 
-        $totalIzinSakit = log_book::where('user_id', $userId)
-            ->whereHas('presensi', fn ($q) => $q->whereIn('status_kehadiran', ['izin', 'sakit']))
-            ->count();
+    $totalHadir = PresensiModel::where('user_id', $userId)
+        ->where('status_kehadiran', 'hadir')
+        ->count();
 
-        return view('livewire.user.riwayat', [
-            'dataRiwayat' => $dataRiwayat,
-            'totalHadir' => $totalHadir,
-            'totalIzinSakit' => $totalIzinSakit,
-        ]);
-    }
+    $totalIzinSakit = PresensiModel::where('user_id', $userId)
+        ->whereIn('status_kehadiran', ['izin', 'sakit'])
+        ->count();
+
+    return view('livewire.user.riwayat', [
+        'dataRiwayat' => $dataRiwayat,
+        'totalHadir' => $totalHadir,
+        'totalIzinSakit' => $totalIzinSakit,
+    ]);
+}
 }

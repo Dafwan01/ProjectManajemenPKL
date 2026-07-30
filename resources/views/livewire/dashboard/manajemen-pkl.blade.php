@@ -28,90 +28,95 @@
         </div>
         
         <!-- Tabel Data (READ) -->
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-slate-300">
-                <thead class="text-xs uppercase bg-[#080c14] text-slate-400 border-b border-slate-800/80">
-                    <tr>
-                        <th scope="col" class="px-6 py-4">Nama</th>
-                        <th scope="col" class="px-6 py-4">Asal Sekolah</th>
-                        <th scope="col" class="px-6 py-4">Status</th>
-                        <th scope="col" class="px-6 py-4">Tanggal Masuk</th>
-                        <th scope="col" class="px-6 py-4">Tanggal Keluar</th>
-                        <th scope="col" class="px-6 py-4">Mentor</th>
-                        <th scope="col" class="px-6 py-4 text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/60">
-                    @forelse($users as $user)
-                        @php
-                            $isAktif = strtolower($user->status?->value ?? $user->status ?? '') === 'aktif';
-                        @endphp
-                        <tr class="bg-[#0d1322] hover:bg-slate-800/40 transition">
-                            <th scope="row" class="px-6 py-4 font-semibold text-white whitespace-nowrap">
-                                {{ $user->nama }}
-                            </th>
-                            <td class="px-6 py-4 text-slate-400">{{ $user->asal_sekolah }}</td>
-                            <td class="px-6 py-4 align-middle">
-                                <span class="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium tracking-wide uppercase border
-                                    {{ $isAktif 
-                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
-                                    }}">
-                                    <span class="w-1.5 h-1.5 rounded-full {{ $isAktif ? 'bg-emerald-400' : 'bg-rose-400' }}"></span>
-                                    {{ $user->status }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-slate-300">{{ optional($user->tanggal_mulai)->format('d M Y') }}</td>
-                            <td class="px-6 py-4 text-slate-300">{{ optional($user->tanggal_Akhir)->format('d M Y') ?? '-' }}</td>
-                            <td class="px-6 py-4 text-slate-300">{{ $user->mentor }}</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center justify-center gap-1.5">
-                                    <!-- Edit -->
-                                    <button 
-                                        type="button" 
-                                        wire:click="openEditProfile({{ $user->user_id }})" 
-                                        title="Edit Profil"
-                                        class="p-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                    </button>
+      <!-- Tabel Data (READ) -->
+<div class="overflow-x-auto lg:overflow-x-visible">
+    <table class="w-full table-fixed text-sm text-slate-300">
+    <thead class="text-xs uppercase bg-[#080c14] text-slate-400 border-b border-slate-800/80">
+        <tr>
+            <th scope="col" class="px-4 py-4 w-[15%] text-center">Nama</th>
+            <th scope="col" class="px-4 py-4 w-[17%] text-center">Asal Sekolah</th>
+            <th scope="col" class="px-4 py-4 w-[9%] text-center">Status</th>
+            <th scope="col" class="px-4 py-4 w-[11%] text-center">Tanggal Masuk</th>
+            <th scope="col" class="px-4 py-4 w-[11%] text-center">Tanggal Keluar</th>
+            <th scope="col" class="px-4 py-4 w-[15%] text-center">Mentor</th>
+            <th scope="col" class="px-4 py-4 w-[22%] text-center">Aksi</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-800/60">
+        @forelse($users as $user)
+            @php
+                $isAktif = strtolower($user->status?->value ?? $user->status ?? '') === 'aktif';
+            @endphp
+            <tr class="bg-[#0d1322] hover:bg-slate-800/40 transition align-middle">
+                <th scope="row" class="px-4 py-4 font-semibold text-white text-center">
+                    <span class="block line-clamp-2 break-words">{{ $user->nama }}</span>
+                </th>
+                <td class="px-4 py-4 text-slate-400 text-center">
+                    <span class="block line-clamp-2 break-words">{{ $user->asal_sekolah }}</span>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium uppercase border whitespace-nowrap
+                        {{ $isAktif 
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                            : 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
+                        }}">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ $isAktif ? 'bg-emerald-400' : 'bg-rose-400' }}"></span>
+                        {{ $user->status }}
+                    </span>
+                </td>
+                <td class="px-4 py-4 text-slate-300 text-center whitespace-nowrap">{{ optional($user->tanggal_mulai)->format('d M Y') }}</td>
+                <td class="px-4 py-4 text-slate-300 text-center whitespace-nowrap">{{ optional($user->tanggal_Akhir)->format('d M Y') ?? '-' }}</td>
+                <td class="px-4 py-4 text-slate-300 text-center">
+                    <span class="block line-clamp-2 break-words">{{ $user->mentor }}</span>
+                </td>
+                <td class="px-4 py-4">
+                    <div class="flex items-center justify-center gap-1">
+                        <!-- Edit -->
+                        <button 
+                            type="button" 
+                            wire:click="openEditProfile({{ $user->user_id }})" 
+                            title="Edit Profil"
+                            class="p-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 transition"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </button>
 
-                                    <!-- Jadwal -->
-                                    <button 
-                                        type="button" 
-                                        wire:click="openJadwalModal({{ $user->user_id }})" 
-                                        title="Jadwal Masuk"
-                                        class="p-2 rounded-xl text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                    </button>
+                        <!-- Jadwal -->
+                        <button 
+                            type="button" 
+                            wire:click="openJadwalModal({{ $user->user_id }})" 
+                            title="Jadwal Masuk"
+                            class="p-2 rounded-xl text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/20 transition"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </button>
 
-                                    <!-- Project -->
-                                    <button 
-                                        type="button" 
-                                        wire:click="openProjectModal({{ $user->user_id }})" 
-                                        title="Detail Project"
-                                        class="p-2 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20 transition"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                        <!-- Project -->
+                        <button 
+                            type="button" 
+                            wire:click="openProjectModal({{ $user->user_id }})" 
+                            title="Detail Project"
+                            class="p-2 rounded-xl text-slate-400 hover:text-purple-400 hover:bg-purple-500/10 border border-transparent hover:border-purple-500/20 transition"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="7" class="px-6 py-10 text-center text-slate-500">Tidak ada data ditemukan.</td>
+            </tr>
+        @endforelse
+    </tbody>
+</table>
+</div>
 
         <!-- Pagination -->
         <div class="p-4 border-t border-slate-800/80 bg-[#0d1322]">

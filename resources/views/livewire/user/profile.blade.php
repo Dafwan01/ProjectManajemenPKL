@@ -245,27 +245,27 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="rounded-2xl border border-gray-700 bg-gray-900 p-5">
-                        <p class="text-xs text-gray-400 uppercase tracking-wider">Nama Lengkap</p>
-                        <p class="mt-2 text-sm text-white">{{ $nama }}</p>
-                    </div>
-                    <div class="rounded-2xl border border-gray-700 bg-gray-900 p-5">
-                        <p class="text-xs text-gray-400 uppercase tracking-wider">Email</p>
-                        <p class="mt-2 text-sm text-white">{{ $email }}</p>
-                    </div>
-                </div>
+               <div class="grid grid-cols-2 gap-4">
+    <div class="rounded-2xl border border-gray-700 bg-gray-900 p-5 min-w-0">
+        <p class="text-xs text-gray-400 uppercase tracking-wider">Nama Lengkap</p>
+        <p class="mt-2 text-sm text-white break-words">{{ $nama }}</p>
+    </div>
+    <div class="rounded-2xl border border-gray-700 bg-gray-900 p-5 min-w-0">
+        <p class="text-xs text-gray-400 uppercase tracking-wider">Email</p>
+        <p class="mt-2 text-sm text-white break-all">{{ $email }}</p>
+    </div>
+</div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="rounded-2xl border border-gray-700 bg-gray-900 p-5">
-                        <p class="text-xs text-gray-400 uppercase tracking-wider">Asal Sekolah / Universitas</p>
-                        <p class="mt-2 text-sm text-white">{{ $asal_sekolah ?: '-' }}</p>
-                    </div>
-                    <div class="rounded-2xl border border-gray-700 bg-gray-900 p-5">
-                        <p class="text-xs text-gray-400 uppercase tracking-wider">Nama Mentor</p>
-                        <p class="mt-2 text-sm text-white">{{ $mentor ?: '-' }}</p>
-                    </div>
-                </div>
+<div class="grid grid-cols-2 gap-4">
+    <div class="rounded-2xl border border-gray-700 bg-gray-900 p-5 min-w-0">
+        <p class="text-xs text-gray-400 uppercase tracking-wider">Asal Sekolah / Universitas</p>
+        <p class="mt-2 text-sm text-white break-words">{{ $asal_sekolah ?: '-' }}</p>
+    </div>
+    <div class="rounded-2xl border border-gray-700 bg-gray-900 p-5 min-w-0">
+        <p class="text-xs text-gray-400 uppercase tracking-wider">Nama Mentor</p>
+        <p class="mt-2 text-sm text-white break-words">{{ $mentor ?: '-' }}</p>
+    </div>
+</div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="rounded-2xl border border-gray-700 bg-gray-900 p-5">
