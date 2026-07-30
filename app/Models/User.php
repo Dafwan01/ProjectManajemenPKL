@@ -36,6 +36,10 @@ class User extends Authenticatable
         'foto',
         'skill',
         'sertifikat',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'jenis_kelamin',
+        'jurusan',
     ];
 
     protected $hidden = [
@@ -47,6 +51,7 @@ class User extends Authenticatable
         'password' => 'hashed',
         'tanggal_mulai' => 'datetime',
         'tanggal_Akhir' => 'date',
+        'tanggal_lahir' => 'date',
 
         // Casting Enum di sini
         'role' => UserRole::class,

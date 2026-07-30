@@ -17,15 +17,21 @@ class Dokumen extends Component
     public $nama = '';
     public $uploadedFiles = [];
 
+    // State Modal & Preview
+    public $showModal = false;
+    public $selectedFile = null;
+    public $previewUrl = '';
+    public $fileExtension = '';
+
     protected $rules = [
-        'fileProject' => 'required|file|mimes:zip,rar|max:51200',
+        'fileProject' => 'required|file|mimes:zip,rar,pdf,png,jpg,jpeg|max:51200',
         'nama' => 'required|string|max:255',
     ];
 
     protected $messages = [
-        'fileProject.mimes' => 'File harus berformat ZIP atau RAR.',
+        'fileProject.mimes' => 'Format file yang diperbolehkan: ZIP, RAR, PDF, PNG, JPG.',
         'fileProject.max' => 'File maksimal 50MB.',
-        'fileProject.required' => 'Silakan unggah file ZIP/RAR.',
+        'fileProject.required' => 'Silakan unggah file.',
         'nama.required' => 'Nama file wajib diisi.',
         'nama.max' => 'Nama file maksimal 255 karakter.',
     ];
@@ -46,24 +52,15 @@ class Dokumen extends Component
             return;
         }
 
-        // 1. Ambil ekstensi file asli
         $extension = $this->fileProject->getClientOriginalExtension();
 
-        // 2. Sanitasi Nama User dan Nama File dari Input
-        // Mengubah spasi/karakter aneh menjadi dash (-)
         $userNameSanitized = Str::slug($user->nama ?? $user->name ?? 'user', '-');
         $fileNameSanitized = Str::slug($this->nama, '-');
 
-        // 3. Format: user-namafile.ext (contoh: john-doe-proposal-kerja.zip)
-        $customFileName = $userNameSanitized . '-' . $fileNameSanitized . '.' . $extension;
+        $customFileName = $userNameSanitized . '-' . $fileNameSanitized . '-' . time() . '.' . $extension;
 
-        // Jika ingin tetap ada timestamp unik di tengah biar tidak saling menimpa jika namanya sama:
-        // $customFileName = $userNameSanitized . '-' . $fileNameSanitized . '-' . time() . '.' . $extension;
-
-        // 4. Simpan ke storage
         $path = $this->fileProject->storeAs('files', $customFileName, 'public');
 
-        // 5. Insert ke Database
         FileModel::create([
             'user_id'   => $user->user_id,
             'nama_file' => $this->nama,
@@ -73,6 +70,41 @@ class Dokumen extends Component
         $this->reset(['fileProject', 'nama']);
         $this->loadUploadedFiles();
         session()->flash('message', 'File berhasil disimpan di storage pribadi Anda.');
+    }
+
+    // Modal / Direct Preview Action
+    public function openPreviewModal($fileId)
+    {
+        $this->selectedFile = FileModel::where('file_id', $fileId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if (Storage::disk('public')->exists($this->selectedFile->file)) {
+            $url = Storage::disk('public')->url($this->selectedFile->file);
+            $extension = strtolower(pathinfo($this->selectedFile->file, PATHINFO_EXTENSION));
+
+            // Jika PDF: Buka langsung di tab baru (Native Browser Viewer)
+            if ($extension === 'pdf') {
+                $this->js("window.open('{$url}', '_blank');");
+                return;
+            }
+
+            // Selain PDF: Tampilkan Modal Preview (PNG, JPG, ZIP, RAR, dll)
+            $this->previewUrl = $url;
+            $this->fileExtension = $extension;
+            $this->showModal = true;
+        } else {
+            session()->flash('error', 'File tidak ditemukan di server.');
+        }
+    }
+
+    // Modal Action: Tutup modal
+    public function closePreviewModal()
+    {
+        $this->showModal = false;
+        $this->selectedFile = null;
+        $this->previewUrl = '';
+        $this->fileExtension = '';
     }
 
     public function downloadFile($fileId)

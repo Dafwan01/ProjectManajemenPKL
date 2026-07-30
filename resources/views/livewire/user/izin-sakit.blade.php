@@ -2,24 +2,24 @@
     <div class="w-full mx-auto max-w-4xl">
         
         <!-- Header Judul Ringkas -->
-        <div class="mb-4 border-b border-gray-800 pb-3">
-            <h1 class="text-xl font-bold text-white tracking-wide">PENGAJUAN IZIN, SAKIT & ABSEN</h1>
-            <p class="text-xs text-gray-400 mt-0.5">Formulir permohonan ketidakhadiran magang untuk ketiadaan sementara karena izin, sakit, atau absen.</p>
+        <div class="mb-4 border-b border-gray-200 dark:border-gray-800 pb-3">
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white tracking-wide">PENGAJUAN IZIN, SAKIT & ABSEN</h1>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Formulir permohonan ketidakhadiran magang untuk ketiadaan sementara karena izin, sakit, atau absen.</p>
         </div>
 
         <!-- Flash Message Notification -->
         @if (session()->has('message'))
-            <div class="mb-4 p-3 bg-green-900/40 border border-green-600/60 text-green-300 text-xs rounded-lg flex items-center justify-between shadow">
+            <div class="mb-4 p-3 bg-green-100 dark:bg-green-900/40 border border-green-400 dark:border-green-600/60 text-green-700 dark:text-green-300 text-xs rounded-lg flex items-center justify-between shadow">
                 <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <svg class="w-4 h-4 text-green-500 dark:text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     <span>{{ session('message') }}</span>
                 </div>
-                <button type="button" class="text-green-400 hover:text-white text-xs" @click="$el.parentElement.remove()">✕</button>
+                <button type="button" class="text-green-600 dark:text-green-400 hover:text-gray-900 dark:hover:text-white text-xs" @click="$el.parentElement.remove()">✕</button>
             </div>
         @endif
 
         <!-- Card Container Compact Form -->
-        <div class="bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-700/60 shadow-lg">
+        <div class="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-lg">
             <form wire:submit.prevent="kirimPengajuan" class="space-y-4">
                 
                 <!-- Baris 1: Dynamic Grid bergantung tipe pengajuan -->
@@ -27,55 +27,55 @@
                     
                     <!-- Dropdown Tipe Pengajuan -->
                     <div>
-                        <label for="tipePengajuan" class="block text-[11px] font-medium text-gray-300 mb-1">Tipe Pengajuan</label>
+                        <label for="tipePengajuan" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe Pengajuan</label>
                         <div class="relative">
                             <select 
                                 id="tipePengajuan" 
                                 wire:model.live="tipePengajuan"
-                                class="w-full bg-gray-900 border border-gray-700 text-white text-xs rounded-lg px-3 py-2 pr-8 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer">
+                                class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg px-3 py-2 pr-8 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer">
                                 <option value="izin">Izin</option>
                                 <option value="sakit">Sakit</option>
                                 <option value="absen">Absen</option>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400 dark:text-gray-400">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </div>
                         </div>
                         @error('tipePengajuan')
-                            <span class="text-[10px] text-red-400 mt-0.5 block">{{ $message }}</span>
+                            <span class="text-[10px] text-red-500 dark:text-red-400 mt-0.5 block">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <!-- Tanggal Mulai / Tanggal Absen -->
                     <div>
-                        <label for="tanggalMulai" class="block text-[11px] font-medium text-gray-300 mb-1">
+                        <label for="tanggalMulai" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">
                             {{ $tipePengajuan === 'absen' ? 'Tanggal' : 'Tanggal Mulai' }}
                         </label>
                         <input 
                             type="date" 
                             id="tanggalMulai" 
                             wire:model.live="tanggalMulai"
-                            class="w-full bg-gray-900 border border-gray-700 text-white text-xs rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none" 
+                            class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none" 
                         />
                         @error('tanggalMulai')
-                            <span class="text-[10px] text-red-400 mt-0.5 block">{{ $message }}</span>
+                            <span class="text-[10px] text-red-500 dark:text-red-400 mt-0.5 block">{{ $message }}</span>
                         @enderror
                     </div>
 
                     <!-- Tanggal Selesai (Hanya muncul jika Izin atau Sakit) -->
                     @if ($tipePengajuan !== 'absen')
                         <div>
-                            <label for="tanggalSelesai" class="block text-[11px] font-medium text-gray-300 mb-1">Tanggal Selesai</label>
+                            <label for="tanggalSelesai" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Selesai</label>
                             <input 
                                 type="date" 
                                 id="tanggalSelesai" 
                                 wire:model="tanggalSelesai"
-                                class="w-full bg-gray-900 border border-gray-700 text-white text-xs rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none" 
+                                class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none" 
                             />
                             @error('tanggalSelesai')
-                                <span class="text-[10px] text-red-400 mt-0.5 block">{{ $message }}</span>
+                                <span class="text-[10px] text-red-500 dark:text-red-400 mt-0.5 block">{{ $message }}</span>
                             @enderror
                         </div>
                     @endif
@@ -83,21 +83,21 @@
 
                 <!-- Baris 2: Textarea Alasan -->
                 <div>
-                    <label for="alasan" class="block text-[11px] font-medium text-gray-300 mb-1">Alasan / Keterangan</label>
+                    <label for="alasan" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Alasan / Keterangan</label>
                     <textarea 
                         id="alasan" 
                         wire:model="alasan" 
                         rows="2" 
                         placeholder="Tuliskan alasan pengajuan secara jelas..." 
-                        class="w-full bg-gray-900 border border-gray-700 text-white text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none leading-relaxed resize-none"></textarea>
+                        class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none leading-relaxed resize-none"></textarea>
                     @error('alasan')
-                        <span class="text-[10px] text-red-400 mt-0.5 block">{{ $message }}</span>
+                        <span class="text-[10px] text-red-500 dark:text-red-400 mt-0.5 block">{{ $message }}</span>
                     @enderror
                 </div>
 
                 <!-- Baris 3: Tombol Submit Compact -->
                 <div class="flex flex-col items-end gap-2 pt-1">
-                    <p class="text-[10px] text-gray-400 italic">Silakan lengkapi tanggal dan alasan keterangan sebelum mengirim.</p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">Silakan lengkapi tanggal dan alasan keterangan sebelum mengirim.</p>
                     <button 
                         type="submit" 
                         class="w-full sm:w-auto text-white bg-blue-600 hover:bg-blue-500 focus:ring-2 focus:ring-blue-800 font-medium rounded-lg text-xs px-5 py-2.5 transition duration-150 flex items-center justify-center gap-2 shadow-md">
@@ -112,14 +112,14 @@
 
       <!-- Riwayat Pengajuan -->
 <div class="w-full mx-auto max-w-4xl mt-8">
-    <div class="mb-4 border-b border-gray-800 pb-3">
-        <h2 class="text-lg font-bold text-white tracking-wide">Riwayat Pengajuan</h2>
-        <p class="text-xs text-gray-400 mt-0.5">Daftar pengajuan izin, sakit, dan absen yang sudah pernah dikirim.</p>
+    <div class="mb-4 border-b border-gray-200 dark:border-gray-800 pb-3">
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white tracking-wide">Riwayat Pengajuan</h2>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Daftar pengajuan izin, sakit, dan absen yang sudah pernah dikirim.</p>
     </div>
 
-    <div class="overflow-x-auto rounded-xl border border-gray-700/60 bg-gray-900 shadow-sm">
-        <table class="min-w-full text-left text-xs text-gray-300">
-            <thead class="bg-gray-800 text-gray-400 uppercase text-[10px] tracking-wider">
+    <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-900 shadow-sm">
+        <table class="min-w-full text-left text-xs text-gray-600 dark:text-gray-300">
+            <thead class="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase text-[10px] tracking-wider">
                 <tr>
                     <th class="px-3 py-3">Nama</th>
                     <th class="px-3 py-3">Tanggal</th>
@@ -139,25 +139,25 @@
                             ? $tglAwal . ' - ' . $tglAkhir 
                             : $tglAwal;
 
-                        // Color Badge Status
+                        // Color Badge Status (light + dark variant)
                         $statusBadge = match(strtolower($item->status)) {
-                            'disetujui', 'diterima' => 'bg-emerald-900/60 text-emerald-300 border border-emerald-600/50',
-                            'ditolak'              => 'bg-red-900/60 text-red-300 border border-red-600/50',
-                            default                => 'bg-yellow-900/60 text-yellow-300 border border-yellow-600/50',
+                            'disetujui', 'diterima' => 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-400 dark:border-emerald-600/50',
+                            'ditolak'              => 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 border border-red-400 dark:border-red-600/50',
+                            default                => 'bg-yellow-100 dark:bg-yellow-900/60 text-yellow-700 dark:text-yellow-300 border border-yellow-400 dark:border-yellow-600/50',
                         };
                     @endphp
-                    <tr class="border-t border-gray-800 hover:bg-gray-800/70 transition-colors">
+                    <tr class="border-t border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors">
                         <!-- NAMA -->
-                        <td class="px-3 py-3 text-gray-200 font-medium">{{ $nama }}</td>
+                        <td class="px-3 py-3 text-gray-800 dark:text-gray-200 font-medium">{{ $nama }}</td>
                         
                         <!-- TANGGAL -->
-                        <td class="px-3 py-3 text-gray-300 whitespace-nowrap">{{ $rangeTanggal }}</td>
+                        <td class="px-3 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ $rangeTanggal }}</td>
                         
                         <!-- TIPE PENGAJUAN (Izin / Sakit / Absen) -->
-                        <td class="px-3 py-3 uppercase font-semibold text-blue-400">{{ $item->jenis }}</td>
+                        <td class="px-3 py-3 uppercase font-semibold text-blue-600 dark:text-blue-400">{{ $item->jenis }}</td>
                         
                         <!-- ALASAN -->
-                        <td class="px-3 py-3 text-gray-300 truncate max-w-[20rem]" title="{{ $item->alasan }}">
+                        <td class="px-3 py-3 text-gray-600 dark:text-gray-300 truncate max-w-[20rem]" title="{{ $item->alasan }}">
                             {{ $item->alasan }}
                         </td>
                         
@@ -170,7 +170,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-3 py-6 text-center text-gray-500">Belum ada pengajuan yang tersimpan di database.</td>
+                        <td colspan="5" class="px-3 py-6 text-center text-gray-400 dark:text-gray-500">Belum ada pengajuan yang tersimpan di database.</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -1,6 +1,5 @@
 <!-- Modal Overlay dengan Background Blur -->
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-md p-4 overflow-y-auto">
-    
+<div class="fixed inset-0 z-50 flex justify-center items-start bg-gray-900/50 backdrop-blur-md p-4 overflow-y-auto">
     <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 p-6 space-y-5 my-8">
         
         <!-- Header Modal -->
@@ -37,7 +36,42 @@
                 </div>
             </div>
 
-            <!-- Baris 2: Asal Sekolah & Mentor -->
+            <!-- Baris 2 Tambahan: Tempat Lahir & Tanggal Lahir -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="tempat_lahir" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Tempat Lahir</label>
+                    <input type="text" id="tempat_lahir" wire:model="tempat_lahir" placeholder="Contoh: Jakarta" class="bg-gray-50 border @error('tempat_lahir') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    @error('tempat_lahir') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label for="tanggal_lahir" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Tanggal Lahir</label>
+                    <input type="date" id="tanggal_lahir" wire:model="tanggal_lahir" class="bg-gray-50 border @error('tanggal_lahir') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    @error('tanggal_lahir') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+            </div>
+
+            <!-- Baris 3 Tambahan: Jenis Kelamin & Jurusan -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="jenis_kelamin" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Jenis Kelamin</label>
+                    <select id="jenis_kelamin" wire:model="jenis_kelamin" class="bg-gray-50 border @error('jenis_kelamin') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+    <option value="">-- Pilih Jenis Kelamin --</option>
+    <!-- Ubah value jadi huruf kecil -->
+    <option value="laki-laki">Laki-laki</option>
+    <option value="perempuan">Perempuan</option>
+</select>
+                    @error('jenis_kelamin') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label for="jurusan" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Jurusan / Program Studi</label>
+                    <input type="text" id="jurusan" wire:model="jurusan" placeholder="Contoh: Teknik Informatika / RPL" class="bg-gray-50 border @error('jurusan') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    @error('jurusan') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                </div>
+            </div>
+
+            <!-- Baris 4: Asal Sekolah & Mentor -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="asal_sekolah" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Asal Sekolah / Universitas</label>
@@ -52,29 +86,29 @@
                 </div>
             </div>
 
-            <!-- Baris 3: Tanggal Mulai & Tanggal Akhir -->
+            <!-- Baris 5: Tanggal Mulai & Tanggal Akhir -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="tanggal_mulai" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Tanggal Mulai</label>
+                    <label for="tanggal_mulai" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Tanggal Mulai Magang</label>
                     <input type="date" id="tanggal_mulai" wire:model="tanggal_mulai" class="bg-gray-50 border @error('tanggal_mulai') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     @error('tanggal_mulai') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <label for="tanggal_akhir" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Tanggal Akhir</label>
+                    <label for="tanggal_akhir" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Tanggal Akhir Magang</label>
                     <input type="date" id="tanggal_akhir" wire:model="tanggal_akhir" class="bg-gray-50 border @error('tanggal_akhir') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     @error('tanggal_akhir') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                 </div>
             </div>
 
-            <!-- Baris 4: Skill -->
+            <!-- Baris 6: Skill -->
             <div>
-                <label for="skill" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Skill</label>
-                <textarea id="skill" wire:model="skill" rows="5" placeholder="Tuliskan skill pengguna, misalnya PHP, Laravel, Tailwind, dll." class="bg-gray-50 border @error('skill') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                <label for="skill" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Skill / Keahlian</label>
+                <textarea id="skill" wire:model="skill" rows="3" placeholder="Tuliskan skill pengguna, misalnya PHP, Laravel, Tailwind, dll." class="bg-gray-50 border @error('skill') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
                 @error('skill') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
             </div>
 
-            <!-- Baris 5: Password & Konfirmasi Password -->
+            <!-- Baris 7: Password & Konfirmasi Password -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="password" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">
@@ -96,8 +130,9 @@
                     Batal
                 </button>
 
-                <button type="submit" class="text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-xs px-5 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700">
-                    {{ $isEditMode ? 'Simpan Perubahan' : 'Simpan Data' }}
+                <button type="submit" wire:loading.attr="disabled" class="text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-xs px-5 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50">
+                    <span wire:loading.remove>{{ $isEditMode ? 'Simpan Perubahan' : 'Simpan Data' }}</span>
+                    <span wire:loading>Proses Menyimpan...</span>
                 </button>
             </div>
         </form>

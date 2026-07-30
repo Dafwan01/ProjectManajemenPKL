@@ -16,6 +16,18 @@
 <!-- Ditaruh di <head> layout utama -->
 <link rel="preconnect" href="https://basemaps.cartocdn.com">
 <link rel="preconnect" href="https://tile.openstreetmap.org">
+<script>
+    (function() {
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    })();
+</script>
     </head>
     <body>
         <livewire:header>

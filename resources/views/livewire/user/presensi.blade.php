@@ -10,6 +10,7 @@
     <div class="w-full mx-auto max-w-7xl" 
          wire:ignore.self
          x-data="{ 
+            tipePresensi: $wire.entangle('tipePresensi'),
             isCameraOn: false, 
             hasPhoto: false,
             photoPreview: null,
@@ -218,29 +219,38 @@
          x-init="getLocation()"
          x-on:unmount.window="stopCamera(); if(watchId) navigator.geolocation.clearWatch(watchId);">
          
-        <h1 class="text-2xl font-bold mb-6 text-white tracking-wide">FORM PRESENSI HARI INI</h1>
+        <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white tracking-wide">FORM PRESENSI HARI INI</h1>
 
         <!-- Notifikasi Berhasil -->
         @if (session()->has('message'))
-            <div class="mb-6 p-4 bg-green-900/80 border border-green-500 text-green-200 rounded-xl flex items-center justify-between shadow-lg">
+            <div class="mb-6 p-4 bg-green-100 dark:bg-green-900/80 border border-green-400 dark:border-green-500 text-green-800 dark:text-green-200 rounded-xl flex items-center justify-between shadow-lg">
                 <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <svg class="w-5 h-5 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     <span>{{ session('message') }}</span>
                 </div>
-                <button type="button" class="text-green-300 hover:text-white" onclick="this.parentElement.remove()">✕</button>
+                <button type="button" class="text-green-600 dark:text-green-300 hover:text-gray-900 dark:hover:text-white" onclick="this.parentElement.remove()">✕</button>
             </div>
         @endif
 
         <!-- Card Utama Form Presensi -->
-        <form wire:submit.prevent="simpanPresensi(); resetVisualState();" class="bg-gray-800 p-6 rounded-xl border border-gray-700/60 shadow-xl mb-8 w-full transition-all duration-300">
+        <form wire:submit.prevent="simpanPresensi(); resetVisualState();" class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-xl mb-8 w-full transition-all duration-300">
             
             <!-- Tab Pilih Tipe Presensi (Masuk / Pulang) -->
-            <div class="mb-6 flex gap-2 border-b border-gray-700 pb-2">
-                <button type="button" wire:click="$set('tipePresensi', 'masuk')" class="px-4 py-2 rounded-t-lg text-sm font-medium flex items-center gap-2 transition {{ $tipePresensi === 'masuk' ? 'bg-gray-700 text-blue-400 border-b-2 border-blue-500' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+            <div class="mb-6 flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+                <!-- Button MASUK -->
+                <button type="button" 
+                    @click="tipePresensi = 'masuk'; $wire.setTipePresensi('masuk')" 
+                    :class="tipePresensi === 'masuk' ? 'bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50'"
+                    class="px-4 py-2 rounded-t-lg text-sm font-medium flex items-center gap-2 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
                     Presensi MASUK
                 </button>
-                <button type="button" wire:click="$set('tipePresensi', 'pulang')" class="px-4 py-2 rounded-t-lg text-sm font-medium flex items-center gap-2 transition {{ $tipePresensi === 'pulang' ? 'bg-gray-700 text-orange-400 border-b-2 border-orange-500' : 'text-gray-400 hover:text-white hover:bg-gray-700/50' }}">
+
+                <!-- Button PULANG -->
+                <button type="button" 
+                    @click="tipePresensi = 'pulang'; $wire.setTipePresensi('pulang')" 
+                    :class="tipePresensi === 'pulang' ? 'bg-gray-100 dark:bg-gray-700 text-orange-600 dark:text-orange-400 border-b-2 border-orange-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50'"
+                    class="px-4 py-2 rounded-t-lg text-sm font-medium flex items-center gap-2 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
                     Presensi PULANG
                 </button>
@@ -250,7 +260,7 @@
                 
                 <!-- Kamera Box -->
                 <div class="flex flex-col gap-3 w-full lg:w-80 flex-shrink-0" wire:ignore>
-                    <div class="w-full h-64 bg-gray-900 border-2 border-dashed border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-400 relative overflow-hidden shadow-inner group">
+                    <div class="w-full h-64 bg-gray-100 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 relative overflow-hidden shadow-inner group">
                         
                         <video x-show="isCameraOn" x-ref="video" autoplay playsinline muted class="w-full h-full object-cover"></video>
                         
@@ -259,9 +269,9 @@
                         </template>
 
                         <div x-show="!isCameraOn && !hasPhoto" class="flex flex-col items-center p-4 text-center">
-                            <svg class="w-12 h-12 mb-3 text-gray-600 group-hover:text-emerald-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-                            <span class="text-xs uppercase tracking-wider text-gray-500 font-semibold group-hover:text-gray-300">KAMERA STANDBY</span>
-                            <p class="text-[10px] text-gray-600 mt-1">Klik tombol di bawah untuk membuka kamera perangkat Anda</p>
+                            <svg class="w-12 h-12 mb-3 text-gray-400 dark:text-gray-600 group-hover:text-emerald-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+                            <span class="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-500 font-semibold group-hover:text-gray-700 dark:group-hover:text-gray-300">KAMERA STANDBY</span>
+                            <p class="text-[10px] text-gray-400 dark:text-gray-600 mt-1">Klik tombol di bawah untuk membuka kamera perangkat Anda</p>
                         </div>
 
                         <!-- Indikator Loading Model -->
@@ -295,7 +305,7 @@
                     </div>
 
                     @error('fotoCaptured') 
-                        <span class="text-red-400 text-xs block">{{ $message }}</span> 
+                        <span class="text-red-500 dark:text-red-400 text-xs block">{{ $message }}</span> 
                     @enderror
 
                     <!-- Control Tombol Kamera -->
@@ -310,14 +320,14 @@
                             x-show="isCameraOn" 
                             @click="takeSnap()" 
                             :disabled="!faceDetected"
-                            :class="faceDetected ? 'bg-blue-600 hover:bg-blue-500 cursor-pointer' : 'bg-gray-600 cursor-not-allowed opacity-60'"
+                            :class="faceDetected ? 'bg-blue-600 hover:bg-blue-500 cursor-pointer' : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-60'"
                             class="w-full text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg"
                         >
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h0.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             <span x-text="faceDetected ? 'Ambil Foto' : 'Menunggu Wajah...'"></span>
                         </button>
 
-                        <button type="button" x-show="hasPhoto && !isCameraOn" @click="initCamera()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
+                        <button type="button" x-show="hasPhoto && !isCameraOn" @click="initCamera()" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             <span>Ambil Ulang Foto</span>
                         </button>
@@ -328,25 +338,25 @@
                 <div class="flex flex-col space-y-4 w-full flex-1">
                     
                     <!-- Indicator Status GPS / Geofencing -->
-                    <div class="p-4 bg-gray-900 border border-gray-700 rounded-lg text-xs shadow-inner">
+                    <div class="p-4 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs shadow-inner">
                         <template x-if="$wire.latitude && $wire.longitude">
                             <div class="flex flex-col gap-1 font-mono">
                                 <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2" :class="isWithinRadius ? 'text-green-400' : 'text-red-400'">
+                                    <div class="flex items-center gap-2" :class="isWithinRadius ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                         <span>Status Lokasi Active (WFA Mode)</span>
                                     </div>
-                                    <span class="text-gray-400" x-text="`${distance}m dari pusat`"></span>
+                                    <span class="text-gray-500 dark:text-gray-400" x-text="`${distance}m dari pusat`"></span>
                                 </div>
-                                <div class="text-[10px] text-gray-400 flex justify-between mt-1 pt-1 border-t border-gray-800">
-                                    <span>Akurasi GPS: ±<span class="text-emerald-400 font-bold" x-text="locationAccuracy"></span> meter</span>
-                                    <button type="button" @click="getLocation()" class="text-blue-400 hover:underline cursor-pointer">Refresh GPS</button>
+                                <div class="text-[10px] text-gray-500 dark:text-gray-400 flex justify-between mt-1 pt-1 border-t border-gray-200 dark:border-gray-800">
+                                    <span>Akurasi GPS: ±<span class="text-emerald-600 dark:text-emerald-400 font-bold" x-text="locationAccuracy"></span> meter</span>
+                                    <button type="button" @click="getLocation()" class="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Refresh GPS</button>
                                 </div>
                             </div>
                         </template>
 
                         <template x-if="!$wire.latitude || !$wire.longitude">
-                            <div class="flex items-center justify-between text-yellow-400 font-mono">
+                            <div class="flex items-center justify-between text-yellow-600 dark:text-yellow-400 font-mono">
                                 <div class="flex items-center gap-2">
                                     <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                                     <span>⏳ Mengunci GPS presisi tinggi...</span>
@@ -354,28 +364,28 @@
                             </div>
                         </template>
 
-                        <div x-show="locationError" class="text-red-400 mt-2 font-sans font-medium" x-text="locationError"></div>
+                        <div x-show="locationError" class="text-red-600 dark:text-red-400 mt-2 font-sans font-medium" x-text="locationError"></div>
 
                         @error('latitude') 
-                            <span class="text-red-400 text-xs block mt-2 p-1.5 bg-red-950 border border-red-800 rounded">{{ $message }}</span> 
+                            <span class="text-red-600 dark:text-red-400 text-xs block mt-2 p-1.5 bg-red-50 dark:bg-red-950 border border-red-300 dark:border-red-800 rounded">{{ $message }}</span> 
                         @enderror
                     </div>
 
                     <!-- Input Logbook (Khusus Presensi PULANG) -->
                     <div x-show="$wire.tipePresensi === 'pulang'" x-collapse x-cloak>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1.5">LOGBOOK HARIAN <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">LOGBOOK HARIAN <span class="text-red-500">*</span></label>
                         <textarea 
                             wire:model="logbook" 
                             rows="5" 
                             placeholder="Tuliskan catatan detail mengenai hasil kegiatan atau tugas Anda hari ini (minimal 10 karakter)..." 
-                            class="bg-gray-900 border @error('logbook') border-red-500 @else border-gray-700 @enderror text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-3 resize-none shadow-inner transition"></textarea>
+                            class="bg-gray-100 dark:bg-gray-900 border @error('logbook') border-red-500 @else border-gray-300 dark:border-gray-700 @enderror text-gray-900 dark:text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-3 resize-none shadow-inner transition"></textarea>
                         @error('logbook') 
-                            <span class="text-red-400 text-xs mt-1.5 block">{{ $message }}</span> 
+                            <span class="text-red-500 dark:text-red-400 text-xs mt-1.5 block">{{ $message }}</span> 
                         @enderror
                     </div>
 
                     <!-- Info Box Presensi Masuk -->
-                    <div x-show="$wire.tipePresensi === 'masuk'" x-collapse class="p-3.5 bg-gray-900/50 border border-gray-700/50 rounded-lg text-xs text-gray-400 italic flex items-start gap-2">
+                    <div x-show="$wire.tipePresensi === 'masuk'" x-collapse class="p-3.5 bg-gray-100 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/50 rounded-lg text-xs text-gray-500 dark:text-gray-400 italic flex items-start gap-2">
                         <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <span>Untuk presensi masuk, Anda hanya perlu mengambil foto jepretan kamera terbaru. Logbook harian tidak perlu diisi saat presensi masuk.</span>
                     </div>
@@ -386,7 +396,7 @@
                         :disabled="!isWithinRadius || ({{ $tipePresensi === 'masuk' && $sudahAbsenMasuk ? 'true' : 'false' }}) || ({{ $tipePresensi === 'pulang' && $sudahAbsenKeluar ? 'true' : 'false' }})"
                         :class="(isWithinRadius && !({{ $tipePresensi === 'masuk' && $sudahAbsenMasuk ? 'true' : 'false' }}) && !({{ $tipePresensi === 'pulang' && $sudahAbsenKeluar ? 'true' : 'false' }})) 
                                 ? 'bg-green-600 hover:bg-green-500 cursor-pointer' 
-                                : 'bg-gray-600 cursor-not-allowed opacity-50'"
+                                : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-50'"
                         class="w-full text-white font-bold py-3 px-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
                         
                         @if ($tipePresensi === 'masuk' && $sudahAbsenMasuk)

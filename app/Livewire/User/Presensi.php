@@ -25,9 +25,13 @@ class Presensi extends Component
     public $sudahAbsenMasuk = false;
     public $sudahAbsenKeluar = false;
 
-    private $targetLat = -6.595181;
-    private $targetLng = 106.793836;
-    private $maxRadiusMeters = 50000000; // Mode WFA 50.000 KM
+    // Radius, Status Kerja, & Jam Masuk
+    public $isWfa = false;
+    public $statusKerja = 'wfo';
+    public $jamMasukJadwal = null; // Menyimpan batas jam masuk
+    public $maxRadiusMeters = 150;  // Default WFO 150 meter
+    public $targetLat = -6.595181;
+    public $targetLng = 106.793836;
 
     protected $messages = [
         'latitude.required'     => 'Koordinat lokasi belum terdeteksi. Izinkan akses lokasi di browser!',
@@ -40,6 +44,68 @@ class Presensi extends Component
     public function mount()
     {
         $this->cekStatusPresensi();
+        $this->cekJadwalDanRadius();
+    }
+
+    /**
+     * Pengecekan Jadwal, Jam Masuk, & Radius berdasarkan Database
+     */
+    private function cekJadwalDanRadius()
+    {
+        $userId = $this->currentUserId();
+
+        if (!$userId) {
+            return;
+        }
+
+        // 1. Dapatkan nama hari ini dalam Bahasa Indonesia
+        Carbon::setLocale('id');
+        $hariIni = Carbon::now()->translatedFormat('l'); // Hasil: "Senin", "Selasa", dll.
+
+        // 2. Query ke database mencari jadwal user pada hari ini
+        $jadwalHariIni = DB::table('detail_jadwals')
+            ->join('jadwals', 'detail_jadwals.jadwal_id', '=', 'jadwals.jadwal_id')
+            ->where('detail_jadwals.user_id', $userId)
+            ->where(DB::raw('LOWER(detail_jadwals.hari)'), strtolower($hariIni))
+            ->select('jadwals.status_kerja', 'jadwals.jam_masuk')
+            ->first();
+
+        if ($jadwalHariIni) {
+            // Simpan jam_masuk dari jadwal (Contoh format dari DB: "08:00:00")
+            $this->jamMasukJadwal = $jadwalHariIni->jam_masuk;
+
+            // 3. Tentukan radius berdasarkan status_kerja dari database
+            if (strtolower($jadwalHariIni->status_kerja) === 'wfa') {
+                $this->isWfa = true;
+                $this->statusKerja = 'wfa';
+                $this->maxRadiusMeters = 50000000; // Mode WFA (50.000 KM)
+            } else {
+                $this->isWfa = false;
+                $this->statusKerja = 'wfo';
+                $this->maxRadiusMeters = 150; // Mode WFO (150 Meter)
+            }
+        }
+    }
+
+    /**
+     * Hitung jarak dua titik koordinat (Haversine Formula) dalam satuan meter
+     */
+    private function hitungJarakMeters($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371000; // Radius bumi dalam meter
+
+        $latFrom = deg2rad($lat1);
+        $lonFrom = deg2rad($lon1);
+        $latTo = deg2rad($lat2);
+        $lonTo = deg2rad($lon2);
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+                 cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+
+        return $angle * $earthRadius;
     }
 
     private function currentUser()
@@ -108,7 +174,20 @@ class Presensi extends Component
 
         $this->validate($rules);
 
-        // 3. User & File Setup
+        // 3. Validasi Radius Lokasi
+        $jarakUser = $this->hitungJarakMeters(
+            $this->latitude,
+            $this->longitude,
+            $this->targetLat,
+            $this->targetLng
+        );
+
+        if ($jarakUser > $this->maxRadiusMeters) {
+            session()->flash('warning', 'Gagal Presensi! Lokasi Anda terlalu jauh dari lokasi kantor (' . round($jarakUser) . ' meter).');
+            return;
+        }
+
+        // 4. User & File Setup
         $user = $this->currentUser();
         if (!$user) {
             session()->flash('warning', 'User tidak ditemukan.');
@@ -122,7 +201,7 @@ class Presensi extends Component
         $namaFile = "{$namaUserSlug}-{$tanggalHariIni}-{$tipe}.jpg";
         $fotoPath = $this->simpanFotoBase64($this->fotoCaptured, $namaFile);
 
-        // 4. Eksekusi Simpan dengan Database Transaction & Error Catching
+        // 5. Eksekusi Simpan dengan Database Transaction & Error Catching
         DB::beginTransaction();
         try {
             if ($this->tipePresensi === 'masuk') {
@@ -132,22 +211,35 @@ class Presensi extends Component
                     return;
                 }
 
+                $waktuSekarang = now();
+                $jamSekarangStr = $waktuSekarang->format('H:i:s');
+                
+                // Tentukan status_kehadiran (hadir / terlambat)
+                $statusKehadiran = 'hadir';
+                if ($this->jamMasukJadwal && $jamSekarangStr > $this->jamMasukJadwal) {
+                    $statusKehadiran = 'terlambat';
+                }
+
                 PresensiModel::create([
                     'user_id'          => $user->user_id,
                     'tanggal'          => $tanggalHariIni,
-                    'absen_masuk'      => now()->format('H:i:s'),
+                    'absen_masuk'      => $jamSekarangStr,
                     'foto_masuk'       => $fotoPath,
-                    'status_kehadiran' => 'hadir',
+                    'status_kehadiran' => $statusKehadiran,
                     'latitude'         => $this->latitude,
                     'longitude'        => $this->longitude,
                 ]);
 
-                session()->flash('message', 'Presensi MASUK berhasil dikirim!');
+                $pesan = $statusKehadiran === 'terlambat' 
+                    ? 'Presensi MASUK berhasil dikirim (Terlambat)!' 
+                    : 'Presensi MASUK berhasil dikirim!';
+
+                session()->flash('message', $pesan);
 
             } else {
 
                 // Dapatkan Primary Key dari Record Presensi
-                $pkName = $presensiHariIni->getKeyName(); // Mendapatkan 'presensi_id' atau 'id'
+                $pkName = $presensiHariIni->getKeyName();
                 $presensiId = $presensiHariIni->{$pkName};
 
                 // Update jam & foto keluar pada tabel presensi
@@ -168,13 +260,12 @@ class Presensi extends Component
 
             DB::commit();
 
-            // Reset Form & Refesh State
+            // Reset Form & Refresh State
             $this->reset(['logbook', 'fotoCaptured']);
             $this->cekStatusPresensi();
 
         } catch (\Exception $e) {
             DB::rollBack();
-            // Menampilkan error spesifik dari Database jika ada kegagalan query
             session()->flash('warning', 'Gagal menyimpan: ' . $e->getMessage());
         }
     }
