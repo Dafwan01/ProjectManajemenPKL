@@ -168,19 +168,23 @@ class ManajemenAkun extends Component
         $this->closeJadwalModal();
     }
 
-    public function render()
-    {
-        $users = User::query()
-            ->when($this->search, function ($query) {
-                $query->where('nama', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%')
-                      ->orWhere('asal_sekolah', 'like', '%' . $this->search . '%');
-            })
-            ->latest('tanggal_mulai')
-            ->paginate(10);
-            
-        return view('livewire.dashboard.manajemen-akun', compact('users'));
-    }
+ public function render()
+{
+    $users = User::query()
+        ->when($this->search, function ($query) {
+            $query->where('nama', 'like', '%' . $this->search . '%')
+                  ->orWhere('email', 'like', '%' . $this->search . '%')
+                  ->orWhere('asal_sekolah', 'like', '%' . $this->search . '%');
+        })
+        ->latest('tanggal_mulai')
+        ->paginate(10);
+
+    $mentors = User::where('role', UserRole::MENTOR->value)
+        ->orderBy('nama')
+        ->get();
+
+    return view('livewire.dashboard.manajemen-akun', compact('users', 'mentors'));
+}
 
     protected function ensureDefaultScheduleForPkl(User $user): void
     {

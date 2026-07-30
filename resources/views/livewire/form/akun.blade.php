@@ -37,31 +37,41 @@
                 </div>
             </div>
 
-            <!-- Baris 2: Role -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                <label for="role" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Pilih Role</label>
-                <select id="role" wire:model="role" class="bg-gray-50 border @error('role') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <option value="" selected>-- Pilih Role Pengguna --</option>
-                
-        @foreach(App\Enums\UserRole::cases() as $roleEnum)
-            <option value="{{ $roleEnum->value }}">{{ $roleEnum->label() }}</option>
-        @endforeach
-                </select>
-                @error('role') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+           <!-- Baris 2: Role, Divisi, Mentor -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div>
+        <label for="role" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Pilih Role</label>
+        <select id="role" wire:model="role" class="bg-gray-50 border @error('role') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <option value="" selected>-- Pilih Role Pengguna --</option>
+            @foreach(App\Enums\UserRole::cases() as $roleEnum)
+                <option value="{{ $roleEnum->value }}">{{ $roleEnum->label() }}</option>
+            @endforeach
+        </select>
+        @error('role') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+    </div>
+
+    <div>
+        <label for="divisi" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Pilih divisi</label>
+        <select id="divisi" wire:model="divisi" class="bg-gray-50 border @error('divisi') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <option value="" selected>-- Pilih divisi Pengguna --</option>
+            @foreach(App\Enums\UserDivisi::cases() as $divisiEnum)
+                <option value="{{ $divisiEnum->value }}">{{ $divisiEnum->label() }}</option>
+            @endforeach
+        </select>
+        @error('divisi') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+    </div>
+
+    <div>
+        <label for="mentor" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Pilih Mentor</label>
+        <select id="mentor" wire:model="mentor" class="bg-gray-50 border @error('mentor') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <option value="">-- Pilih Mentor --</option>
+            @foreach($mentors as $mentorUser)
+                <option value="{{ $mentorUser->nama }}">{{ $mentorUser->nama }}</option>
+            @endforeach
+        </select>
+        @error('mentor') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+    </div>
 </div>
-<div>
-                 <label for="divisi" class="block mb-1.5 text-xs font-medium text-gray-900 dark:text-white">Pilih divisi</label>
-                <select id="divisi" wire:model="divisi" class="bg-gray-50 border @error('divisi') border-red-500 @else border-gray-300 @enderror text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <option value="" selected>-- Pilih divisi Pengguna --</option>
-                
-        @foreach(App\Enums\UserDivisi::cases() as $divisiEnum)
-            <option value="{{ $divisiEnum->value }}">{{ $divisiEnum->label() }}</option>
-        @endforeach
-                </select>
-                @error('divisi') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-            </div>
-            </div>
 
             <!-- Baris 3: Password & Konfirmasi Password -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
