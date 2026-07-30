@@ -77,6 +77,41 @@
             ></textarea>
         </div>
 
+        <!-- Upload File Pendukung -->
+        <div>
+            <label class="block mb-1 text-sm font-medium text-gray-900 dark:text-white">
+                Upload File Pendukung (Opsional)
+            </label>
+
+            @if($fileNilaiLama)
+                <div class="mb-2 p-2.5 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-between text-xs">
+                    <span class="text-gray-600 dark:text-gray-300">File sudah ada.</span>
+                    <a href="{{ asset('storage/' . $fileNilaiLama->file) }}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                        Lihat File
+                    </a>
+                </div>
+            @endif
+
+            <input 
+                type="file" 
+                wire:model="file"
+                class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 @error('file') border-red-500 @enderror"
+            >
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Format: PDF, JPG, JPEG, PNG. Maks 5MB.</p>
+
+            @error('file') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+
+            <div wire:loading wire:target="file" class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Mengunggah pratinjau...
+            </div>
+
+            @if ($file)
+                <div class="mt-2 text-sm text-green-600 dark:text-green-400">
+                    File dipilih: {{ $file->getClientOriginalName() }}
+                </div>
+            @endif
+        </div>
+
         <div class="flex items-center justify-between gap-3 pt-4 border-t dark:border-gray-700">
             <!-- Tombol Cetak PDF (Sisi Kiri) -->
             <div>

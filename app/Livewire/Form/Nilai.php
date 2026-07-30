@@ -3,11 +3,18 @@
 namespace App\Livewire\Form;
 
 use App\Models\Nilai as NilaiModel;
+use App\Models\file as FileModel;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Nilai extends Component
 {
+    use WithFileUploads;
+
     public $userId;
     public ?User $user = null;
 
@@ -18,7 +25,13 @@ class Nilai extends Component
     public $kualitas_ketepatan = 0;
     public $catatan = '';
 
-    public $sudahAdaNilai = false; // Flag status nilai
+    public $file = null;
+    public ?FileModel $fileNilaiLama = null;
+
+    public $sudahAdaNilai = false;
+
+    protected $namaFileKategori = 'nilai';
+    protected $namaFilePdfKategori = 'nilai_pdf';
 
     protected function rules()
     {
@@ -29,6 +42,7 @@ class Nilai extends Component
             'komunikasi_kerjasama' => 'required|integer|min:0|max:100',
             'kualitas_ketepatan' => 'required|integer|min:0|max:100',
             'catatan' => 'nullable|string',
+            'file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ];
     }
 
@@ -41,6 +55,8 @@ class Nilai extends Component
         '*.integer' => 'Nilai harus berupa angka.',
         '*.min' => 'Nilai minimal 0.',
         '*.max' => 'Nilai maksimal 100.',
+        'file.mimes' => 'File harus berformat PDF, JPG, JPEG, atau PNG.',
+        'file.max' => 'Ukuran file maksimal 5MB.',
     ];
 
     public function mount($userId = null)
@@ -59,13 +75,17 @@ class Nilai extends Component
             $this->catatan = $nilai->catatan;
             $this->sudahAdaNilai = true;
         }
+
+        $this->fileNilaiLama = FileModel::where('user_id', $userId)
+            ->where('nama_file', $this->namaFileKategori)
+            ->first();
     }
 
     public function simpan()
     {
         $this->validate();
 
-        NilaiModel::updateOrCreate(
+        $nilai = NilaiModel::updateOrCreate(
             ['user_id' => $this->userId],
             [
                 'kedisiplinan' => $this->kedisiplinan,
@@ -77,11 +97,81 @@ class Nilai extends Component
             ]
         );
 
+        if ($this->file) {
+            if ($this->fileNilaiLama && Storage::disk('public')->exists($this->fileNilaiLama->file)) {
+                Storage::disk('public')->delete($this->fileNilaiLama->file);
+            }
+
+            $extension = $this->file->getClientOriginalExtension();
+            $namaFile = Str::slug($this->user->nama) . '-nilai.' . $extension;
+            $path = $this->file->storeAs('nilai', $namaFile, 'public');
+
+            FileModel::updateOrCreate(
+                [
+                    'user_id' => $this->userId,
+                    'nama_file' => $this->namaFileKategori,
+                ],
+                [
+                    'file' => $path,
+                ]
+            );
+
+            $this->fileNilaiLama = FileModel::where('user_id', $this->userId)
+                ->where('nama_file', $this->namaFileKategori)
+                ->first();
+        }
+
+        // Generate PDF otomatis kalau kelima nilai sudah tidak 0
+        $semuaNilaiTerisi = $this->kedisiplinan > 0
+            && $this->kemampuan_teknis > 0
+            && $this->problem_solving > 0
+            && $this->komunikasi_kerjasama > 0
+            && $this->kualitas_ketepatan > 0;
+
+        if ($semuaNilaiTerisi) {
+            $this->generatePdfNilai($nilai);
+        }
+
         $this->sudahAdaNilai = true;
+        $this->file = null;
 
         session()->flash('message', 'Nilai untuk ' . $this->user->nama . ' berhasil disimpan!');
         $this->dispatch('close-nilai-modal');
     }
+
+   private function generatePdfNilai(NilaiModel $nilai): void
+{
+    $rataRata = collect([
+        $nilai->kedisiplinan,
+        $nilai->kemampuan_teknis,
+        $nilai->problem_solving,
+        $nilai->komunikasi_kerjasama,
+        $nilai->kualitas_ketepatan,
+    ])->avg();
+
+    // Tambahkan rata_rata ke object nilai supaya bisa dipakai di view
+    $nilai->rata_rata = number_format($rataRata, 1);
+
+    $pdf = Pdf::loadView('livewire.components.cetak-nilai', [
+        'selectedUser' => $this->user,
+        'nilaiUser' => $nilai,
+    ]);
+
+    $namaFilePdf = Str::slug($this->user->nama) . '-nilai.pdf';
+    $path = 'files/' . $namaFilePdf;
+
+    Storage::disk('public')->put($path, $pdf->output());
+
+    FileModel::updateOrCreate(
+        [
+            'user_id' => $this->userId,
+            'nama_file' => $this->namaFilePdfKategori,
+        ],
+        [
+            'file' => $path,
+        ]
+    );
+}
 
     public function tutup()
     {
