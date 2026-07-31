@@ -1,12 +1,14 @@
 <?php
+
 namespace App\Livewire\Dashboard\UploadFile;
 
 use App\Enums\UserRole;
+use App\Models\file as FileModel;
 use App\Models\User;
 use App\Services\CertificateService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -14,102 +16,31 @@ class Sertifikat extends Component
 {
     use WithPagination;
 
-    // Property untuk Search Bar
-    public $search = '';
+    // Property Search
+    public string $search = '';
 
-    // State Modal & Form Generate Sertifikat
-    public $showModal = false;
-    public $selectedUser = null;
-    public $nomorSertifikat = '';
-    public $tanggalTerbit = '';
+    // Property Modal Form Input/Generate Sertifikat
+    public bool $showModal = false; 
+    public $selectedUserId = null;
 
-    // State Modal Preview PDF
+    // Property Modal PDF Preview (Tanpa Buka Tab Baru)
     public bool $showPdfModal = false;
+    public $pdfUserId = null;
     public ?string $previewUrl = null;
     public ?string $previewUserName = null;
+
+    // Form Fields
+    public string $nomorSertifikat = '';
+    public string $tanggalTerbit = '';
 
     public function mount(): void
     {
         $this->tanggalTerbit = date('Y-m-d');
     }
 
-    // Reset halaman pagination saat mengetik di search bar
     public function updatingSearch(): void
     {
         $this->resetPage();
-    }
-
-    /**
-     * Membuka Modal Generate & Menyiapkan Data Peserta
-     */
-   public function openUploadModal($userId): void
-    {
-        // Hanya query berdasarkan user_id
-        $this->selectedUser = User::where('user_id', $userId)->firstOrFail();
-
-        // Format nomor sertifikat otomatis menggunakan user_id
-        $idNumber = $this->selectedUser->user_id;
-        $this->nomorSertifikat = 'SERT/' . date('Y') . '/' . str_pad($idNumber, 4, '0', STR_PAD_LEFT);
-
-        $this->showModal = true;
-    }
-
-    /**
-     * Menutup Modal Generate
-     */
-    public function closeModal(): void
-    {
-        $this->showModal = false;
-        $this->selectedUser = null;
-    }
-
-    /**
-     * Membuka Modal Preview PDF Sertifikat
-     */
-  public function openPdfModal($userId): void
-    {
-        // Hanya query berdasarkan user_id
-        $user = User::where('user_id', $userId)->firstOrFail();
-
-        if ($user->sertifikat) {
-            $this->previewUrl = asset('storage/' . $user->sertifikat);
-            $this->previewUserName = $user->nama;
-            $this->showPdfModal = true;
-        }
-    }
-
-    /**
-     * Menutup Modal Preview PDF
-     */
-    public function closePdfModal(): void
-    {
-        $this->showPdfModal = false;
-        $this->previewUrl = null;
-        $this->previewUserName = null;
-    }
-
-    /**
-     * Proses Generate PDF dan simpan ke Database
-     */
-    public function generate(CertificateService $certificateService): void
-    {
-        $this->validate([
-            'nomorSertifikat' => 'required|string',
-            'tanggalTerbit' => 'required|date',
-        ]);
-
-        try {
-            $certificateService->generateForUser(
-                $this->selectedUser,
-                $this->nomorSertifikat,
-                $this->tanggalTerbit
-            );
-
-            session()->flash('message', 'Sertifikat untuk ' . $this->selectedUser->nama . ' berhasil diterbitkan!');
-            $this->closeModal();
-        } catch (\Exception $e) {
-            session()->flash('error', 'Gagal membuat sertifikat: ' . $e->getMessage());
-        }
     }
 
     /**
@@ -129,6 +60,89 @@ class Sertifikat extends Component
         return $userRole === UserRole::MENTOR->value;
     }
 
+    // Modal Form Sertifikat
+    public function openForm($userId): void
+    {
+        $this->selectedUserId = $userId;
+        $this->nomorSertifikat = 'SERT/' . date('Y') . '/' . str_pad((string) $userId, 4, '0', STR_PAD_LEFT);
+        $this->showModal = true;
+    }
+
+    #[On('close-sertifikat-modal')]
+    public function closeForm(): void
+    {
+        $this->showModal = false;
+        $this->selectedUserId = null;
+    }
+
+    // Modal PDF Preview
+    public function openPdfModal($userId): void
+    {
+        $user = User::where('user_id', $userId)->first();
+
+        $sertifikatFile = FileModel::where('user_id', $userId)
+            ->where(function ($query) {
+                $query->where('nama_file', 'Sertifikat')
+                      ->orWhere('file', 'like', 'user-sertifikat/%');
+            })
+            ->latest('file_id')
+            ->first();
+
+        if ($sertifikatFile && $sertifikatFile->file) {
+            $this->previewUrl = asset('storage/' . $sertifikatFile->file);
+            $this->previewUserName = $user?->nama;
+            $this->pdfUserId = $userId;
+            $this->showPdfModal = true;
+        } else {
+            session()->flash('error', 'File sertifikat belum tersedia.');
+        }
+    }
+
+    public function closePdfModal(): void
+    {
+        $this->showPdfModal = false;
+        $this->pdfUserId = null;
+        $this->previewUrl = null;
+        $this->previewUserName = null;
+    }
+
+    /**
+     * Eksekusi Generate PDF & Simpan File
+     */
+    public function generate(): void
+    {
+        $this->validate([
+            'nomorSertifikat' => 'required|string',
+            'tanggalTerbit'   => 'required|date',
+        ]);
+
+        try {
+            $user = User::where('user_id', $this->selectedUserId)->firstOrFail();
+            $certificateService = app(CertificateService::class);
+
+            $relativeFilePath = $certificateService->generateForUser(
+                $user,
+                $this->nomorSertifikat,
+                $this->tanggalTerbit
+            );
+
+            FileModel::updateOrCreate(
+                [
+                    'user_id'   => $user->user_id,
+                    'nama_file' => 'Sertifikat',
+                ],
+                [
+                    'file' => $relativeFilePath,
+                ]
+            );
+
+            session()->flash('message', 'Sertifikat untuk ' . $user->nama . ' berhasil diterbitkan!');
+            $this->closeForm();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal membuat sertifikat: ' . $e->getMessage());
+        }
+    }
+
     #[Layout('layouts.dashboard')]
     public function render()
     {
@@ -137,18 +151,19 @@ class Sertifikat extends Component
 
         $users = User::query()
             ->where('role', UserRole::PKL->value)
-            // Filter Search Bar (Nama, Asal Sekolah, atau Email)
+            // Filter Pencarian
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('nama', 'like', '%' . $this->search . '%')
-                      ->orWhere('asal_sekolah', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%');
+                      ->orWhere('email', 'like', '%' . $this->search . '%')
+                      ->orWhere('asal_sekolah', 'like', '%' . $this->search . '%');
                 });
             })
-            // Filter anak bimbingan jika pengakses adalah Mentor
+            // Filter hanya anak bimbingan jika yang login adalah Mentor
             ->when($isMentor, function ($query) use ($currentUser) {
                 $query->where('mentor', $currentUser->nama);
             })
+            ->with(['files'])
             ->latest('tanggal_mulai')
             ->paginate(10);
 

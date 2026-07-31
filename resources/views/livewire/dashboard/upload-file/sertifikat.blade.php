@@ -55,6 +55,9 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700/60">
                     @forelse($users as $user)
+                        @php
+                            $hasSertifikat = $user->files->contains('nama_file', 'Sertifikat');
+                        @endphp
                         <tr class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
                             <th scope="row" class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                                 {{ $user->nama }}
@@ -63,12 +66,12 @@
                             <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->mentor ?? '-' }}</td>
                             <td class="px-6 py-4 align-middle">
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border
-                                    {{ $user->sertifikat 
+                                    {{ $hasSertifikat 
                                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
                                         : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20' 
                                     }}">
-                                    <span class="w-1.5 h-1.5 rounded-full {{ $user->sertifikat ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-rose-500 dark:bg-rose-400' }}"></span>
-                                    {{ $user->sertifikat ? 'Sudah Diterbitkan' : 'Belum Ada' }}
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $hasSertifikat ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-rose-500 dark:bg-rose-400' }}"></span>
+                                    {{ $hasSertifikat ? 'Sudah Diterbitkan' : 'Belum Ada' }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">
@@ -76,20 +79,20 @@
                                     <!-- Tombol Generate / Regenerate -->
                                     <button 
                                         type="button"
-                                        wire:click="openUploadModal({{ $user->user_id ?? $user->id }})"
+                                        wire:click="openForm({{ $user->user_id }})"
                                         class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-md shadow-blue-600/20 transition shrink-0"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 001.946.806 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                                         </svg>
-                                        <span>{{ $user->sertifikat ? 'Regenerate' : 'Generate' }}</span>
+                                        <span>{{ $hasSertifikat ? 'Regenerate' : 'Generate' }}</span>
                                     </button>
 
-                                    <!-- Tombol Preview PDF (Buka di Modal Iframe) -->
-                                    @if($user->sertifikat)
+                                    <!-- Tombol Preview PDF -->
+                                    @if($hasSertifikat)
                                         <button 
                                             type="button"
-                                            wire:click="openPdfModal({{ $user->user_id ?? $user->id }})"
+                                            wire:click="openPdfModal({{ $user->user_id }})"
                                             class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 hover:bg-rose-100 dark:hover:bg-rose-500/20 rounded-xl transition shrink-0 shadow-sm"
                                             title="Lihat PDF Sertifikat"
                                         >
@@ -124,9 +127,12 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 1. MODAL FORM GENERATE SERTIFIKAT          -->
+    <!-- MODAL FORM GENERATE SERTIFIKAT             -->
     <!-- ========================================== -->
-    @if($showModal)
+    @if($showModal && $selectedUserId)
+        @php
+            $targetUser = $users->firstWhere('user_id', $selectedUserId) ?? \App\Models\User::where('user_id', $selectedUserId)->first();
+        @endphp
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity">
             <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 
@@ -135,7 +141,7 @@
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white">
                         Generate Sertifikat Magang
                     </h3>
-                    <button wire:click="closeModal" type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <button wire:click="closeForm" type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -143,13 +149,21 @@
                 </div>
 
                 <!-- Modal Body -->
-                <form wire:submit.prevent="generate" class="p-5 space-y-4">
-                    <!-- Detail Peserta -->
-                    <div class="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl space-y-1 border border-gray-100 dark:border-gray-700/50">
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Peserta Magang:</p>
-                        <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ $selectedUser?->nama }}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $selectedUser?->asal_sekolah }} (Mentor: {{ $selectedUser?->mentor ?? '-' }})</p>
-                    </div>
+               <form wire:submit.prevent="generate" class="p-5 space-y-4">
+
+    <!-- 🔥 Alert Error di Dalam Modal (Tambahkan Ini) -->
+    @if (session()->has('error'))
+        <div class="p-3 text-xs text-rose-700 dark:text-rose-400 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-between" role="alert">
+            <span class="font-medium">{{ session('error') }}</span>
+        </div>
+    @endif
+
+    <!-- Detail Peserta -->
+    <div class="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl space-y-1 border border-gray-100 dark:border-gray-700/50">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Peserta Magang:</p>
+        <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ $targetUser?->nama }}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $targetUser?->asal_sekolah }} (Mentor: {{ $targetUser?->mentor ?? '-' }})</p>
+    </div>
 
                     <!-- Input Nomor Sertifikat -->
                     <div>
@@ -177,7 +191,7 @@
                     <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                         <button 
                             type="button" 
-                            wire:click="closeModal" 
+                            wire:click="closeForm" 
                             class="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition"
                         >
                             Batal
@@ -201,7 +215,7 @@
     @endif
 
     <!-- ========================================== -->
-    <!-- 2. MODAL PREVIEW PDF (IFRAME)              -->
+    <!-- MODAL PREVIEW PDF (IFRAME)                 -->
     <!-- ========================================== -->
     @if ($showPdfModal && $previewUrl)
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm transition-opacity">

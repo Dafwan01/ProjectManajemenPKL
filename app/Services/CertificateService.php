@@ -1,37 +1,25 @@
 <?php
-
 namespace App\Services;
 
 use App\Models\User;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CertificateService
 {
     public function generateForUser(User $user, string $nomorSertifikat, string $tanggalTerbit): string
     {
-        // Set opsi DomPDF agar bisa baca aset lokal/remote
-        $pdf = Pdf::loadView('pdf.sertifikat', [
-            'user' => $user,
-            'nomorSertifikat' => $nomorSertifikat,
-            'tanggalTerbit' => $tanggalTerbit,
-        ])
-        ->setPaper('a4', 'landscape')
-        ->setOptions([
-            'isRemoteEnabled' => true,
-            'isHtml5ParserEnabled' => true,
-            'chroot' => public_path(), // Mengizinkan akses folder public
-        ]);
+        // Load view PDF sertifikat
+        $pdf = Pdf::loadView('pdf.sertifikat', compact('user', 'nomorSertifikat', 'tanggalTerbit'));
 
+        // Buat nama file unik
         $fileName = 'sertifikat_' . $user->user_id . '_' . time() . '.pdf';
-        $filePath = 'sertifikat/' . $fileName;
+        
+        // Simpan ke storage/app/public/user-sertifikat/
+        $relativePath = 'user-sertifikat/' . $fileName;
+        Storage::disk('public')->put($relativePath, $pdf->output());
 
-        Storage::disk('public')->put($filePath, $pdf->output());
-
-        $user->update([
-            'sertifikat' => $filePath,
-        ]);
-
-        return $filePath;
+        // Kembalikan path relatif untuk disimpan ke kolom 'file' di tabel 'files'
+        return $relativePath;
     }
 }

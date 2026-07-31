@@ -35,7 +35,6 @@ class User extends Authenticatable
         'surat_penerimaan',
         'foto',
         'skill',
-        'sertifikat',
         'tempat_lahir',
         'tanggal_lahir',
         'jenis_kelamin',

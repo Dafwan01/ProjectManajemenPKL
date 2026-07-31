@@ -32,7 +32,6 @@ return new class extends Migration
             $table->rememberToken();
             $table->string('foto')->nullable();
             $table->text('skill')->nullable();
-            $table->string('sertifikat')->nullable();
             $table->string('tempat_lahir')->nullable();
             $table->string('jurusan')->nullable();
             $table->enum('jenis_kelamin',['perempuan','laki-laki'])->nullable();
