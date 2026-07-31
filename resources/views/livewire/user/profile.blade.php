@@ -21,19 +21,47 @@
     @endif
 
     <div 
-        x-data="{
+            wire:ignore.self
+            x-data="{
             showPhotoModal: false,
             isCameraOn: false,
             photoPreview: null,
+            stream: null,
+
+            init() {
+                // Stop camera when page is hidden or about to unload
+                const stopIfHidden = () => {
+                    if (document.hidden) {
+                        this.stopCamera();
+                    }
+                };
+
+                document.addEventListener('visibilitychange', stopIfHidden);
+                window.addEventListener('pagehide', () => this.stopCamera());
+                window.addEventListener('beforeunload', () => this.stopCamera());
+            },
 
             async initCamera() {
                 this.isCameraOn = true;
+                await this.$nextTick();
+
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } } });
-                    this.$refs.video.srcObject = stream;
+                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } } });
+                    this.stream = s;
+                    if (this.$refs.video) {
+                        this.$refs.video.srcObject = s;
+                        try {
+                            // some browsers require a play() call after setting srcObject
+                            await this.$refs.video.play();
+                        } catch (e) {
+                            // ignore play errors (browser autoplay policies)
+                            console.warn('Video play() failed', e);
+                        }
+                    }
                 } catch (err) {
                     alert('Kamera tidak dapat diakses atau izin ditolak!');
                     this.isCameraOn = false;
+                    this.stream = null;
                 }
             },
 
@@ -55,14 +83,38 @@
 
             stopCamera() {
                 this.isCameraOn = false;
-                if (this.$refs.video && this.$refs.video.srcObject) {
-                    this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
+                try {
+                    if (this.stream) {
+                        this.stream.getTracks().forEach(track => track.stop());
+                        this.stream = null;
+                    }
+                    if (this.$refs.video) {
+                        // Clear srcObject to fully release camera on some browsers
+                        this.$refs.video.srcObject = null;
+                    }
+                } catch (e) {
+                    // ignore errors stopping tracks
+                    console.error('Error stopping camera tracks', e);
                 }
             },
 
             openModal() {
                 this.showPhotoModal = true;
                 this.photoPreview = null;
+            },
+
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) {
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.photoPreview = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                this.showPhotoModal = false;
             },
 
             closeModal() {
@@ -83,8 +135,7 @@
                     <button type="button" @click="closeModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition">✕</button>
                 </div>
 
-                <template x-if="!isCameraOn">
-                    <div class="space-y-3">
+                <div x-show="!isCameraOn" x-cloak class="space-y-3">
                         <button 
                             type="button"
                             @click="initCamera()"
@@ -102,20 +153,10 @@
                                 wire:model="fotoUpload"
                                 accept="image/*"
                                 class="hidden"
-                                @change="closeModal()"
-                            >
+                                @change="handleFileUpload($event)"
+                            />
                         </label>
-
-                        @error('fotoUpload') <span class="text-red-500 dark:text-red-400 text-xs block text-center mt-1">{{ $message }}</span> @enderror
-                    </div>
-                </template>
-
-                <template x-if="isCameraOn">
-                    <div class="space-y-3">
-                        <div class="w-full aspect-square bg-gray-100 dark:bg-gray-950 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 relative">
-                            <video x-ref="video" autoplay playsinline muted class="w-full h-full object-cover"></video>
-                            <canvas x-ref="canvas" class="hidden"></canvas>
-                        </div>
+                        <canvas x-ref="canvas" class="hidden"></canvas>
                         <button 
                             type="button"
                             @click="takeSnap()"
@@ -131,7 +172,6 @@
                             Batal
                         </button>
                     </div>
-                </template>
             </div>
         </div>
 

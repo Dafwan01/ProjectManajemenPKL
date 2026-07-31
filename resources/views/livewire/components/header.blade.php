@@ -26,12 +26,10 @@
      <div class="h-full px-3 py-4 overflow-y-auto bg-white dark:bg-slate-900 flex flex-col justify-between">
         <div>
            <!-- Brand / Logo -->
-           <a href="https://v3.flowbite.com/" class="flex items-center ps-2.5 mb-5 gap-3">
-              <div class="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-600/30">
-                 P
-              </div>
-              <span class="self-center text-lg font-bold tracking-wider whitespace-nowrap text-slate-900 dark:text-white">
-                 E-PRESENSI PKL
+           <a href="{{ route('dashboard') }}" class="flex items-center ps-2.5 mb-5 gap-3">
+              <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo Presensi Pintar" class="w-16 h-16 rounded-2xl object-cover">
+              <span class="self-center brand-name whitespace-nowrap">
+                 Presensi Pintar
               </span>
            </a>
 
