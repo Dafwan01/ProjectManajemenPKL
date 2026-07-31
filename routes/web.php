@@ -54,6 +54,9 @@ Route::middleware('auth')->group(function () {
 
         return Storage::disk('public')->download($project->file_project);
     })->name('project.download');
+
+    Route::get('/sertifikat/saya', [SertifikatController::class, 'downloadSaya'])->name('sertifikat.saya');
+    
 });
 
 // ==========================================

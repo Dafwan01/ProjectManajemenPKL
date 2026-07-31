@@ -263,18 +263,66 @@
                 </div>
 
                 <!-- Section: Keamanan -->
+               <!-- Section: Keamanan -->
                 <div class="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-800">
                     <h3 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Ubah Password (Opsional)</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <!-- Password Baru -->
+                        <div x-data="{ showPassword: false }">
                             <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">Password Baru</label>
-                            <input type="password" wire:model="password" class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white text-sm px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition" placeholder="••••••••">
+                            <div class="relative">
+                                <input 
+                                    :type="showPassword ? 'text' : 'password'" 
+                                    wire:model="password" 
+                                    class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white text-sm px-4 py-3 pr-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition" 
+                                    placeholder="••••••••"
+                                >
+                                <button 
+                                    type="button" 
+                                    @click="showPassword = !showPassword" 
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition focus:outline-none"
+                                >
+                                    <!-- Icon Mata Terbuka (Muncul saat Password Terlihat) -->
+                                    <svg x-show="showPassword" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    <!-- Icon Mata Tertutup (Muncul saat Password Tersembunyi) -->
+                                    <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.018 10.018 0 014.122-.963c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21M3 3l18 18"/>
+                                    </svg>
+                                </button>
+                            </div>
                             @error('password') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
-                        <div>
+
+                        <!-- Konfirmasi Password -->
+                        <div x-data="{ showConfirmPassword: false }">
                             <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">Konfirmasi Password</label>
-                            <input type="password" wire:model="confirm_password" class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white text-sm px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition" placeholder="••••••••">
+                            <div class="relative">
+                                <input 
+                                    :type="showConfirmPassword ? 'text' : 'password'" 
+                                    wire:model="confirm_password" 
+                                    class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white text-sm px-4 py-3 pr-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition" 
+                                    placeholder="••••••••"
+                                >
+                                <button 
+                                    type="button" 
+                                    @click="showConfirmPassword = !showConfirmPassword" 
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition focus:outline-none"
+                                >
+                                    <!-- Icon Mata Terbuka -->
+                                    <svg x-show="showConfirmPassword" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    <!-- Icon Mata Tertutup -->
+                                    <svg x-show="!showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.018 10.018 0 014.122-.963c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21M3 3l18 18"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

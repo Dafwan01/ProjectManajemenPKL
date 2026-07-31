@@ -19,6 +19,9 @@ return new class extends Migration
             $table->string('lampiran')->nullable();
             $table->enum('status', ['pending', 'disetujui', 'ditolak'])->default('pending');
             $table->text('catatan_admin')->nullable();
+            $table->string('alamat_izin')->nullable();
+            $table->integer('jumlah_hari')->nullable();
+            
             $table->timestamps();
         });
     }

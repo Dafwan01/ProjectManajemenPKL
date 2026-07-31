@@ -14,9 +14,21 @@ class Nilai extends Component
 {
     use WithPagination;
 
-    // Property UI State
-    public $showModal = false; 
+    // Property Search
+    public string $search = '';
+
+    // Property Modal Form Input/Edit Nilai
+    public bool $showModal = false; 
     public $selectedUserId = null;
+
+    // Property Modal PDF Preview (Tanpa Buka Tab Baru)
+    public bool $showPdfModal = false;
+    public $pdfUserId = null;
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
 
     /**
      * Helper untuk mengecek apakah user yang login adalah Mentor secara aman
@@ -35,17 +47,31 @@ class Nilai extends Component
         return $userRole === UserRole::MENTOR->value;
     }
 
-    public function openForm($userId)
+    // Modal Form Nilai
+    public function openForm($userId): void
     {
         $this->selectedUserId = $userId;
         $this->showModal = true;
     }
 
     #[On('close-nilai-modal')]
-    public function closeForm()
+    public function closeForm(): void
     {
         $this->showModal = false;
         $this->selectedUserId = null;
+    }
+
+    // Modal PDF Preview
+    public function openPdfModal($userId): void
+    {
+        $this->pdfUserId = $userId;
+        $this->showPdfModal = true;
+    }
+
+    public function closePdfModal(): void
+    {
+        $this->showPdfModal = false;
+        $this->pdfUserId = null;
     }
 
     #[Layout('layouts.dashboard')]
@@ -56,11 +82,19 @@ class Nilai extends Component
 
         $users = User::query()
             ->where('role', UserRole::PKL->value)
+            // Filter Pencarian
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('nama', 'like', '%' . $this->search . '%')
+                      ->orWhere('email', 'like', '%' . $this->search . '%')
+                      ->orWhere('asal_sekolah', 'like', '%' . $this->search . '%');
+                });
+            })
             // Filter hanya anak bimbingan jika yang login adalah Mentor
             ->when($isMentor, function ($query) use ($currentUser) {
                 $query->where('mentor', $currentUser->nama);
             })
-            ->with('nilai')
+            ->with(['nilai', 'nilais'])
             ->latest('tanggal_mulai')
             ->paginate(10);
 

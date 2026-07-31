@@ -95,33 +95,49 @@
                     <select 
                         id="divisi" 
                         wire:model="divisi" 
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('divisi') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition"
+                        @disabled($isMentorUser)
+                        class="bg-gray-50 dark:bg-gray-800/60 border @error('divisi') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         <option value="">-- Pilih Divisi --</option>
                         @foreach(App\Enums\UserDivisi::cases() as $divisiEnum)
                             <option value="{{ $divisiEnum->value }}">{{ $divisiEnum->label() }}</option>
                         @endforeach
                     </select>
+
+                    @if($isMentorUser)
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                            * Otomatis disesuaikan dengan divisi Anda sebagai Mentor.
+                        </p>
+                    @endif
+
                     @error('divisi') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
             </div>
 
             <!-- Baris 3: Mentor & Asal Sekolah/Instansi -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+               <div>
                     <label for="mentor" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Mentor Pembimbing <span class="text-red-500">*</span>
                     </label>
                     <select 
                         id="mentor" 
                         wire:model="mentor" 
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('mentor') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition"
+                        @disabled($isMentorUser)
+                        class="bg-gray-50 dark:bg-gray-800/60 border @error('mentor') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         <option value="">-- Pilih Mentor --</option>
                         @foreach($mentors as $mentorUser)
                             <option value="{{ $mentorUser->nama }}">{{ $mentorUser->nama }}</option>
                         @endforeach
                     </select>
+
+                    @if($isMentorUser)
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                            * Otomatis disesuaikan dengan nama Anda sebagai Mentor.
+                        </p>
+                    @endif
+
                     @error('mentor') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
@@ -142,31 +158,67 @@
 
             <!-- Baris 4: Password & Konfirmasi Password -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-800/80">
-                <div>
+                <!-- Field Password -->
+                <div x-data="{ showPassword: false }">
                     <label for="password" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Password @if(!$isEditMode)<span class="text-red-500">*</span>@else <span class="text-gray-400 text-[10px] lowercase font-normal">(opsional)</span> @endif
                     </label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        wire:model="password" 
-                        placeholder="Min. 8 karakter" 
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('password') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition placeholder-gray-400 dark:placeholder-gray-500"
-                    >
+                    <div class="relative">
+                        <input 
+                            :type="showPassword ? 'text' : 'password'" 
+                            id="password" 
+                            wire:model="password" 
+                            placeholder="Min. 8 karakter" 
+                            class="bg-gray-50 dark:bg-gray-800/60 border @error('password') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 pr-10 transition placeholder-gray-400 dark:placeholder-gray-500"
+                        >
+                        <button 
+                            type="button" 
+                            @click="showPassword = !showPassword" 
+                            class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition focus:outline-none"
+                        >
+                            <!-- Icon Mata Terbuka -->
+                            <svg x-show="showPassword" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <!-- Icon Mata Tertutup -->
+                            <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.018 10.018 0 014.122-.963c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21M3 3l18 18"/>
+                            </svg>
+                        </button>
+                    </div>
                     @error('password') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
 
-                <div>
+                <!-- Field Konfirmasi Password -->
+                <div x-data="{ showConfirmPassword: false }">
                     <label for="confirm-password" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Konfirmasi Password
                     </label>
-                    <input 
-                        type="password" 
-                        id="confirm-password" 
-                        wire:model="confirm_password" 
-                        placeholder="Ulangi password" 
-                        class="bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition placeholder-gray-400 dark:placeholder-gray-500"
-                    >
+                    <div class="relative">
+                        <input 
+                            :type="showConfirmPassword ? 'text' : 'password'" 
+                            id="confirm-password" 
+                            wire:model="confirm_password" 
+                            placeholder="Ulangi password" 
+                            class="bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 pr-10 transition placeholder-gray-400 dark:placeholder-gray-500"
+                        >
+                        <button 
+                            type="button" 
+                            @click="showConfirmPassword = !showConfirmPassword" 
+                            class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition focus:outline-none"
+                        >
+                            <!-- Icon Mata Terbuka -->
+                            <svg x-show="showConfirmPassword" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <!-- Icon Mata Tertutup -->
+                            <svg x-show="!showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.018 10.018 0 014.122-.963c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21M3 3l18 18"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 

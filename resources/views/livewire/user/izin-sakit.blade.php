@@ -1,181 +1,278 @@
 <div>
-    <div class="w-full mx-auto max-w-4xl">
-        
-        <!-- Header Judul Ringkas -->
-        <div class="mb-4 border-b border-gray-200 dark:border-gray-800 pb-3">
-            <h1 class="text-xl font-bold text-gray-900 dark:text-white tracking-wide">PENGAJUAN IZIN, SAKIT & ABSEN</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Formulir permohonan ketidakhadiran magang untuk ketiadaan sementara karena izin, sakit, atau absen.</p>
+    <!-- HEADER TITLE & BADGE PENDING -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">Permohonan Izin / Sakit / Absen</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola persetujuan pengajuan izin, sakit, dan ketidakhadiran peserta PKL.</p>
+        </div>
+        @if($totalPending > 0)
+            <span class="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 shadow-sm self-start sm:self-auto">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                {{ $totalPending }} Menunggu Persetujuan
+            </span>
+        @endif
+    </div>
+
+    <!-- Flash Message Notifikasi -->
+    @if (session()->has('message'))
+        <div class="p-4 mb-6 text-sm text-emerald-700 dark:text-emerald-400 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-between" role="alert">
+            <span class="font-medium">{{ session('message') }}</span>
+        </div>
+    @endif
+
+    <div class="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-xl">
+        <!-- Top Bar -->
+        <div class="flex items-center justify-between p-5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 gap-4 overflow-x-auto no-scrollbar">
+            
+            <div class="flex items-center flex-nowrap shrink-0 gap-3">
+                <!-- Search -->
+                <div class="relative shrink-0">
+                    <div class="absolute inset-y-0 left-0 flex items-center ps-3.5 pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
+                    </div>
+                    <input type="text" wire:model.live.debounce.300ms="search" class="block p-2.5 ps-10 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl w-56 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Cari nama...">
+                </div>
+
+                <!-- Date Picker -->
+                <div class="relative shrink-0">
+                    <div class="absolute inset-y-0 left-0 flex items-center ps-3.5 pointer-events-none z-10">
+                        <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <input 
+                        type="date" 
+                        wire:model.live="tanggal"
+                        class="block p-2.5 ps-10 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl w-48 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    >
+                </div>
+
+                @if($tanggal)
+                    <button 
+                        type="button"
+                        wire:click="resetFilterTanggal"
+                        class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-500 hover:underline shrink-0"
+                    >
+                        Tampilkan Semua Tanggal
+                    </button>
+                @endif
+
+                <!-- Filter Status -->
+                <select wire:model.live="filterStatus" class="bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 text-gray-900 dark:text-gray-100 text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2.5 shrink-0 transition">
+                    <option value="">Semua Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="disetujui">Disetujui</option>
+                    <option value="ditolak">Ditolak</option>
+                </select>
+            </div>
         </div>
 
-        <!-- Flash Message Notification -->
-        @if (session()->has('message'))
-            <div class="mb-4 p-3 bg-green-100 dark:bg-green-900/40 border border-green-400 dark:border-green-600/60 text-green-700 dark:text-green-300 text-xs rounded-lg flex items-center justify-between shadow">
-                <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-green-500 dark:text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    <span>{{ session('message') }}</span>
-                </div>
-                <button type="button" class="text-green-600 dark:text-green-400 hover:text-gray-900 dark:hover:text-white text-xs" @click="$el.parentElement.remove()">✕</button>
-            </div>
-        @endif
+        <div class="overflow-x-auto">
+            <table class="w-full table-fixed text-sm text-left text-gray-600 dark:text-gray-300">
+                <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
+                    <tr>
+                        <th scope="col" class="px-5 py-4 w-[16%] font-bold">Nama</th>
+                        <th scope="col" class="px-5 py-4 w-[16%] font-bold">Tanggal / Rentang</th>
+                        <th scope="col" class="px-5 py-4 w-[12%] font-bold">Jenis</th>
+                        <th scope="col" class="px-5 py-4 w-[28%] font-bold">Alasan</th>
+                        <th scope="col" class="px-5 py-4 w-[14%] font-bold">Status</th>
+                        <th scope="col" class="px-5 py-4 w-[14%] font-bold text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-800/60">
+                    @forelse($permohonans as $permohonan)
+                        @php
+                            $tglAwal = $permohonan->tanggal_awal ? \Carbon\Carbon::parse($permohonan->tanggal_awal)->format('d/m/Y') : \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->format('d/m/Y');
+                            $tglAkhir = $permohonan->tanggal_akhir ? \Carbon\Carbon::parse($permohonan->tanggal_akhir)->format('d/m/Y') : null;
+                            
+                            $tglTampilan = ($tglAkhir && $tglAwal !== $tglAkhir) 
+                                ? $tglAwal . ' - ' . $tglAkhir 
+                                : $tglAwal;
 
-        <!-- Card Container Compact Form -->
-        <div class="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-lg">
-            <form wire:submit.prevent="kirimPengajuan" class="space-y-4">
-                
-                <!-- Baris 1: Dynamic Grid bergantung tipe pengajuan -->
-                <div class="grid grid-cols-1 {{ $tipePengajuan === 'absen' ? 'md:grid-cols-2' : 'md:grid-cols-3' }} gap-3">
+                            $jenisColor = match($permohonan->jenis) {
+                                'sakit' => 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
+                                'absen' => 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
+                                default => 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-500/20',
+                            };
+                            
+                            $itemId = $permohonan->permohonan_id ?? $permohonan->id;
+                        @endphp
+                        <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition" wire:key="permohonan-{{ $itemId }}">
+                            <th scope="row" class="px-5 py-4 font-semibold text-gray-900 dark:text-white truncate">
+                                {{ $permohonan->user->nama ?? $permohonan->user->name ?? '-' }}
+                            </th>
+                            <td class="px-5 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
+                                {{ $tglTampilan }}
+                            </td>
+                            <td class="px-5 py-4">
+                                <span class="inline-flex items-center justify-center w-full capitalize px-2.5 py-1 text-xs font-semibold rounded-full border {{ $jenisColor }}">
+                                    {{ $permohonan->jenis }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-4">
+                                <span class="block truncate text-gray-600 dark:text-gray-300" title="{{ $permohonan->alasan }}">{{ $permohonan->alasan }}</span>
+                            </td>
+                            <td class="px-5 py-4">
+                                @php
+                                    $statusColor = match($permohonan->status) {
+                                        'disetujui' => 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+                                        'ditolak' => 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
+                                        default => 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700/80',
+                                    };
+                                @endphp
+                                <span class="inline-flex items-center justify-center w-full capitalize px-2.5 py-1 text-xs font-semibold rounded-full border {{ $statusColor }}">
+                                    {{ $permohonan->status }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-4 text-center">
+                                <button 
+                                    type="button"
+                                    wire:click="openDetail({{ $itemId }})"
+                                    class="p-2 rounded-xl text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 border border-transparent hover:border-blue-200 dark:hover:border-blue-500/20 transition"
+                                    title="Lihat Detail"
+                                >
+                                    <svg class="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-5 py-10 text-center text-gray-400 dark:text-gray-500">Tidak ada permohonan ditemukan.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+            {{ $permohonans->links() }}
+        </div>
+    </div>
+
+    <!-- Modal Detail -->
+    @if($showDetailModal && $selectedPermohonan)
+        @php
+            $modalId = $selectedPermohonan->permohonan_id ?? $selectedPermohonan->id;
+        @endphp
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm px-4 py-6" @click="$event.target === $el && $wire.closeDetail()" wire:key="detail-modal-{{ $modalId }}">
+            <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 shadow-2xl" @click.stop>
+                @php
+                    $tglAwalObj = $selectedPermohonan->tanggal_awal ? \Carbon\Carbon::parse($selectedPermohonan->tanggal_awal) : \Carbon\Carbon::parse($selectedPermohonan->tanggal_permohonan);
+                    $tglAkhirObj = $selectedPermohonan->tanggal_akhir ? \Carbon\Carbon::parse($selectedPermohonan->tanggal_akhir) : $tglAwalObj;
                     
-                    <!-- Dropdown Tipe Pengajuan -->
-                    <div>
-                        <label for="tipePengajuan" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe Pengajuan</label>
-                        <div class="relative">
-                            <select 
-                                id="tipePengajuan" 
-                                wire:model.live="tipePengajuan"
-                                class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg px-3 py-2 pr-8 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer">
-                                <option value="izin">Izin</option>
-                                <option value="sakit">Sakit</option>
-                                <option value="absen">Absen</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400 dark:text-gray-400">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </div>
-                        </div>
-                        @error('tipePengajuan')
-                            <span class="text-[10px] text-red-500 dark:text-red-400 mt-0.5 block">{{ $message }}</span>
-                        @enderror
-                    </div>
+                    $tglMulaiFormatted = $tglAwalObj->translatedFormat('d F Y');
+                    $tglAkhirFormatted = $selectedPermohonan->tanggal_akhir ? $tglAkhirObj->translatedFormat('d F Y') : null;
 
-                    <!-- Tanggal Mulai / Tanggal Absen -->
-                    <div>
-                        <label for="tanggalMulai" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            {{ $tipePengajuan === 'absen' ? 'Tanggal' : 'Tanggal Mulai' }}
-                        </label>
-                        <input 
-                            type="date" 
-                            id="tanggalMulai" 
-                            wire:model.live="tanggalMulai"
-                            class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none" 
-                        />
-                        @error('tanggalMulai')
-                            <span class="text-[10px] text-red-500 dark:text-red-400 mt-0.5 block">{{ $message }}</span>
-                        @enderror
-                    </div>
+                    $jumlahHari = $selectedPermohonan->jumlah_hari ?? ($tglAwalObj->diffInDays($tglAkhirObj) + 1);
+                @endphp
 
-                    <!-- Tanggal Selesai (Hanya muncul jika Izin atau Sakit) -->
-                    @if ($tipePengajuan !== 'absen')
+                <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4">
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">Detail Permohonan</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {{ $selectedPermohonan->user->nama ?? $selectedPermohonan->user->name ?? 'Pemohon' }} 
+                        &bull; 
+                        {{ $selectedPermohonan->user->sekolah ?? $selectedPermohonan->user->asal_sekolah ?? '-' }}
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Grid 3 Kolom: Jenis, Tanggal, & Durasi Hari -->
+                    <div class="grid grid-cols-3 gap-3">
                         <div>
-                            <label for="tanggalSelesai" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Selesai</label>
-                            <input 
-                                type="date" 
-                                id="tanggalSelesai" 
-                                wire:model="tanggalSelesai"
-                                class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none" 
-                            />
-                            @error('tanggalSelesai')
-                                <span class="text-[10px] text-red-500 dark:text-red-400 mt-0.5 block">{{ $message }}</span>
-                            @enderror
+                            <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jenis</span>
+                            <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white capitalize">{{ $selectedPermohonan->jenis }}</p>
+                        </div>
+                        <div>
+                            <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal / Rentang</span>
+                            <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
+                                @if($tglAkhirFormatted && $tglMulaiFormatted !== $tglAkhirFormatted)
+                                    {{ $tglMulaiFormatted }} s/d {{ $tglAkhirFormatted }}
+                                @else
+                                    {{ $tglMulaiFormatted }}
+                                @endif
+                            </p>
+                        </div>
+                        <div>
+                            <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durasi</span>
+                            <p class="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                {{ $jumlahHari }} Hari
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Alamat Selama Izin (Hanya muncul jika ada nilainya) -->
+                    @if(!empty($selectedPermohonan->alamat_izin))
+                        <div>
+                            <span class="block mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alamat Selama Izin</span>
+                            <p class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-200 dark:border-gray-800 flex items-start gap-1.5">
+                                <span class="shrink-0">📍</span>
+                                <span>{{ $selectedPermohonan->alamat_izin }}</span>
+                            </p>
                         </div>
                     @endif
-                </div>
 
-                <!-- Baris 2: Textarea Alasan -->
-                <div>
-                    <label for="alasan" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Alasan / Keterangan</label>
-                    <textarea 
-                        id="alasan" 
-                        wire:model="alasan" 
-                        rows="2" 
-                        placeholder="Tuliskan alasan pengajuan secara jelas..." 
-                        class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg p-2.5 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none leading-relaxed resize-none"></textarea>
-                    @error('alasan')
-                        <span class="text-[10px] text-red-500 dark:text-red-400 mt-0.5 block">{{ $message }}</span>
-                    @enderror
-                </div>
+                    <div>
+                        <span class="block mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alasan</span>
+                        <p class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-800/60 p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800">{{ $selectedPermohonan->alasan }}</p>
+                    </div>
 
-                <!-- Baris 3: Tombol Submit Compact -->
-                <div class="flex flex-col items-end gap-2 pt-1">
-                    <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">Silakan lengkapi tanggal dan alasan keterangan sebelum mengirim.</p>
-                    <button 
-                        type="submit" 
-                        class="w-full sm:w-auto text-white bg-blue-600 hover:bg-blue-500 focus:ring-2 focus:ring-blue-800 font-medium rounded-lg text-xs px-5 py-2.5 transition duration-150 flex items-center justify-center gap-2 shadow-md">
-                        <span wire:loading.remove wire:target="kirimPengajuan">
-                            Kirim Pengajuan {{ ucfirst($tipePengajuan) }}
+                    @if($selectedPermohonan->lampiran)
+                        <div>
+                            <span class="block mb-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lampiran</span>
+                            <a href="{{ asset('storage/' . $selectedPermohonan->lampiran) }}" target="_blank" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-500/20 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                                </svg>
+                                Lihat Lampiran
+                            </a>
+                        </div>
+                    @endif
+
+                    <div>
+                        <span class="block mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status Saat Ini</span>
+                        @php
+                            $statusColorModal = match($selectedPermohonan->status) {
+                                'disetujui' => 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+                                'ditolak' => 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
+                                default => 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700/80',
+                            };
+                        @endphp
+                        <span class="inline-flex items-center capitalize px-3 py-1 text-xs font-semibold rounded-full border {{ $statusColorModal }}">
+                            {{ $selectedPermohonan->status }}
                         </span>
-                        <span wire:loading wire:target="kirimPengajuan">Mengirim Data...</span>
-                    </button>
+                    </div>
+
+                    <div>
+                        <label class="block mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Catatan Admin (Opsional)</label>
+                        <textarea 
+                            wire:model="catatanAdmin" rows="3"
+                            class="bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 text-gray-900 dark:text-gray-100 text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition"
+                            placeholder="Catatan untuk pemohon..."
+                        ></textarea>
+                    </div>
                 </div>
-            </form>
+
+                <div class="flex items-center justify-end gap-3 pt-5 mt-6 border-t border-gray-200 dark:border-gray-800">
+                    <button type="button" wire:click="closeDetail" class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition">
+                        Tutup
+                    </button>
+
+                    @if($selectedPermohonan->status === 'pending')
+                        <button type="button" wire:click="tolak({{ $modalId }})" class="px-4 py-2.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-2xl shadow-md shadow-rose-600/20 transition">
+                            Tolak
+                        </button>
+                        <button type="button" wire:click="setujui({{ $modalId }})" class="px-4 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-2xl shadow-md shadow-emerald-600/20 transition">
+                            Setujui
+                        </button>
+                    @endif
+                </div>
+            </div>
         </div>
-
-      <!-- Riwayat Pengajuan -->
-<div class="w-full mx-auto max-w-4xl mt-8">
-    <div class="mb-4 border-b border-gray-200 dark:border-gray-800 pb-3">
-        <h2 class="text-lg font-bold text-gray-900 dark:text-white tracking-wide">Riwayat Pengajuan</h2>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Daftar pengajuan izin, sakit, dan absen yang sudah pernah dikirim.</p>
-    </div>
-
-    <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-900 shadow-sm">
-        <table class="min-w-full text-left text-xs text-gray-600 dark:text-gray-300">
-            <thead class="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase text-[10px] tracking-wider">
-                <tr>
-                    <th class="px-3 py-3">Nama</th>
-                    <th class="px-3 py-3">Tanggal</th>
-                    <th class="px-3 py-3">Tipe</th>
-                    <th class="px-3 py-3">Alasan</th>
-                    <th class="px-3 py-3">Status Pengajuan</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($riwayat as $item)
-                    @php
-                        // Format Tanggal Mulai & Akhir dari Database
-                        $tglAwal = \Carbon\Carbon::parse($item->tanggal_awal ?? $item->tanggal_permohonan)->format('d/m/Y');
-                        $tglAkhir = $item->tanggal_akhir ? \Carbon\Carbon::parse($item->tanggal_akhir)->format('d/m/Y') : null;
-                        
-                        $rangeTanggal = ($tglAkhir && $tglAwal !== $tglAkhir) 
-                            ? $tglAwal . ' - ' . $tglAkhir 
-                            : $tglAwal;
-
-                        // Color Badge Status (light + dark variant)
-                        $statusBadge = match(strtolower($item->status)) {
-                            'disetujui', 'diterima' => 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-400 dark:border-emerald-600/50',
-                            'ditolak'              => 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 border border-red-400 dark:border-red-600/50',
-                            default                => 'bg-yellow-100 dark:bg-yellow-900/60 text-yellow-700 dark:text-yellow-300 border border-yellow-400 dark:border-yellow-600/50',
-                        };
-                    @endphp
-                    <tr class="border-t border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors">
-                        <!-- NAMA -->
-                        <td class="px-3 py-3 text-gray-800 dark:text-gray-200 font-medium">{{ $nama }}</td>
-                        
-                        <!-- TANGGAL -->
-                        <td class="px-3 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ $rangeTanggal }}</td>
-                        
-                        <!-- TIPE PENGAJUAN (Izin / Sakit / Absen) -->
-                        <td class="px-3 py-3 uppercase font-semibold text-blue-600 dark:text-blue-400">{{ $item->jenis }}</td>
-                        
-                        <!-- ALASAN -->
-                        <td class="px-3 py-3 text-gray-600 dark:text-gray-300 truncate max-w-[20rem]" title="{{ $item->alasan }}">
-                            {{ $item->alasan }}
-                        </td>
-                        
-                        <!-- STATUS PENGAJUAN (Pending / Disetujui / Ditolak) -->
-                        <td class="px-3 py-3">
-                            <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-semibold rounded-full capitalize {{ $statusBadge }}">
-                                {{ $item->status }}
-                            </span>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="px-3 py-6 text-center text-gray-400 dark:text-gray-500">Belum ada pengajuan yang tersimpan di database.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
-    </div>
+    @endif
 </div>

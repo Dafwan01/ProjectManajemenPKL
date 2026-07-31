@@ -4,6 +4,7 @@ namespace App\Livewire\User;
 
 use Livewire\Component;
 use App\Models\PermohonanIzin;
+use App\Enums\UserStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,11 +13,16 @@ class IzinSakit extends Component
     public $nama = '';
     public $sekolah = '';
 
+    // Flag status kelulusan user
+    public bool $isLulus = false;
+
     // State Form
     public $tipePengajuan = 'izin'; // 'izin', 'sakit', atau 'absen'
     public $tanggalMulai = '';
     public $tanggalSelesai = '';
     public $alasan = '';
+    public $alamatIzin = ''; // Property baru untuk alamat selama izin
+    public $jumlahHari = 1;  // Property baru untuk kalkulasi jumlah hari
 
     // Aturan validasi
     protected function rules()
@@ -32,6 +38,11 @@ class IzinSakit extends Component
             $rules['tanggalSelesai'] = 'required|date|after_or_equal:tanggalMulai';
         }
 
+        // Jika tipe pengajuan 'izin', wajibkan alamatIzin
+        if ($this->tipePengajuan === 'izin') {
+            $rules['alamatIzin'] = 'required|min:5';
+        }
+
         return $rules;
     }
 
@@ -43,6 +54,8 @@ class IzinSakit extends Component
         'tanggalSelesai.after_or_equal' => 'Tanggal selesai tidak boleh kurang dari tanggal mulai.',
         'alasan.required'               => 'Alasan/keterangan wajib diisi.',
         'alasan.min'                    => 'Alasan minimal 10 karakter.',
+        'alamatIzin.required'           => 'Alamat lokasi selama izin wajib diisi.',
+        'alamatIzin.min'                => 'Alamat minimal 5 karakter.',
     ];
 
     public function mount()
@@ -54,9 +67,53 @@ class IzinSakit extends Component
             $this->sekolah = $user->sekolah ?? $user->instansi ?? '-';
         }
 
+        $this->cekUserStatus();
+
         $today = now()->format('Y-m-d');
         $this->tanggalMulai = $today;
         $this->tanggalSelesai = $today;
+        $this->hitungJumlahHari();
+    }
+
+    private function cekUserStatus()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return;
+        }
+
+        $userStatus = $user->status instanceof \UnitEnum ? $user->status->value : $user->status;
+
+        if (strtolower((string) $userStatus) === 'lulus' || $userStatus === UserStatus::LULUS->value) {
+            $this->isLulus = true;
+            session()->flash('warning', 'Status akun Anda adalah LULUS. Anda tidak dapat membuat pengajuan izin/sakit lagi.');
+        }
+    }
+
+    /**
+     * Hitung durasi hari secara otomatis
+     */
+    public function hitungJumlahHari()
+    {
+        if ($this->tipePengajuan === 'absen') {
+            $this->jumlahHari = 1;
+            return;
+        }
+
+        if ($this->tanggalMulai && $this->tanggalSelesai) {
+            try {
+                $start = Carbon::parse($this->tanggalMulai);
+                $end = Carbon::parse($this->tanggalSelesai);
+
+                if ($end->greaterThanOrEqualTo($start)) {
+                    $this->jumlahHari = $start->diffInDays($end) + 1;
+                } else {
+                    $this->jumlahHari = 0;
+                }
+            } catch (\Exception $e) {
+                $this->jumlahHari = 1;
+            }
+        }
     }
 
     public function updatedTipePengajuan($value)
@@ -64,6 +121,10 @@ class IzinSakit extends Component
         if ($value === 'absen') {
             $this->tanggalSelesai = $this->tanggalMulai;
         }
+        if ($value !== 'izin') {
+            $this->alamatIzin = ''; // Reset alamat jika bukan izin
+        }
+        $this->hitungJumlahHari();
     }
 
     public function updatedTanggalMulai($value)
@@ -71,10 +132,21 @@ class IzinSakit extends Component
         if ($this->tipePengajuan === 'absen') {
             $this->tanggalSelesai = $value;
         }
+        $this->hitungJumlahHari();
+    }
+
+    public function updatedTanggalSelesai()
+    {
+        $this->hitungJumlahHari();
     }
 
     public function kirimPengajuan()
     {
+        if ($this->isLulus) {
+            session()->flash('warning', 'Gagal Pengajuan! Akun Anda telah berstatus LULUS.');
+            return;
+        }
+
         $this->validate();
 
         $user = Auth::user();
@@ -84,34 +156,35 @@ class IzinSakit extends Component
             return;
         }
 
-        // Tentukan tanggal akhir
         $tglAkhir = ($this->tipePengajuan === 'absen') 
             ? $this->tanggalMulai 
             : $this->tanggalSelesai;
 
-        // SIMPAN KE DATABASE TABEL permohonan_izins
+        // Simpan Ke Database
         PermohonanIzin::create([
             'user_id'            => $user->id ?? $user->user_id,
             'jenis'              => $this->tipePengajuan,
             'tanggal_awal'       => $this->tanggalMulai,
             'tanggal_akhir'      => $tglAkhir,
+            'jumlah_hari'        => $this->jumlahHari,
+            'alamat_izin'        => $this->tipePengajuan === 'izin' ? $this->alamatIzin : null,
             'tanggal_permohonan' => now()->format('Y-m-d'),
             'alasan'             => $this->alasan,
             'status'             => 'pending',
         ]);
 
         // Reset Form Input
-        $this->reset(['alasan']);
+        $this->reset(['alasan', 'alamatIzin']);
         $today = now()->format('Y-m-d');
         $this->tanggalMulai = $today;
         $this->tanggalSelesai = $today;
+        $this->hitungJumlahHari();
 
         session()->flash('message', 'Pengajuan ' . strtoupper($this->tipePengajuan) . ' berhasil dikirim ke admin!');
     }
 
     public function render()
     {
-        // Ambil riwayat pengajuan user langsung dari Database
         $user = Auth::user();
         $riwayat = [];
 

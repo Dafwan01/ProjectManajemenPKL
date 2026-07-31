@@ -3,6 +3,7 @@
 namespace App\Livewire\User;
 
 use App\Models\file as FileModel;
+use App\Enums\UserStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -17,6 +18,9 @@ class Dokumen extends Component
     public $nama = '';
     public $uploadedFiles = [];
 
+    // Flag status kelulusan user
+    public bool $isLulus = false;
+
     // State Modal & Preview
     public $showModal = false;
     public $selectedFile = null;
@@ -25,16 +29,38 @@ class Dokumen extends Component
 
     protected $rules = [
         'fileProject' => 'required|file|mimes:zip,rar,pdf,png,jpg,jpeg|max:51200',
-        'nama' => 'required|string|max:255',
+        'nama'        => 'required|string|max:255',
     ];
 
     protected $messages = [
-        'fileProject.mimes' => 'Format file yang diperbolehkan: ZIP, RAR, PDF, PNG, JPG.',
-        'fileProject.max' => 'File maksimal 50MB.',
+        'fileProject.mimes'    => 'Format file yang diperbolehkan: ZIP, RAR, PDF, PNG, JPG.',
+        'fileProject.max'      => 'File maksimal 50MB.',
         'fileProject.required' => 'Silakan unggah file.',
-        'nama.required' => 'Nama file wajib diisi.',
-        'nama.max' => 'Nama file maksimal 255 karakter.',
+        'nama.required'        => 'Nama file wajib diisi.',
+        'nama.max'             => 'Nama file maksimal 255 karakter.',
     ];
+
+    public function mount()
+    {
+        $this->loadUploadedFiles();
+        $this->cekUserStatus();
+    }
+
+    /**
+     * Pengecekan apakah status user saat ini adalah LULUS
+     */
+    private function cekUserStatus()
+    {
+        $user = Auth::user();
+        if (!$user) return;
+
+        $userStatus = $user->status instanceof \UnitEnum ? $user->status->value : $user->status;
+
+        if (strtolower((string) $userStatus) === 'lulus' || $userStatus === UserStatus::LULUS->value) {
+            $this->isLulus = true;
+            session()->flash('warning', 'Status akun Anda adalah LULUS. Anda tidak dapat mengunggah dokumen baru lagi.');
+        }
+    }
 
     public function updatedFileProject()
     {
@@ -43,11 +69,16 @@ class Dokumen extends Component
 
     public function submitDocument()
     {
+        if ($this->isLulus) {
+            session()->flash('warning', 'Gagal mengunggah! Akun Anda telah berstatus LULUS.');
+            return;
+        }
+
         $this->validate();
 
         $user = Auth::user();
 
-        if (! $user) {
+        if (!$user) {
             session()->flash('error', 'Silakan login terlebih dahulu sebelum mengunggah file.');
             return;
         }
@@ -62,7 +93,7 @@ class Dokumen extends Component
         $path = $this->fileProject->storeAs('files', $customFileName, 'public');
 
         FileModel::create([
-            'user_id'   => $user->user_id,
+            'user_id'   => $user->user_id ?? $user->id,
             'nama_file' => $this->nama,
             'file'      => $path,
         ]);
@@ -72,24 +103,23 @@ class Dokumen extends Component
         session()->flash('message', 'File berhasil disimpan di storage pribadi Anda.');
     }
 
-    // Modal / Direct Preview Action
+    /**
+     * Membuka Modal Preview untuk Gambar & PDF
+     */
     public function openPreviewModal($fileId)
     {
+        $user = Auth::user();
+        $userId = $user->user_id ?? $user->id ?? Auth::id();
+
         $this->selectedFile = FileModel::where('file_id', $fileId)
-            ->where('user_id', Auth::id())
+            ->where('user_id', $userId)
             ->firstOrFail();
 
         if (Storage::disk('public')->exists($this->selectedFile->file)) {
             $url = Storage::disk('public')->url($this->selectedFile->file);
             $extension = strtolower(pathinfo($this->selectedFile->file, PATHINFO_EXTENSION));
 
-            // Jika PDF: Buka langsung di tab baru (Native Browser Viewer)
-            if ($extension === 'pdf') {
-                $this->js("window.open('{$url}', '_blank');");
-                return;
-            }
-
-            // Selain PDF: Tampilkan Modal Preview (PNG, JPG, ZIP, RAR, dll)
+            // Set state modal untuk semua format file (Termasuk PDF)
             $this->previewUrl = $url;
             $this->fileExtension = $extension;
             $this->showModal = true;
@@ -98,7 +128,9 @@ class Dokumen extends Component
         }
     }
 
-    // Modal Action: Tutup modal
+    /**
+     * Tutup Modal Preview
+     */
     public function closePreviewModal()
     {
         $this->showModal = false;
@@ -109,8 +141,11 @@ class Dokumen extends Component
 
     public function downloadFile($fileId)
     {
+        $user = Auth::user();
+        $userId = $user->user_id ?? $user->id ?? Auth::id();
+
         $fileRecord = FileModel::where('file_id', $fileId)
-            ->where('user_id', Auth::id())
+            ->where('user_id', $userId)
             ->firstOrFail();
 
         if (Storage::disk('public')->exists($fileRecord->file)) {
@@ -123,14 +158,11 @@ class Dokumen extends Component
     public function loadUploadedFiles()
     {
         $user = Auth::user();
-        $this->uploadedFiles = $user 
-            ? FileModel::where('user_id', $user->user_id)->orderByDesc('file_id')->get() 
-            : collect();
-    }
+        $userId = $user ? ($user->user_id ?? $user->id) : null;
 
-    public function mount()
-    {
-        $this->loadUploadedFiles();
+        $this->uploadedFiles = $userId 
+            ? FileModel::where('user_id', $userId)->orderByDesc('file_id')->get() 
+            : collect();
     }
 
     public function render()

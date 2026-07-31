@@ -6,7 +6,7 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth; // <-- Tambahkan import Auth
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -22,15 +22,13 @@ class ManajemenPkl extends Component
     public $userId = null;
     public $nama = '';
     public $email = '';
-    public $role = UserRole::PKL->value; // Default role PKL
+    public $role = UserRole::PKL->value;
     public $status = UserStatus::AKTIF->value;
     public $asal_sekolah = '';
     public $mentor = '';
     public $tanggal_mulai = null;
     public $tanggal_akhir = null;
     public $skill = '';
-    public $password = '';
-    public $confirm_password = '';
 
     // Field Tambahan Profil
     public $tempat_lahir = '';
@@ -61,9 +59,6 @@ class ManajemenPkl extends Component
             'tanggal_mulai' => 'nullable|date',
             'tanggal_akhir' => 'nullable|date|after_or_equal:tanggal_mulai',
             'skill' => 'nullable|string',
-            'password' => $this->isEditMode
-                ? 'nullable|min:8|same:confirm_password'
-                : 'required|min:8|same:confirm_password',
         ];
     }
 
@@ -77,9 +72,6 @@ class ManajemenPkl extends Component
         'status.required' => 'Silakan pilih status akun.',
         'jenis_kelamin.in' => 'Pilihan jenis kelamin tidak valid.',
         'tanggal_akhir.after_or_equal' => 'Tanggal akhir harus sama atau setelah tanggal mulai.',
-        'password.required' => 'Password wajib diisi.',
-        'password.min' => 'Password minimal harus 8 karakter.',
-        'password.same' => 'Konfirmasi password tidak cocok.',
     ];
 
     public function resetFields()
@@ -98,8 +90,6 @@ class ManajemenPkl extends Component
         $this->tanggal_mulai = null;
         $this->tanggal_akhir = null;
         $this->skill = '';
-        $this->password = '';
-        $this->confirm_password = '';
         $this->resetValidation();
     }
 
@@ -110,6 +100,13 @@ class ManajemenPkl extends Component
 
     public function save()
     {
+        $currentUser = Auth::user();
+
+        // Kunci nilai mentor jika user yang login adalah MENTOR
+        if ($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value) {
+            $this->mentor = $currentUser->nama;
+        }
+
         $validated = $this->validate();
 
         $data = [
@@ -133,21 +130,18 @@ class ManajemenPkl extends Component
 
         if ($this->isEditMode) {
             $user = User::findOrFail($this->userId);
-
-            if (!empty($this->password)) {
-                $data['password'] = bcrypt($this->password);
-            }
-
             $user->update($data);
             session()->flash('message', 'Akun berhasil diperbarui!');
         } else {
-            $data['password'] = bcrypt($this->password);
+            // Password default untuk akun baru
+            $data['password'] = bcrypt('password123');
+
             if (empty($data['tanggal_mulai'])) {
                 $data['tanggal_mulai'] = now()->format('Y-m-d');
             }
 
             User::create($data);
-            session()->flash('message', 'Akun berhasil dibuat!');
+            session()->flash('message', 'Akun berhasil dibuat! Password default: password123');
         }
 
         $this->closeModal();
@@ -158,7 +152,6 @@ class ManajemenPkl extends Component
         $this->resetFields();
         $this->isEditMode = false;
 
-        // Otomatis isi kolom mentor jika user yang login adalah Mentor
         $currentUser = Auth::user();
         if ($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value) {
             $this->mentor = $currentUser->nama;
@@ -181,7 +174,14 @@ class ManajemenPkl extends Component
         $this->jenis_kelamin = $user->jenis_kelamin;
         $this->jurusan = $user->jurusan;
         $this->asal_sekolah = $user->asal_sekolah;
-        $this->mentor = $user->mentor;
+
+        $currentUser = Auth::user();
+        if ($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value) {
+            $this->mentor = $currentUser->nama;
+        } else {
+            $this->mentor = $user->mentor;
+        }
+
         $this->tanggal_mulai = $this->formatDateForInput($user->tanggal_mulai);
         $this->tanggal_akhir = $this->formatDateForInput($user->tanggal_Akhir);
         $this->skill = $user->skill ?? '';
@@ -252,9 +252,14 @@ class ManajemenPkl extends Component
     {
         $currentUser = Auth::user();
 
+        // Ambil daftar user yang ber-role MENTOR untuk dropdown
+        $mentors = User::query()
+            ->where('role', UserRole::MENTOR->value)
+            ->orderBy('nama', 'asc')
+            ->get();
+
         $users = User::query()
             ->where('role', UserRole::PKL->value)
-            // Filter hanya user PKL yang dinaungi mentor ini jika yang login adalah Mentor
             ->when($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value, function ($query) use ($currentUser) {
                 $query->where('mentor', $currentUser->nama);
             })
@@ -269,6 +274,6 @@ class ManajemenPkl extends Component
             ->latest('tanggal_mulai')
             ->paginate(10);
 
-        return view('livewire.dashboard.manajemen-pkl', compact('users'));
+        return view('livewire.dashboard.manajemen-pkl', compact('users', 'mentors'));
     }
 }

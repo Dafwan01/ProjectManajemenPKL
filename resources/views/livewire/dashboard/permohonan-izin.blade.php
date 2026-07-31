@@ -162,8 +162,14 @@
             <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 shadow-2xl" @click.stop>
                 @if($permohonan)
                     @php
-                        $tglMulaiFormatted = $permohonan->tanggal_awal ? \Carbon\Carbon::parse($permohonan->tanggal_awal)->translatedFormat('d F Y') : \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->translatedFormat('d F Y');
-                        $tglAkhirFormatted = $permohonan->tanggal_akhir ? \Carbon\Carbon::parse($permohonan->tanggal_akhir)->translatedFormat('d F Y') : null;
+                        $tglAwalObj = $permohonan->tanggal_awal ? \Carbon\Carbon::parse($permohonan->tanggal_awal) : \Carbon\Carbon::parse($permohonan->tanggal_permohonan);
+                        $tglAkhirObj = $permohonan->tanggal_akhir ? \Carbon\Carbon::parse($permohonan->tanggal_akhir) : $tglAwalObj;
+                        
+                        $tglMulaiFormatted = $tglAwalObj->translatedFormat('d F Y');
+                        $tglAkhirFormatted = $permohonan->tanggal_akhir ? $tglAkhirObj->translatedFormat('d F Y') : null;
+
+                        // Kalkulasi Jumlah Hari / Durasi
+                        $jumlahHari = $permohonan->jumlah_hari ?? ($tglAwalObj->diffInDays($tglAkhirObj) + 1);
                     @endphp
 
                     <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4">
@@ -176,14 +182,15 @@
                     </div>
 
                     <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
+                        <!-- Grid 3 Kolom: Jenis, Tanggal, & Durasi Hari -->
+                        <div class="grid grid-cols-3 gap-3">
                             <div>
-                                <span class="block mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jenis Permohonan</span>
-                                <p class="text-sm font-semibold text-gray-900 dark:text-white capitalize">{{ $permohonan->jenis }}</p>
+                                <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jenis</span>
+                                <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white capitalize">{{ $permohonan->jenis }}</p>
                             </div>
                             <div>
-                                <span class="block mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal / Rentang</span>
-                                <p class="text-sm font-semibold text-gray-900 dark:text-white">
+                                <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal / Rentang</span>
+                                <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
                                     @if($tglAkhirFormatted && $tglMulaiFormatted !== $tglAkhirFormatted)
                                         {{ $tglMulaiFormatted }} s/d {{ $tglAkhirFormatted }}
                                     @else
@@ -191,11 +198,28 @@
                                     @endif
                                 </p>
                             </div>
+                            <div>
+                                <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durasi</span>
+                                <p class="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                    {{ $jumlahHari }} Hari
+                                </p>
+                            </div>
                         </div>
+
+                        <!-- Alamat Selama Izin (Hanya muncul jika ada nilainya) -->
+                        @if(!empty($permohonan->alamat_izin))
+                            <div>
+                                <span class="block mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alamat Selama Izin</span>
+                                <p class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-200 dark:border-gray-800 flex items-start gap-1.5">
+                                    <span class="shrink-0">📍</span>
+                                    <span>{{ $permohonan->alamat_izin }}</span>
+                                </p>
+                            </div>
+                        @endif
 
                         <div>
                             <span class="block mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alasan</span>
-                            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-800/60 p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800">{{ $permohonan->alasan }}</p>
+                            <p class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-800/60 p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800">{{ $permohonan->alasan }}</p>
                         </div>
 
                         @if($permohonan->lampiran)

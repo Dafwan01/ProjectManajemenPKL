@@ -5,13 +5,13 @@ namespace App\Enums;
 enum UserStatus: string
 {
     case AKTIF = 'Aktif';
-    case lulus = 'Lulus';
+    case LULUS = 'Lulus'; // <-- Ubah 'lulus' menjadi 'LULUS' (Huruf Kapital)
 
     public function label(): string
     {
         return match ($this) {
             self::AKTIF => 'Aktif',
-            self::lulus => 'Lulus',
+            self::LULUS => 'Lulus',
         };
     }
 }

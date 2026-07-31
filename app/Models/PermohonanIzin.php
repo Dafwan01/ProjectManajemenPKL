@@ -19,6 +19,8 @@ class PermohonanIzin extends Model
         'lampiran',
         'status',
         'catatan_admin',
+        'alamat_izin',
+        'jumlah_hari',
     ];
 
     protected $casts = [

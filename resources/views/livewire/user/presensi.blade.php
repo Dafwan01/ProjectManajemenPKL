@@ -11,6 +11,12 @@
          wire:ignore.self
          x-data="{ 
             tipePresensi: $wire.entangle('tipePresensi'),
+            
+            // 1. SINKRONISASI VARIABLE DARI BACKEND LIVEWIRE (PENTING!)
+            statusKerja: $wire.entangle('statusKerja'),
+            isWfa: $wire.entangle('isWfa'),
+            maxRadiusMeters: $wire.entangle('maxRadiusMeters'),
+
             isCameraOn: false, 
             hasPhoto: false,
             photoPreview: null,
@@ -18,10 +24,9 @@
             locationAccuracy: null,
             watchId: null,
 
-            // Konfigurasi Geofencing Balai Kota Bogor (Di-set sangat besar untuk WFA)
+            // Konfigurasi Geofencing Kantor
             targetLat: -6.595181,
             targetLng: 106.793836,
-            maxRadiusMeters: 50000000, // 50.000 KM agar bebas WFA dari mana saja
             distance: null,
             isWithinRadius: true,
 
@@ -54,28 +59,32 @@
                     return;
                 }
 
-                // Hentikan watch sebelumnya jika ada
                 if (this.watchId) {
                     navigator.geolocation.clearWatch(this.watchId);
                 }
 
-                // Menggunakan watchPosition untuk mengunci koordinat presisi secara berkelanjutan
                 this.watchId = navigator.geolocation.watchPosition(
                     (position) => {
                         const lat = position.coords.latitude;
                         const lng = position.coords.longitude;
-                        this.locationAccuracy = Math.round(position.coords.accuracy); // Akurasi dalam meter
+                        this.locationAccuracy = Math.round(position.coords.accuracy);
 
                         this.$wire.latitude = lat;
                         this.$wire.longitude = lng;
 
                         this.distance = this.calculateDistance(lat, lng, this.targetLat, this.targetLng);
-                        this.isWithinRadius = this.distance <= this.maxRadiusMeters;
-
-                        if (!this.isWithinRadius) {
-                            this.locationError = `Jarak Anda: ${this.distance}m dari pusat.`;
-                        } else {
+                        
+                        // Validasi Radius Dinamis (Jika WFA selalu true, jika WFO cek <= maxRadiusMeters)
+                        if (this.isWfa || this.statusKerja === 'wfh') {
+                            this.isWithinRadius = true;
                             this.locationError = '';
+                        } else {
+                            this.isWithinRadius = this.distance <= this.maxRadiusMeters;
+                            if (!this.isWithinRadius) {
+                                this.locationError = `Di luar radius kantor (${this.distance}m / Maksimal ${this.maxRadiusMeters}m).`;
+                            } else {
+                                this.locationError = '';
+                            }
                         }
                     },
                     (error) => {
@@ -95,9 +104,9 @@
                         }
                     },
                     { 
-                        enableHighAccuracy: true, // Wajib paksa hardware GPS
-                        timeout: 20000,           // Waktu tunggu 20 detik
-                        maximumAge: 0             // Dilarang pakai cache lokasi lama
+                        enableHighAccuracy: true,
+                        timeout: 20000,
+                        maximumAge: 0
                     }
                 );
             },
@@ -221,7 +230,7 @@
          
         <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white tracking-wide">FORM PRESENSI HARI INI</h1>
 
-        <!-- Notifikasi Berhasil -->
+        <!-- Notifikasi Success -->
         @if (session()->has('message'))
             <div class="mb-6 p-4 bg-green-100 dark:bg-green-900/80 border border-green-400 dark:border-green-500 text-green-800 dark:text-green-200 rounded-xl flex items-center justify-between shadow-lg">
                 <div class="flex items-center gap-2">
@@ -232,12 +241,22 @@
             </div>
         @endif
 
+        <!-- Notifikasi Warning / Alert -->
+        @if (session()->has('warning'))
+            <div class="mb-6 p-4 bg-amber-100 dark:bg-amber-900/80 border border-amber-400 dark:border-amber-500 text-amber-800 dark:text-amber-200 rounded-xl flex items-center justify-between shadow-lg">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-amber-500 dark:text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span>{{ session('warning') }}</span>
+                </div>
+                <button type="button" class="text-amber-600 dark:text-amber-300 hover:text-gray-900 dark:hover:text-white" onclick="this.parentElement.remove()">✕</button>
+            </div>
+        @endif
+
         <!-- Card Utama Form Presensi -->
         <form wire:submit.prevent="simpanPresensi(); resetVisualState();" class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-xl mb-8 w-full transition-all duration-300">
             
             <!-- Tab Pilih Tipe Presensi (Masuk / Pulang) -->
             <div class="mb-6 flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-2">
-                <!-- Button MASUK -->
                 <button type="button" 
                     @click="tipePresensi = 'masuk'; $wire.setTipePresensi('masuk')" 
                     :class="tipePresensi === 'masuk' ? 'bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50'"
@@ -246,7 +265,6 @@
                     Presensi MASUK
                 </button>
 
-                <!-- Button PULANG -->
                 <button type="button" 
                     @click="tipePresensi = 'pulang'; $wire.setTipePresensi('pulang')" 
                     :class="tipePresensi === 'pulang' ? 'bg-gray-100 dark:bg-gray-700 text-orange-600 dark:text-orange-400 border-b-2 border-orange-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50'"
@@ -337,17 +355,27 @@
                 <!-- Detail & Input Data -->
                 <div class="flex flex-col space-y-4 w-full flex-1">
                     
-                    <!-- Indicator Status GPS / Geofencing -->
+                    <!-- 2. PERBAIKAN: INDICATOR STATUS GPS / GEOFENCING DINAMIS -->
                     <div class="p-4 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs shadow-inner">
                         <template x-if="$wire.latitude && $wire.longitude">
                             <div class="flex flex-col gap-1 font-mono">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-2" :class="isWithinRadius ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                        <span>Status Lokasi Active (WFA Mode)</span>
+                                        
+                                        <!-- Teks Status Dinamis Berdasarkan Mode WFH / WFO -->
+                                        <template x-if="isWfa || statusKerja === 'wfh'">
+                                            <span>Mode Kerja: WFH / WFA (Bebas Radius)</span>
+                                        </template>
+                                        <template x-if="!isWfa && statusKerja === 'wfo'">
+                                            <span x-text="isWithinRadius ? `Mode WFO: Dalam Radius Kantor` : `Mode WFO: Di Luar Radius (Max ${maxRadiusMeters}m)`"></span>
+                                        </template>
                                     </div>
+
+                                    <!-- Jarak meter dari kantor -->
                                     <span class="text-gray-500 dark:text-gray-400" x-text="`${distance}m dari pusat`"></span>
                                 </div>
+
                                 <div class="text-[10px] text-gray-500 dark:text-gray-400 flex justify-between mt-1 pt-1 border-t border-gray-200 dark:border-gray-800">
                                     <span>Akurasi GPS: ±<span class="text-emerald-600 dark:text-emerald-400 font-bold" x-text="locationAccuracy"></span> meter</span>
                                     <button type="button" @click="getLocation()" class="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Refresh GPS</button>
@@ -390,23 +418,33 @@
                         <span>Untuk presensi masuk, Anda hanya perlu mengambil foto jepretan kamera terbaru. Logbook harian tidak perlu diisi saat presensi masuk.</span>
                     </div>
 
-                    <!-- Tombol Submit Presensi -->
+                    <!-- Pengecekan Logika Disabled Sisi Backend -->
+                    @php
+                        $isDisabledByBackend = $isLulus 
+                            || ($tipePresensi === 'masuk' && $sudahAbsenMasuk) 
+                            || ($tipePresensi === 'pulang' && $sudahAbsenKeluar);
+                    @endphp
+
+                    <!-- 3. PERBAIKAN: TOMBOL SUBMIT DENGAN NAMA LABEL DINAMIS -->
                     <button 
                         type="submit" 
-                        :disabled="!isWithinRadius || ({{ $tipePresensi === 'masuk' && $sudahAbsenMasuk ? 'true' : 'false' }}) || ({{ $tipePresensi === 'pulang' && $sudahAbsenKeluar ? 'true' : 'false' }})"
-                        :class="(isWithinRadius && !({{ $tipePresensi === 'masuk' && $sudahAbsenMasuk ? 'true' : 'false' }}) && !({{ $tipePresensi === 'pulang' && $sudahAbsenKeluar ? 'true' : 'false' }})) 
+                        :disabled="!isWithinRadius || {{ $isDisabledByBackend ? 'true' : 'false' }}"
+                        :class="(isWithinRadius && !{{ $isDisabledByBackend ? 'true' : 'false' }}) 
                                 ? 'bg-green-600 hover:bg-green-500 cursor-pointer' 
                                 : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-50'"
                         class="w-full text-white font-bold py-3 px-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
                         
-                        @if ($tipePresensi === 'masuk' && $sudahAbsenMasuk)
+                        @if ($isLulus)
+                            <span>Status Akun Lulus (Nonaktif)</span>
+                        @elseif ($tipePresensi === 'masuk' && $sudahAbsenMasuk)
                             <span>Sudah Absen Masuk Hari Ini</span>
                         @elseif ($tipePresensi === 'pulang' && $sudahAbsenKeluar)
                             <span>Sudah Absen Pulang Hari Ini</span>
                         @else
-                            <span x-text="isWithinRadius ? 'Kirim Presensi' : 'Di Luar Area Balai Kota'"></span>
+                            <span x-text="isWithinRadius ? 'Kirim Presensi' : `Di Luar Radius Kantor (Max ${maxRadiusMeters}m)`"></span>
                         @endif
                     </button>
+
                 </div>
             </div>
         </form>

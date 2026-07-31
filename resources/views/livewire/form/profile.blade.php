@@ -1,10 +1,11 @@
-<!-- Modal Overlay dengan Background Blur -->
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
     
-    <div class="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-6 my-8" @click.stop>
+    <!-- Container Modal dengan Batas Tinggi Max 90vh -->
+    <div class="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 flex flex-col max-h-[90vh] my-auto" @click.stop>
         
-        <!-- Header Modal -->
-        <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
+        <!-- Header Modal (Tetap di Atas) -->
+        <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4 shrink-0">
             <div>
                 <h3 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
                     {{ $isEditMode ? 'Edit Data Pengguna' : 'Buat Pengguna Baru' }}
@@ -19,8 +20,8 @@
             </button>
         </div>
 
-        <!-- Form Submit -->
-        <form wire:submit.prevent="save" class="space-y-4">
+        <!-- Body Form (Bisa di-scroll jika konten panjang) -->
+        <form wire:submit.prevent="save" class="space-y-4 overflow-y-auto pr-1 pt-4 my-2 flex-1 scrollbar-thin">
             
             <!-- Baris 1: Nama Lengkap & Email -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -120,13 +121,23 @@
 
                 <div>
                     <label for="mentor" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Nama Mentor</label>
-                    <input 
-                        type="text" 
+                    @php
+                        $isMentorUser = auth()->user()->role === \App\Enums\UserRole::MENTOR || auth()->user()->role?->value === \App\Enums\UserRole::MENTOR->value;
+                    @endphp
+                    <select 
                         id="mentor" 
                         wire:model="mentor" 
-                        placeholder="Masukkan nama mentor" 
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('mentor') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
+                        @disabled($isMentorUser)
+                        class="bg-gray-50 dark:bg-gray-800/60 border @error('mentor') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition disabled:opacity-60 disabled:cursor-not-allowed"
                     >
+                        <option value="">-- Pilih Mentor --</option>
+                        @foreach($mentors as $m)
+                            <option value="{{ $m->nama }}">{{ $m->nama }}</option>
+                        @endforeach
+                    </select>
+                    @if($isMentorUser)
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1">*Sebagai Mentor, Anda otomatis menjadi pembimbing pengguna ini.</p>
+                    @endif
                     @error('mentor') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                 </div>
             </div>
@@ -169,36 +180,8 @@
                 @error('skill') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
             </div>
 
-            <!-- Baris 7: Password & Konfirmasi Password -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label for="password" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Password {{ $isEditMode ? '(Kosongkan jika tidak diubah)' : '' }}
-                    </label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        wire:model="password" 
-                        placeholder="••••••••" 
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('password') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
-                    >
-                    @error('password') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                </div>
-
-                <div>
-                    <label for="confirm-password" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Konfirmasi Password</label>
-                    <input 
-                        type="password" 
-                        id="confirm-password" 
-                        wire:model="confirm_password" 
-                        placeholder="••••••••" 
-                        class="bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
-                    >
-                </div>
-            </div>
-
-            <!-- Tombol Aksi -->
-            <div class="flex items-center justify-end gap-3 pt-5 border-t border-gray-200 dark:border-gray-800">
+            <!-- Tombol Aksi (Tetap di Bawah) -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800 shrink-0">
                 <button 
                     type="button" 
                     wire:click="closeModal" 

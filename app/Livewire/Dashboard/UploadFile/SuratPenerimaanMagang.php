@@ -21,6 +21,11 @@ class SuratPenerimaanMagang extends Component
     public string $search = '';
     public $files = [];
 
+    // State Modal Preview PDF
+    public bool $showPreviewModal = false;
+    public ?string $previewUrl = null;
+    public ?string $previewUserName = null;
+
     protected $namaFileKategori = 'surat_penerimaan_magang';
 
     /**
@@ -45,13 +50,39 @@ class SuratPenerimaanMagang extends Component
         $this->resetPage();
     }
 
+    public function openPreview($userId): void
+    {
+        $user = User::with(['files' => function ($query) {
+            $query->where('nama_file', $this->namaFileKategori);
+        }])->findOrFail($userId);
+
+        $suratFile = $user->files->first();
+
+        if ($suratFile && Storage::disk('public')->exists($suratFile->file)) {
+            $this->previewUrl = Storage::url($suratFile->file);
+            $this->previewUserName = $user->nama;
+            $this->showPreviewModal = true;
+        }
+    }
+
+    public function closePreview(): void
+    {
+        $this->showPreviewModal = false;
+        $this->previewUrl = null;
+        $this->previewUserName = null;
+    }
+
     public function updatedFiles($value, $key)
     {
         $userId = $key;
 
+        // Validasi Dikhususkan Hanya Untuk PDF
         $this->validateOnly("files.$userId", [
-            "files.$userId" => 'file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ], [], [
+            "files.$userId" => 'file|mimes:pdf|max:5120',
+        ], [
+            "files.$userId.mimes" => 'Berkas harus berformat PDF.',
+            "files.$userId.max"   => 'Ukuran file tidak boleh lebih dari 5MB.',
+        ], [
             "files.$userId" => 'File',
         ]);
 
@@ -82,7 +113,7 @@ class SuratPenerimaanMagang extends Component
 
         unset($this->files[$userId]);
 
-        session()->flash('message', 'Surat penerimaan magang untuk ' . $user->nama . ' berhasil diupload!');
+        session()->flash('message', 'Surat penerimaan magang (PDF) untuk ' . $user->nama . ' berhasil diupload!');
     }
 
     public function render()

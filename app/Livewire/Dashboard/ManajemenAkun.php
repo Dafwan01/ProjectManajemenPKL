@@ -135,7 +135,11 @@ class ManajemenAkun extends Component
 
         $currentUser = Auth::user();
         if ($this->isMentor()) {
+            // Set otomatis mentor & divisi mengikuti akun mentor yang login
             $this->mentor = $currentUser->nama;
+            $this->divisi = $currentUser->divisi instanceof \UnitEnum 
+                ? $currentUser->divisi->value 
+                : (string) $currentUser->divisi;
         }
 
         $this->showModal = true;
@@ -153,7 +157,16 @@ class ManajemenAkun extends Component
         $this->role = $user->role instanceof \UnitEnum ? $user->role->value : $user->role;
         $this->divisi = $user->divisi instanceof \UnitEnum ? $user->divisi->value : $user->divisi;
         $this->asal_sekolah = $user->asal_sekolah;
-        $this->mentor = $user->mentor;
+
+        $currentUser = Auth::user();
+        if ($this->isMentor()) {
+            $this->mentor = $currentUser->nama;
+            $this->divisi = $currentUser->divisi instanceof \UnitEnum 
+                ? $currentUser->divisi->value 
+                : (string) $currentUser->divisi;
+        } else {
+            $this->mentor = $user->mentor;
+        }
 
         $this->showModal = true;
     }
@@ -166,8 +179,15 @@ class ManajemenAkun extends Component
 
     public function save()
     {
+        $currentUser = Auth::user();
+
+        // Proteksi backend: Kunci nilai role, mentor, dan divisi jika user yang login adalah MENTOR
         if ($this->isMentor()) {
             $this->role = UserRole::PKL->value;
+            $this->mentor = $currentUser->nama;
+            $this->divisi = $currentUser->divisi instanceof \UnitEnum 
+                ? $currentUser->divisi->value 
+                : (string) $currentUser->divisi;
         }
 
         $this->validate();
