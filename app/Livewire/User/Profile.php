@@ -81,16 +81,20 @@ class Profile extends Component
         'fotoUpload.max' => 'Ukuran gambar maksimal 2MB.',
     ];
 
-    public function mount()
-    {
-        $this->user = Auth::user() ?? User::where('role', UserRole::PKL)->first();
+   public function mount()
+{
+    $authUser = Auth::user();
+    logger('Auth::id() = ' . Auth::id());
+    logger('Auth::user() null? ' . (is_null($authUser) ? 'YA' : 'TIDAK'));
 
-        if (! $this->user) {
-            abort(403);
-        }
+    $this->user = $authUser ?? User::where('role', UserRole::PKL)->first();
 
-        $this->fillProfileFields();
-    }
+    logger('user_id yang dipakai: ' . $this->user->user_id);
+    logger('tanggal_akhir: ' . $this->user->tanggal_akhir);
+
+    if (! $this->user) abort(403);
+    $this->fillProfileFields();
+}
 
     /**
      * Mengisi nilai field dengan konversi tanggal yang aman

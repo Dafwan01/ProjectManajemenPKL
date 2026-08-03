@@ -5,7 +5,7 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source "../../storage/framework/views/*.php";
 @source "../../app/Livewire";
-
+@import '@fontsource/inter'; // Ini otomatis meng-import font Inter lokal
 :root {
     --font-brand: "Outfit", "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
 }

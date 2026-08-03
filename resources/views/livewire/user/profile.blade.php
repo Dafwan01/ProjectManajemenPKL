@@ -135,43 +135,59 @@
                     <button type="button" @click="closeModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition">✕</button>
                 </div>
 
-                <div x-show="!isCameraOn" x-cloak class="space-y-3">
-                        <button 
-                            type="button"
-                            @click="initCamera()"
-                            class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-3 rounded-xl transition shadow-lg shadow-emerald-600/20"
-                        >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 011.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
-                            Ambil Foto via Kamera
-                        </button>
+                <!-- Pilihan awal: hanya muncul saat kamera belum aktif -->
+<div x-show="!isCameraOn" x-cloak class="space-y-3">
+    <button 
+        type="button"
+        @click="initCamera()"
+        class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-3 rounded-xl transition shadow-lg shadow-emerald-600/20"
+    >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 011.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+        Ambil Foto via Kamera
+    </button>
 
-                        <label class="w-full flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-sm font-semibold py-3 rounded-xl border border-gray-300 dark:border-gray-700 transition cursor-pointer">
-                            <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
-                            Upload dari Perangkat
-                            <input 
-                                type="file" 
-                                wire:model="fotoUpload"
-                                accept="image/*"
-                                class="hidden"
-                                @change="handleFileUpload($event)"
-                            />
-                        </label>
-                        <canvas x-ref="canvas" class="hidden"></canvas>
-                        <button 
-                            type="button"
-                            @click="takeSnap()"
-                            class="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-3 rounded-xl transition shadow-lg shadow-blue-600/20"
-                        >
-                            Jepret Foto
-                        </button>
-                        <button 
-                            type="button"
-                            @click="stopCamera()"
-                            class="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium py-2.5 rounded-xl transition border border-gray-300 dark:border-gray-700"
-                        >
-                            Batal
-                        </button>
-                    </div>
+    <label class="w-full flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-sm font-semibold py-3 rounded-xl border border-gray-300 dark:border-gray-700 transition cursor-pointer">
+        <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+        Upload dari Perangkat
+        <input 
+            type="file" 
+            wire:model="fotoUpload"
+            accept="image/*"
+            class="hidden"
+            @change="handleFileUpload($event)"
+        />
+    </label>
+</div>
+
+<!-- Tampilan kamera aktif: video preview + tombol jepret/batal -->
+<div x-show="isCameraOn" x-cloak class="space-y-3">
+    <div class="w-full aspect-square rounded-xl overflow-hidden bg-black">
+        <video 
+            x-ref="video" 
+            autoplay 
+            playsinline 
+            muted
+            class="w-full h-full object-cover scale-x-[-1]"
+        ></video>
+    </div>
+
+    <button 
+        type="button"
+        @click="takeSnap()"
+        class="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-3 rounded-xl transition shadow-lg shadow-blue-600/20"
+    >
+        Jepret Foto
+    </button>
+    <button 
+        type="button"
+        @click="stopCamera()"
+        class="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium py-2.5 rounded-xl transition border border-gray-300 dark:border-gray-700"
+    >
+        Batal
+    </button>
+</div>
+
+<canvas x-ref="canvas" class="hidden"></canvas>
             </div>
         </div>
 
