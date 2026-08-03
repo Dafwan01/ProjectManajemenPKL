@@ -105,7 +105,7 @@ class Profile extends Component
         $this->email = $this->user->email;
         $this->tempat_lahir = $this->user->tempat_lahir;
         $this->tanggal_lahir = $this->formatDateForInput($this->user->tanggal_lahir);
-        $this->jenis_kelamin = $this->user->jenis_kelamin;
+        $this->jenis_kelamin = $this->normalizeGenderValue($this->user->jenis_kelamin);
         $this->asal_sekolah = $this->user->asal_sekolah;
         $this->jurusan = $this->user->jurusan;
         $this->mentor = $this->user->mentor;
@@ -128,6 +128,19 @@ class Profile extends Component
         }
 
         return Carbon::parse($value)->format('Y-m-d');
+    }
+
+    private function normalizeGenderValue($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        return match (strtolower(trim((string) $value))) {
+            'laki-laki', 'laki laki', 'male', 'pria' => 'Laki-laki',
+            'perempuan', 'wanita', 'female' => 'Perempuan',
+            default => trim((string) $value),
+        };
     }
 
     public function updated($propertyName)

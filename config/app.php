@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'SIMPATI'),
+    'name' => env('APP_NAME', 'SIMPATI (Sistem Informasi Magang dan Presensi dan Aktivitas)'),
 
     /*
     |--------------------------------------------------------------------------

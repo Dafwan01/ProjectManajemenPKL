@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Sinergi Magang Nusantara' }}</title>
+    <title>{{ $title ?? 'SIMPATI (Sistem Informasi Magang dan Presensi dan Aktivitas)' }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -108,38 +108,38 @@
             <aside x-show="sidebarOpen" x-cloak class="fixed top-0 left-0 w-64 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-5 flex flex-col justify-between transition-all duration-300">
                 <div>
                     <div class="flex justify-between items-center mb-8">
-                        <div class="flex items-center gap-2.5">
-                            <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo SIMPATI" class="w-16 h-16 rounded-2xl object-cover">
-                            <h2 class="brand-name">SIMPATI</h2>
+                        <div class="flex items-center gap-3">
+                            <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo SIMPATI" class="w-14 h-14 rounded-2xl object-cover">
+                            <h2 class="brand-name text-[5rem] font-extrabold leading-tight">SIMPATI</h2>
                         </div>
-                        <button @click="sidebarOpen = false" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">✕</button>
+                        <button @click="sidebarOpen = false" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">✕</button>
                     </div>
 
                     <!-- Navigation Links (Mobile) -->
                     <nav class="space-y-1.5">
-                        <a href="{{ route('user.presensi') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.presensi') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                        <a href="{{ route('user.presensi') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.presensi') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                             <span>Presensi</span>
                         </a>
-                        <a href="{{ route('user.riwayat') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.riwayat') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                        <a href="{{ route('user.riwayat') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.riwayat') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <span>Riwayat</span>
                         </a>
-                        <a href="{{ route('user.izin-sakit') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.izin-sakit') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                        <a href="{{ route('user.izin-sakit') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.izin-sakit') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                             <span>Izin / Sakit</span>
                         </a>
-                        <a href="{{ route('user.dokumen') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.dokumen') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                        <a href="{{ route('user.dokumen') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.dokumen') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                             <span>Upload File</span>
                         </a>
                         @if(Route::has('user.project'))
-                        <a href="{{ route('user.project') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.project') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                        <a href="{{ route('user.project') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.project') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
                             <span>Project</span>
                         </a>
                         @endif
-                        <a href="{{ route('user.profile') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                        <a href="{{ route('user.profile') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                             <span>Profile</span>
                         </a>
@@ -160,38 +160,38 @@
         </div>
 
         <!-- SIDEBAR DESKTOP -->
-        <aside class="hidden sm:flex w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-col justify-between h-screen sticky top-0 flex-shrink-0 transition-colors duration-200">
+        <aside class="hidden sm:flex w-72 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-col justify-between h-screen sticky top-0 flex-shrink-0 transition-colors duration-200">
             <div class="p-5 flex-1 flex flex-col">
                 <div class="flex items-center gap-3 mb-8 px-2">
                     <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo SIMPATI" class="w-16 h-16 rounded-2xl object-cover">
-                    <h1 class="brand-name">SIMPATI</h1>
+                    <h1 class="brand-name text-[8rem] font-extrabold leading-tight">SIMPATI</h1>
                 </div>
 
                 <!-- Navigation Links (Desktop) -->
                 <nav class="space-y-1.5 flex-1">
-                    <a href="{{ route('user.presensi') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.presensi') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
+                    <a href="{{ route('user.presensi') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.presensi') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                         <span>Presensi</span>
                     </a>
-                    <a href="{{ route('user.riwayat') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.riwayat') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
+                    <a href="{{ route('user.riwayat') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.riwayat') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <span>Riwayat</span>
                     </a>
-                    <a href="{{ route('user.izin-sakit') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.izin-sakit') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
+                    <a href="{{ route('user.izin-sakit') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.izin-sakit') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         <span>Izin / Sakit</span>
                     </a>
-                    <a href="{{ route('user.dokumen') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.dokumen') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
+                    <a href="{{ route('user.dokumen') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.dokumen') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                         <span>Upload File</span>
                     </a>
                     @if(Route::has('user.project'))
-                    <a href="{{ route('user.project') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.project') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
+                    <a href="{{ route('user.project') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.project') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
                         <span>Project</span>
                     </a>
                     @endif
-                    <a href="{{ route('user.profile') }}" wire:navigate class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
+                    <a href="{{ route('user.profile') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         <span>Profile</span>
                     </a>
@@ -202,7 +202,7 @@
             <div class="p-4 border-t border-gray-200 dark:border-gray-800">
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="flex items-center gap-3 px-4 py-3 w-full text-left text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl text-sm font-medium transition group">
+                    <button type="submit" class="flex items-center gap-3 px-4 py-3 w-full text-left text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl text-sm font-medium transition group min-h-[50px]">
                         <svg class="w-5 h-5 shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
                         <span>Log Out</span>
                     </button>
