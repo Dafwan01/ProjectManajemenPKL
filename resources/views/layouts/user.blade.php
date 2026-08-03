@@ -109,8 +109,8 @@
                 <div>
                     <div class="flex justify-between items-center mb-8">
                         <div class="flex items-center gap-2.5">
-                            <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo Presensi Pintar" class="w-16 h-16 rounded-2xl object-cover">
-                            <h2 class="brand-name">Presensi Pintar</h2>
+                            <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo SIMPATI" class="w-16 h-16 rounded-2xl object-cover">
+                            <h2 class="brand-name">SIMPATI</h2>
                         </div>
                         <button @click="sidebarOpen = false" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">✕</button>
                     </div>
@@ -163,8 +163,8 @@
         <aside class="hidden sm:flex w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-col justify-between h-screen sticky top-0 flex-shrink-0 transition-colors duration-200">
             <div class="p-5 flex-1 flex flex-col">
                 <div class="flex items-center gap-3 mb-8 px-2">
-                    <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo Presensi Pintar" class="w-16 h-16 rounded-2xl object-cover">
-                    <h1 class="brand-name">Presensi Pintar</h1>
+                    <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo SIMPATI" class="w-16 h-16 rounded-2xl object-cover">
+                    <h1 class="brand-name">SIMPATI</h1>
                 </div>
 
                 <!-- Navigation Links (Desktop) -->

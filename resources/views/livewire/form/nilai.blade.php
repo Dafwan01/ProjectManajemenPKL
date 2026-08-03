@@ -11,74 +11,90 @@
     <form wire:submit.prevent="simpan" class="space-y-4">
 
         <!-- Kriteria 1 -->
-        <div>
-            <label for="kedisiplinan" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                1. Kedisiplinan & Profesionalisme (Integritas Work Ethic)
-            </label>
-            <input 
-                type="number" min="0" max="100" id="kedisiplinan"
-                wire:model="kedisiplinan"
-                placeholder="0 - 100"
-                class="bg-gray-50 dark:bg-gray-800/60 border @error('kedisiplinan') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
-            >
-            @error('kedisiplinan') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-        </div>
+        <!-- Kriteria 1 -->
+<div>
+    <div class="flex items-center justify-between mb-1.5">
+        <label for="kedisiplinan" class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            1. Kedisiplinan & Profesionalisme (Integritas Work Ethic)
+        </label>
+        <span class="text-[10px] font-medium text-gray-500 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full flex-shrink-0 ml-2">0-100</span>
+    </div>
+    <input 
+        type="number" min="0" max="100" id="kedisiplinan"
+        wire:model="kedisiplinan"
+        placeholder="0 - 100"
+        class="bg-gray-50 dark:bg-gray-800/60 border @error('kedisiplinan') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
+    >
+    @error('kedisiplinan') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+</div>
 
-        <!-- Kriteria 2 -->
-        <div>
-            <label for="kemampuan_teknis" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                2. Kemampuan Teknis & Implementasi Tugas (Hard Skills)
-            </label>
-            <input 
-                type="number" min="0" max="100" id="kemampuan_teknis"
-                wire:model="kemampuan_teknis"
-                placeholder="0 - 100"
-                class="bg-gray-50 dark:bg-gray-800/60 border @error('kemampuan_teknis') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
-            >
-            @error('kemampuan_teknis') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-        </div>
+<!-- Kriteria 2 -->
+<div>
+    <div class="flex items-center justify-between mb-1.5">
+        <label for="kemampuan_teknis" class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            2. Kemampuan Teknis & Implementasi Tugas (Hard Skills)
+        </label>
+        <span class="text-[10px] font-medium text-gray-500 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full flex-shrink-0 ml-2">0-100</span>
+    </div>
+    <input 
+        type="number" min="0" max="100" id="kemampuan_teknis"
+        wire:model="kemampuan_teknis"
+        placeholder="0 - 100"
+        class="bg-gray-50 dark:bg-gray-800/60 border @error('kemampuan_teknis') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
+    >
+    @error('kemampuan_teknis') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+</div>
 
-        <!-- Kriteria 3 -->
-        <div>
-            <label for="problem_solving" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                3. Kemampuan Logika Pemecahan Masalah (Problem Solving)
-            </label>
-            <input 
-                type="number" min="0" max="100" id="problem_solving"
-                wire:model="problem_solving"
-                placeholder="0 - 100"
-                class="bg-gray-50 dark:bg-gray-800/60 border @error('problem_solving') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
-            >
-            @error('problem_solving') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-        </div>
+<!-- Kriteria 3 -->
+<div>
+    <div class="flex items-center justify-between mb-1.5">
+        <label for="problem_solving" class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            3. Kemampuan Logika Pemecahan Masalah (Problem Solving)
+        </label>
+        <span class="text-[10px] font-medium text-gray-500 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full flex-shrink-0 ml-2">0-100</span>
+    </div>
+    <input 
+        type="number" min="0" max="100" id="problem_solving"
+        wire:model="problem_solving"
+        placeholder="0 - 100"
+        class="bg-gray-50 dark:bg-gray-800/60 border @error('problem_solving') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
+    >
+    @error('problem_solving') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+</div>
 
-        <!-- Kriteria 4 -->
-        <div>
-            <label for="komunikasi_kerjasama" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                4. Komunikasi & Kerja Sama Tim (Soft Skills)
-            </label>
-            <input 
-                type="number" min="0" max="100" id="komunikasi_kerjasama"
-                wire:model="komunikasi_kerjasama"
-                placeholder="0 - 100"
-                class="bg-gray-50 dark:bg-gray-800/60 border @error('komunikasi_kerjasama') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
-            >
-            @error('komunikasi_kerjasama') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-        </div>
+<!-- Kriteria 4 -->
+<div>
+    <div class="flex items-center justify-between mb-1.5">
+        <label for="komunikasi_kerjasama" class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            4. Komunikasi & Kerja Sama Tim (Soft Skills)
+        </label>
+        <span class="text-[10px] font-medium text-gray-500 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full flex-shrink-0 ml-2">0-100</span>
+    </div>
+    <input 
+        type="number" min="0" max="100" id="komunikasi_kerjasama"
+        wire:model="komunikasi_kerjasama"
+        placeholder="0 - 100"
+        class="bg-gray-50 dark:bg-gray-800/60 border @error('komunikasi_kerjasama') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
+    >
+    @error('komunikasi_kerjasama') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+</div>
 
-        <!-- Kriteria 5 -->
-        <div>
-            <label for="kualitas_ketepatan" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                5. Kualitas & Ketepatan Waktu Output Kerja (Deliverables)
-            </label>
-            <input 
-                type="number" min="0" max="100" id="kualitas_ketepatan"
-                wire:model="kualitas_ketepatan"
-                placeholder="0 - 100"
-                class="bg-gray-50 dark:bg-gray-800/60 border @error('kualitas_ketepatan') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
-            >
-            @error('kualitas_ketepatan') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-        </div>
+<!-- Kriteria 5 -->
+<div>
+    <div class="flex items-center justify-between mb-1.5">
+        <label for="kualitas_ketepatan" class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            5. Kualitas & Ketepatan Waktu Output Kerja (Deliverables)
+        </label>
+        <span class="text-[10px] font-medium text-gray-500 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full flex-shrink-0 ml-2">0-100</span>
+    </div>
+    <input 
+        type="number" min="0" max="100" id="kualitas_ketepatan"
+        wire:model="kualitas_ketepatan"
+        placeholder="0 - 100"
+        class="bg-gray-50 dark:bg-gray-800/60 border @error('kualitas_ketepatan') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition placeholder-gray-400 dark:placeholder-gray-500"
+    >
+    @error('kualitas_ketepatan') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+</div>
 
         <!-- Catatan Tambahan -->
         <div>

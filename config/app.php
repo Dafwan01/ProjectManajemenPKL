@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Presensi Pintar'),
+    'name' => env('APP_NAME', 'SIMPATI'),
 
     /*
     |--------------------------------------------------------------------------
