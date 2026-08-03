@@ -171,7 +171,7 @@ class MonitoringAbsensi extends Component
         $currentUser = Auth::user();
         $isMentor = $this->isMentorUser();
 
-        $presensis = presensi::with(['user', 'logBooks.user'])
+        $presensis = presensi::with(['user', 'logBooks.user', 'user.detailJadwals.jadwal'])
             ->whereHas('user', function ($query) use ($currentUser, $isMentor) {
                 $query->where('role', UserRole::PKL->value);
 

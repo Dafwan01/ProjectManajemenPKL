@@ -58,6 +58,35 @@
                         @php
                             $user = $presensi->user ?? $presensi->logBooks->first()?->user;
                             $status = strtolower($presensi->status_kehadiran?->value ?? $presensi->status_kehadiran ?? '');
+                            
+                            // Mapping hari Inggris ke Indonesia
+                            $hariMapping = [
+                                'monday' => 'senin',
+                                'tuesday' => 'selasa',
+                                'wednesday' => 'rabu',
+                                'thursday' => 'kamis',
+                                'friday' => 'jumat',
+                                'saturday' => 'sabtu',
+                                'sunday' => 'minggu',
+                            ];
+                            
+                            // Cari jadwal user untuk hari presensi
+                            $statusKerja = '-';
+                            if ($user && $presensi->tanggal) {
+                                // Ambil hari dari tanggal presensi dalam format Inggris
+                                $hariInggris = strtolower(\Carbon\Carbon::parse($presensi->tanggal)->format('l'));
+                                $hariIndonesia = $hariMapping[$hariInggris] ?? null;
+                                
+                                // Cek apakah user memiliki detail jadwal
+                                if ($hariIndonesia && $user->detailJadwals) {
+                                    foreach ($user->detailJadwals as $detail) {
+                                        if ($detail->hari && strtolower($detail->hari) === $hariIndonesia) {
+                                            $statusKerja = $detail->jadwal?->status_kerja?->value ?? '-';
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                         @endphp
                         <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition">
                             <th scope="row" class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
@@ -65,25 +94,43 @@
                             </th>
                             <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ $user->asal_sekolah ?? '-' }}</td>
                             <td class="px-6 py-4">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border
-                                    @if($status === 'hadir')
-                                        bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20
-                                    @elseif($status === 'izin' || $status === 'sakit')
-                                        bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20
-                                    @else
-                                        bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20
-                                    @endif
-                                ">
-                                    <span class="w-1.5 h-1.5 rounded-full 
-                                        @if($status === 'hadir') bg-emerald-500 dark:bg-emerald-400
-                                        @elseif($status === 'izin' || $status === 'sakit') bg-amber-500 dark:bg-amber-400
-                                        @else bg-rose-500 dark:bg-rose-400 @endif">
+                                <div class="flex flex-col gap-2">
+                                    <!-- Status Kehadiran -->
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border
+                                        @if($status === 'hadir')
+                                            bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20
+                                        @elseif($status === 'izin' || $status === 'sakit')
+                                            bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20
+                                        @else
+                                            bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20
+                                        @endif
+                                    ">
+                                        <span class="w-1.5 h-1.5 rounded-full 
+                                            @if($status === 'hadir') bg-emerald-500 dark:bg-emerald-400
+                                            @elseif($status === 'izin' || $status === 'sakit') bg-amber-500 dark:bg-amber-400
+                                            @else bg-rose-500 dark:bg-rose-400 @endif">
+                                        </span>
+                                        {{ $presensi->status_kehadiran?->value ?? $presensi->status_kehadiran ?? '-' }}
                                     </span>
-                                    {{ $presensi->status_kehadiran?->value ?? $presensi->status_kehadiran ?? '-' }}
-                                </span>
+                                    
+                                    <!-- Status Kerja (WFA/WFO) -->
+                                    @if($statusKerja !== '-')
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border
+                                            @if($statusKerja === 'WFH' || $statusKerja === 'WFA')
+                                                bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20
+                                            @else
+                                                bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20
+                                            @endif
+                                        ">
+                                            <span class="w-1.5 h-1.5 rounded-full 
+                                                @if($statusKerja === 'WFH' || $statusKerja === 'WFA') bg-blue-500 dark:bg-blue-400
+                                                @else bg-purple-500 dark:bg-purple-400 @endif">
+                                            </span>
+                                            {{ $statusKerja }}
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
-                            
-                            <!-- Foto + Jam Masuk -->
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-col items-center justify-center gap-2">
                                     @if($presensi->foto_masuk)
