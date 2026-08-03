@@ -3,11 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class file extends Model
 {
-     public $timestamps = false;
-
     protected $table = 'files';
     protected $primaryKey = 'file_id';
 
@@ -17,8 +16,50 @@ class file extends Model
         'file',
     ];
 
-      public function user()
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+
+    public function getFileExtensionAttribute(): ?string
+    {
+        if (empty($this->file)) {
+            return null;
+        }
+
+        return strtolower(pathinfo($this->file, PATHINFO_EXTENSION));
+    }
+
+    public function getFileSizeAttribute(): ?int
+    {
+        if (empty($this->file)) {
+            return null;
+        }
+
+        try {
+            return Storage::disk('public')->size($this->file);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    public function getFileSizeFormattedAttribute(): ?string
+    {
+        $size = $this->file_size;
+
+        if (! $size) {
+            return null;
+        }
+
+        if ($size >= 1024 * 1024) {
+            return number_format($size / 1024 / 1024, 1) . ' MB';
+        }
+
+        return number_format($size / 1024, 1) . ' KB';
     }
 }

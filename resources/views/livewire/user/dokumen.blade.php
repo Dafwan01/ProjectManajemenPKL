@@ -58,6 +58,15 @@
                     accept=".zip,.rar,.pdf,.png,.jpg,.jpeg"
                 />
                 @error('fileProject') <span class="text-red-500 dark:text-red-400 text-xs block mt-2">{{ $message }}</span> @enderror
+                @if($fileProject)
+                    <div class="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-900/40 p-3 text-emerald-700 dark:text-emerald-200 text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <div>
+                            <p class="font-semibold">Berkas siap diunggah</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-300">{{ $fileProject->getClientOriginalName() }} {{ $fileProject->getSize() ? '• ' . round($fileProject->getSize() / 1024, 1) . ' KB' : '' }}</p>
+                        </div>
+                    </div>
+                @endif
                 <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">Maksimum 50MB. Diperbolehkan: ZIP, RAR, PDF, PNG, JPG.</p>
             </div>
 
@@ -75,7 +84,7 @@
 
     <!-- Tabel Riwayat Upload -->
     <div class="mt-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-3xl p-6 shadow-lg">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex flex-col gap-4 mb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Riwayat Upload</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">Daftar file pribadi yang sudah Anda simpan.</p>
@@ -87,6 +96,41 @@
             @endif
         </div>
 
+        <div class="grid gap-4 sm:grid-cols-3 mb-6">
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">Filter Nama</label>
+                <input
+                    type="text"
+                    wire:model.debounce.500ms="filterName"
+                    class="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm px-4 py-3 focus:border-blue-500 focus:outline-none"
+                    placeholder="Cari nama file"
+                />
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">Filter Jenis</label>
+                <select
+                    wire:model="filterExtension"
+                    class="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm px-4 py-3 focus:border-blue-500 focus:outline-none"
+                >
+                    <option value="">Semua Jenis</option>
+                    <option value="pdf">PDF</option>
+                    <option value="png">PNG</option>
+                    <option value="jpg">JPG</option>
+                    <option value="jpeg">JPEG</option>
+                    <option value="rar">RAR</option>
+                    <option value="zip">ZIP</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">Filter Tanggal Upload</label>
+                <input
+                    type="date"
+                    wire:model="filterUploadAt"
+                    class="w-full rounded-2xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white text-sm px-4 py-3 focus:border-blue-500 focus:outline-none"
+                />
+            </div>
+        </div>
+
         @if($uploadedFiles->isEmpty())
             <div class="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center text-gray-500 dark:text-gray-400">
                 Belum ada file yang diunggah.
@@ -96,8 +140,11 @@
                 <table class="min-w-full text-left text-sm text-gray-700 dark:text-gray-200">
                     <thead class="border-b border-gray-200 dark:border-gray-700 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         <tr>
-                            <th class="px-4 py-3">#</th>
+                            <th class="px-4 py-3">No1</th>
                             <th class="px-4 py-3">Nama File</th>
+                            <th class="px-4 py-3">Jenis File</th>
+                            <th class="px-4 py-3">Ukuran</th>
+                            <th class="px-4 py-3">Waktu Upload</th>
                             <th class="px-4 py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -106,7 +153,10 @@
                             <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition">
                                 <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $index + 1 }}</td>
                                 <td class="px-4 py-3 text-gray-900 dark:text-white font-medium">{{ $item->nama_file ?: '-' }}</td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $item->file_extension ? strtoupper($item->file_extension) : '-' }}</td>
+                                <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $item->file_size_formatted ?: '-' }}</td>
+                                <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $item->created_at ? $item->created_at->format('d M Y H:i') : '-' }}</td>
+                                <td class="px-4 py-3 text-center space-x-2">
                                     @if($item->file)
                                         <button 
                                             wire:click="openPreviewModal({{ $item->file_id }})" 
@@ -116,6 +166,17 @@
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                        </button>
+
+                                        <button 
+                                            type="button"
+                                            wire:click="confirmDelete({{ $item->file_id }})" 
+                                            title="Hapus File"
+                                            class="inline-flex items-center justify-center p-2 rounded-xl bg-red-100 dark:bg-red-700/60 text-red-600 dark:text-red-200 hover:bg-red-500 hover:text-white border border-red-300 dark:border-red-600/50 transition shadow-sm"
+                                        >
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m4 0H5"/>
                                             </svg>
                                         </button>
                                     @else
@@ -196,6 +257,38 @@
                     </button>
                 </div>
 
+            </div>
+        </div>
+    @endif
+
+    @if($confirmDeleteId)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div class="w-full max-w-lg rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-800">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Konfirmasi Hapus File</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Apakah Anda yakin ingin menghapus file ini? Aksi ini tidak dapat dikembalikan.</p>
+                </div>
+                <div class="px-6 py-5">
+                    <div class="text-sm text-gray-700 dark:text-gray-200 mb-4">
+                        Pilih "Hapus" untuk melanjutkan atau "Batal" untuk membatalkan penghapusan.
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button
+                            type="button"
+                            wire:click="cancelDelete"
+                            class="rounded-2xl px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="deleteFile"
+                            class="rounded-2xl px-4 py-2 bg-red-600 text-white hover:bg-red-500 transition"
+                        >
+                            Hapus
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     @endif

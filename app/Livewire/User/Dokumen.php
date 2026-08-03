@@ -17,6 +17,9 @@ class Dokumen extends Component
     public $fileProject;
     public $nama = '';
     public $uploadedFiles = [];
+    public $filterName = '';
+    public $filterExtension = '';
+    public $filterUploadAt = '';
 
     // Flag status kelulusan user
     public bool $isLulus = false;
@@ -26,6 +29,7 @@ class Dokumen extends Component
     public $selectedFile = null;
     public $previewUrl = '';
     public $fileExtension = '';
+    public $confirmDeleteId = null;
 
     protected $rules = [
         'fileProject' => 'required|file|mimes:zip,rar,pdf,png,jpg,jpeg|max:51200',
@@ -65,6 +69,20 @@ class Dokumen extends Component
     public function updatedFileProject()
     {
         $this->validateOnly('fileProject');
+    }
+
+    public function updated($propertyName)
+    {
+        if (str_starts_with($propertyName, 'filter')) {
+            $this->loadUploadedFiles();
+            return;
+        }
+
+        if ($propertyName === 'fileProject') {
+            return;
+        }
+
+        $this->validateOnly($propertyName);
     }
 
     public function submitDocument()
@@ -116,11 +134,10 @@ class Dokumen extends Component
             ->firstOrFail();
 
         if (Storage::disk('public')->exists($this->selectedFile->file)) {
-            $url = Storage::disk('public')->url($this->selectedFile->file);
             $extension = strtolower(pathinfo($this->selectedFile->file, PATHINFO_EXTENSION));
 
-            // Set state modal untuk semua format file (Termasuk PDF)
-            $this->previewUrl = $url;
+            // Use a relative storage path to preserve the current host and port
+            $this->previewUrl = '/storage/' . ltrim($this->selectedFile->file, '/');
             $this->fileExtension = $extension;
             $this->showModal = true;
         } else {
@@ -155,14 +172,69 @@ class Dokumen extends Component
         session()->flash('error', 'File tidak ditemukan di server.');
     }
 
+    public function confirmDelete($fileId)
+    {
+        $this->confirmDeleteId = $fileId;
+    }
+
+    public function cancelDelete()
+    {
+        $this->confirmDeleteId = null;
+    }
+
+    public function deleteFile()
+    {
+        if (!$this->confirmDeleteId) {
+            return;
+        }
+
+        $user = Auth::user();
+        $userId = $user->user_id ?? $user->id ?? Auth::id();
+
+        $fileRecord = FileModel::where('file_id', $this->confirmDeleteId)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        if (Storage::disk('public')->exists($fileRecord->file)) {
+            Storage::disk('public')->delete($fileRecord->file);
+        }
+
+        $fileRecord->delete();
+        $this->confirmDeleteId = null;
+        $this->loadUploadedFiles();
+
+        if ($this->selectedFile && $this->selectedFile->file_id === $fileRecord->file_id) {
+            $this->closePreviewModal();
+        }
+
+        session()->flash('message', 'File berhasil dihapus.');
+    }
+
     public function loadUploadedFiles()
     {
         $user = Auth::user();
         $userId = $user ? ($user->user_id ?? $user->id) : null;
 
-        $this->uploadedFiles = $userId 
-            ? FileModel::where('user_id', $userId)->orderByDesc('file_id')->get() 
-            : collect();
+        if (! $userId) {
+            $this->uploadedFiles = collect();
+            return;
+        }
+
+        $query = FileModel::where('user_id', $userId);
+
+        if ($this->filterName) {
+            $query->where('nama_file', 'like', '%' . $this->filterName . '%');
+        }
+
+        if ($this->filterExtension) {
+            $query->where('file', 'like', '%.' . strtolower($this->filterExtension));
+        }
+
+        if ($this->filterUploadAt && strtotime($this->filterUploadAt) !== false) {
+            $query->whereDate('created_at', date('Y-m-d', strtotime($this->filterUploadAt)));
+        }
+
+        $this->uploadedFiles = $query->orderByDesc('created_at')->get();
     }
 
     public function render()

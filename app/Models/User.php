@@ -29,7 +29,7 @@ class User extends Authenticatable
         'email',
         'password',
         'tanggal_mulai',
-        'tanggal_Akhir',
+        'tanggal_akhir',
         'role',
         'divisi',
         'surat_penerimaan',
@@ -49,7 +49,7 @@ class User extends Authenticatable
     protected $casts = [
         'password' => 'hashed',
         'tanggal_mulai' => 'datetime',
-        'tanggal_Akhir' => 'date',
+        'tanggal_akhir' => 'date',
         'tanggal_lahir' => 'date',
 
         // Casting Enum di sini

@@ -1,9 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap');
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 @source "../views";
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+@source "../../storage/framework/views/*.php";
 @source "../../app/Livewire";
+
+:root {
+    --font-brand: "Outfit", "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.brand-name {
+    font-family: var(--font-brand);
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-size: 1.1rem;
+    background: linear-gradient(120deg, #0ea5e9 0%, #6366f1 45%, #ec4899 100%);
+    -webkit-background-clip: text;
+    color: transparent;
+    text-shadow: 0 2px 12px rgba(15, 23, 42, 0.18);
+}
+
+.dark .brand-name {
+    text-shadow: 0 2px 15px rgba(255, 255, 255, 0.14);
+}
 
 @theme {
     --font-sans:

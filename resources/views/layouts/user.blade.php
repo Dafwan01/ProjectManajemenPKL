@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'E-Presensi PKL' }}</title>
+    <title>{{ $title ?? 'Sinergi Magang Nusantara' }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -109,8 +109,8 @@
                 <div>
                     <div class="flex justify-between items-center mb-8">
                         <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-600/30">P</div>
-                            <h2 class="text-base font-bold text-gray-900 dark:text-white tracking-wider">E-PRESENSI PKL</h2>
+                            <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo Presensi Pintar" class="w-16 h-16 rounded-2xl object-cover">
+                            <h2 class="brand-name">Presensi Pintar</h2>
                         </div>
                         <button @click="sidebarOpen = false" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">✕</button>
                     </div>
@@ -163,8 +163,8 @@
         <aside class="hidden sm:flex w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex-col justify-between h-screen sticky top-0 flex-shrink-0 transition-colors duration-200">
             <div class="p-5 flex-1 flex flex-col">
                 <div class="flex items-center gap-3 mb-8 px-2">
-                    <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-600/30">P</div>
-                    <h1 class="text-base font-bold text-gray-900 dark:text-white tracking-wider">E-PRESENSI PKL</h1>
+                    <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo Presensi Pintar" class="w-16 h-16 rounded-2xl object-cover">
+                    <h1 class="brand-name">Presensi Pintar</h1>
                 </div>
 
                 <!-- Navigation Links (Desktop) -->

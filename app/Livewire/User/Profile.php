@@ -196,6 +196,8 @@ class Profile extends Component
 
         session()->flash('message', 'Profil berhasil diperbarui.');
         $this->fillProfileFields();
+
+        return redirect()->route('user.profile');
     }
 
     private function simpanFoto(): ?string
