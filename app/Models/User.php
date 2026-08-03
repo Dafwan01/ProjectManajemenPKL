@@ -12,6 +12,8 @@ use App\Models\Nilai;
 use App\Models\file;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable
 {
@@ -57,6 +59,67 @@ class User extends Authenticatable
         'status' => UserStatus::class,
         'divisi' => UserDivisi::class,
     ];
+
+    public function getTanggalAkhirAttribute($value)
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value;
+        }
+
+        foreach (['tanggal_akhir', 'tanggal_Akhir'] as $column) {
+            if (array_key_exists($column, $this->attributes) && $this->attributes[$column] !== null && $this->attributes[$column] !== '') {
+                $rawValue = $this->attributes[$column];
+
+                return $rawValue instanceof \DateTimeInterface
+                    ? $rawValue
+                    : Carbon::parse($rawValue);
+            }
+        }
+
+        return null;
+    }
+
+    public function setTanggalAkhirAttribute($value)
+    {
+        if ($value === null || $value === '') {
+            $this->attributes['tanggal_akhir'] = null;
+            if (Schema::hasColumn($this->getTable(), 'tanggal_Akhir')) {
+                $this->attributes['tanggal_Akhir'] = null;
+            }
+            return;
+        }
+
+        $dateValue = $value instanceof \DateTimeInterface ? $value : Carbon::parse($value);
+        $formatted = $dateValue->format('Y-m-d');
+
+        $this->attributes['tanggal_akhir'] = $formatted;
+        if (Schema::hasColumn($this->getTable(), 'tanggal_Akhir')) {
+            $this->attributes['tanggal_Akhir'] = $formatted;
+        }
+    }
+
+    public function getJenisKelaminAttribute($value)
+    {
+        return $this->normalizeGenderValue($value);
+    }
+
+    public function setJenisKelaminAttribute($value)
+    {
+        $this->attributes['jenis_kelamin'] = $this->normalizeGenderValue($value);
+    }
+
+    private function normalizeGenderValue($value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return match (strtolower(trim((string) $value))) {
+            'laki-laki', 'laki laki', 'male', 'pria' => 'Laki-laki',
+            'perempuan', 'wanita', 'female' => 'Perempuan',
+            default => trim((string) $value),
+        };
+    }
 
     public function detailJadwals()
     {

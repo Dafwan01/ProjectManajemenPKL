@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? config('app.name', 'Sinergi Magang Nusantara') }}</title>
+    <title>{{ $title ?? config('app.name', 'SIMPATI (Sistem Informasi Magang dan Presensi dan Aktivitas)') }}</title>
 
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -74,8 +74,8 @@
                 <div>
                     <!-- Brand / Logo -->
                     <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center ps-2.5 mb-5 gap-3">
-                        <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo Presensi Pintar" class="w-16 h-16 rounded-2xl object-cover">
-                        <span class="self-center brand-name whitespace-nowrap">Presensi Pintar</span>
+                        <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo SIMPATI" class="w-16 h-16 rounded-2xl object-cover">
+                        <span class="self-center brand-name whitespace-nowrap">SIMPATI (Sistem Informasi Magang dan Presensi dan Aktivitas)</span>
                     </a>
 
                     <!-- Navigation Links -->

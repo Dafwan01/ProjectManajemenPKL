@@ -27,9 +27,9 @@
         <div>
            <!-- Brand / Logo -->
            <a href="{{ route('dashboard') }}" class="flex items-center ps-2.5 mb-5 gap-3">
-              <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo Presensi Pintar" class="w-16 h-16 rounded-2xl object-cover">
+              <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo SIMPATI" class="w-16 h-16 rounded-2xl object-cover">
               <span class="self-center brand-name whitespace-nowrap">
-                 Presensi Pintar
+                 SIMPATI (Sistem Informasi Magang dan Presensi dan Aktivitas)
               </span>
            </a>
 

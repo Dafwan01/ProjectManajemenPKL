@@ -52,7 +52,7 @@ class ManajemenPkl extends Component
             'status' => ['required', Rule::enum(UserStatus::class)],
             'tempat_lahir' => 'nullable|string|max:255',
             'tanggal_lahir' => 'nullable|date',
-            'jenis_kelamin' => ['nullable', 'string', 'in:laki-laki,perempuan'],
+            'jenis_kelamin' => ['nullable', 'string', 'in:Laki-laki,Perempuan,laki-laki,perempuan'],
             'jurusan' => 'nullable|string|max:255',
             'asal_sekolah' => 'nullable|string|max:255',
             'mentor' => 'nullable|string|max:255',
@@ -121,7 +121,7 @@ class ManajemenPkl extends Component
             'asal_sekolah' => $this->asal_sekolah ?: null,
             'mentor' => $this->mentor ?: null,
             'tanggal_mulai' => $this->tanggal_mulai ?: null,
-            'tanggal_Akhir' => $this->tanggal_akhir ?: null,
+            'tanggal_akhir' => $this->tanggal_akhir ?: null,
         ];
 
         if (Schema::hasColumn('users', 'skill')) {
@@ -183,7 +183,7 @@ class ManajemenPkl extends Component
         }
 
         $this->tanggal_mulai = $this->formatDateForInput($user->tanggal_mulai);
-        $this->tanggal_akhir = $this->formatDateForInput($user->tanggal_Akhir);
+        $this->tanggal_akhir = $this->formatDateForInput($user->tanggal_akhir);
         $this->skill = $user->skill ?? '';
 
         $this->isEditMode = true;
