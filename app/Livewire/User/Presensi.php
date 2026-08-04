@@ -7,6 +7,7 @@ use App\Models\presensi as PresensiModel;
 use App\Models\User;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Notifications\PresensiTerlambatNotification;
 use App\Services\WorldTimeService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -266,7 +267,7 @@ class Presensi extends Component
                     $statusKehadiran = 'terlambat';
                 }
 
-                PresensiModel::create([
+                $presensiBaru = PresensiModel::create([
                     'user_id'          => $user->user_id,
                     'tanggal'          => $tanggalHariIni,
                     'absen_masuk'      => $jamSekarangStr,
@@ -275,6 +276,10 @@ class Presensi extends Component
                     'latitude'         => $this->latitude,
                     'longitude'        => $this->longitude,
                 ]);
+
+                if ($statusKehadiran === 'terlambat') {
+                    $this->notifikasiTerlambat($presensiBaru, $user);
+                }
 
                 $pesan = $statusKehadiran === 'terlambat'
                     ? 'Presensi MASUK berhasil dikirim (Terlambat)!'
@@ -323,6 +328,42 @@ class Presensi extends Component
             DB::rollBack();
             session()->flash('warning', 'Gagal menyimpan: ' . $e->getMessage());
         }
+    }
+
+    private function notifikasiTerlambat(PresensiModel $presensiBaru, User $siswa): void
+    {
+        $penerima = User::where('role', UserRole::ADMIN)->get();
+
+        $mentor = $this->resolveMentor($siswa);
+        if ($mentor) {
+            $penerima->push($mentor);
+        }
+
+        foreach ($penerima->unique('user_id') as $tujuan) {
+            $tujuan->notify(new PresensiTerlambatNotification($presensiBaru));
+        }
+    }
+
+    private function resolveMentor(User $siswa): ?User
+    {
+        if (empty($siswa->mentor)) {
+            return null;
+        }
+
+        // Kemungkinan 1: kolom 'mentor' berisi user_id (FK ke tabel users)
+        if (is_numeric($siswa->mentor)) {
+            $mentor = User::where('user_id', $siswa->mentor)
+                ->where('role', UserRole::MENTOR)
+                ->first();
+            if ($mentor) {
+                return $mentor;
+            }
+        }
+
+        // Kemungkinan 2: kolom 'mentor' berisi nama, cocokkan ke user ber-role mentor
+        return User::where('role', UserRole::MENTOR)
+            ->where('nama', $siswa->mentor)
+            ->first();
     }
 
     private function simpanFotoBase64($base64Image, $namaFile)

@@ -3,7 +3,11 @@
 namespace App\Livewire\User;
 
 use App\Models\log_book;
+use App\Models\PermohonanIzin as PermohonanIzinModel;
 use App\Models\presensi as PresensiModel;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -17,7 +21,6 @@ class Riwayat extends Component
     public $tanggalMulai = '';
     public $tanggalSelesai = '';
 
-    // State Edit Logbook (Ubah acuan dari editingId ke editingPresensiId)
     public $editingPresensiId = null;
     public $editingLogbook = '';
     public $isEditModalOpen = false;
@@ -59,9 +62,6 @@ class Riwayat extends Component
         $this->resetPage();
     }
 
-    /**
-     * Membuka modal edit berdasarkan presensi_id
-     */
     public function editLogbook($presensiId)
     {
         $presensi = PresensiModel::with('logBooks')->find($presensiId);
@@ -75,23 +75,18 @@ class Riwayat extends Component
         }
     }
 
-    /**
-     * Menyimpan atau membuat baru logbook ke database
-     */
     public function updateLogbook()
     {
         $this->validate();
 
         $presensi = PresensiModel::findOrFail($this->editingPresensiId);
 
-        // Pastikan user cuma bisa edit logbook miliknya sendiri
         if ($presensi->user_id !== auth()->id()) {
             session()->flash('error', 'Anda tidak memiliki akses untuk mengedit logbook ini.');
             $this->closeModal();
             return;
         }
 
-        // Gunakan updateOrCreate: Buat baru jika belum ada, atau update jika sudah ada
         log_book::updateOrCreate(
             [
                 'presensi_id' => $presensi->presensi_id,
@@ -114,36 +109,107 @@ class Riwayat extends Component
         $this->resetValidation();
     }
 
+    /**
+     * Label jenis + bagian (Masuk/Pulang) untuk pengajuan absen susulan.
+     */
+    private function labelAbsenSusulan(PermohonanIzinModel $p): string
+    {
+        $bagian = [];
+        if ($p->absen_masuk) $bagian[] = 'Masuk';
+        if ($p->absen_pulang) $bagian[] = 'Pulang';
+
+        return 'ABSEN (' . implode(' & ', $bagian) . ')';
+    }
+
     public function render()
     {
         $userId = auth()->id();
 
-        $presensis = PresensiModel::with(['logBooks'])
+        // 1) Data presensi asli (realisasi kehadiran harian)
+        $presensiList = PresensiModel::with(['logBooks'])
             ->where('user_id', $userId)
-            ->when($this->filterStatus !== 'semua', function ($query) {
-                $query->where('status_kehadiran', strtolower($this->filterStatus));
-            })
             ->when($this->tanggalMulai, function ($query) {
                 $query->whereDate('tanggal', '>=', $this->tanggalMulai);
             })
             ->when($this->tanggalSelesai, function ($query) {
                 $query->whereDate('tanggal', '<=', $this->tanggalSelesai);
             })
-            ->latest('presensi_id')
-            ->paginate(10);
+            ->get();
 
-        $dataRiwayat = $presensis->through(function ($presensi) {
-            $logBook = $presensi->logBooks->first();
+        $baris = collect();
 
-            return [
-                'presensi_id' => $presensi->presensi_id, // Gunakan ID Presensi
-                'tanggal'     => $presensi->tanggal ? $presensi->tanggal->translatedFormat('l, d/m/Y') : '-',
-                'jam_masuk'   => $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) . ' WIB' : '-',
-                'jam_pulang'  => $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) . ' WIB' : '-',
-                'status'      => strtoupper($presensi->status_kehadiran?->value ?? '-'),
-                'logbook'     => $logBook->kegiatan ?? null,
-            ];
-        });
+        foreach ($presensiList as $presensi) {
+            $statusValue = $presensi->status_kehadiran?->value ?? $presensi->status_kehadiran;
+
+            $baris->push([
+                'tanggal_sort' => $presensi->tanggal,
+                'tanggal'      => $presensi->tanggal ? $presensi->tanggal->translatedFormat('l, d/m/Y') : '-',
+                'jam_masuk'    => $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) . ' WIB' : '-',
+                'jam_pulang'   => $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) . ' WIB' : '-',
+                'status'       => strtoupper($statusValue ?? '-'),
+                'logbook'      => $presensi->logBooks->first()?->kegiatan,
+                'presensi_id'  => $presensi->presensi_id,
+                'bisa_edit'    => true,
+            ]);
+        }
+
+        // 2) Semua pengajuan ABSEN SUSULAN (pending / ditolak / disetujui) -> selalu tampil,
+        //    terlepas apakah tanggalnya sudah punya presensi atau belum.
+        $pengajuanAbsen = PermohonanIzinModel::where('user_id', $userId)
+            ->where('jenis', 'absen')
+            ->get();
+
+        foreach ($pengajuanAbsen as $p) {
+            $awal = Carbon::parse($p->tanggal_awal ?? $p->tanggal_permohonan);
+            $akhir = $p->tanggal_akhir ? Carbon::parse($p->tanggal_akhir) : $awal;
+
+            foreach (CarbonPeriod::create($awal, $akhir) as $tgl) {
+                $tglString = $tgl->format('Y-m-d');
+
+                if ($this->tanggalMulai && $tglString < $this->tanggalMulai) continue;
+                if ($this->tanggalSelesai && $tglString > $this->tanggalSelesai) continue;
+
+                $prefix = match ($p->status) {
+                    'pending'   => 'MENUNGGU: ',
+                    'ditolak'   => 'DITOLAK: ',
+                    'disetujui' => 'DISETUJUI: ',
+                    default     => '',
+                };
+
+                $baris->push([
+                    'tanggal_sort' => $tgl->copy(),
+                    'tanggal'      => $tgl->translatedFormat('l, d/m/Y'),
+                    'jam_masuk'    => '-',
+                    'jam_pulang'   => '-',
+                    'status'       => $prefix . $this->labelAbsenSusulan($p),
+                    'logbook'      => $p->alasan,
+                    'presensi_id'  => null,
+                    'bisa_edit'    => false,
+                ]);
+            }
+        }
+
+        // Filter status
+        if ($this->filterStatus !== 'semua') {
+            $baris = $baris->filter(function ($item) {
+                return str_contains(strtolower($item['status']), strtolower($this->filterStatus));
+            });
+        }
+
+        $baris = $baris->sortByDesc('tanggal_sort')->values();
+
+        // Pagination manual atas hasil gabungan
+        $page = LengthAwarePaginator::resolveCurrentPage() ?: 1;
+        $perPage = 10;
+        $items = $baris->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $dataRiwayat = new LengthAwarePaginator(
+            $items,
+            $baris->count(),
+            $perPage,
+            $page,
+            ['path' => LengthAwarePaginator::resolveCurrentPath()]
+        );
 
         $totalHadir = PresensiModel::where('user_id', $userId)
             ->where('status_kehadiran', 'hadir')
@@ -153,10 +219,16 @@ class Riwayat extends Component
             ->whereIn('status_kehadiran', ['izin', 'sakit'])
             ->count();
 
+        $totalMenunggu = PermohonanIzinModel::where('user_id', $userId)
+            ->where('jenis', 'absen')
+            ->where('status', 'pending')
+            ->count();
+
         return view('livewire.user.riwayat', [
             'dataRiwayat'    => $dataRiwayat,
             'totalHadir'     => $totalHadir,
             'totalIzinSakit' => $totalIzinSakit,
+            'totalMenunggu'  => $totalMenunggu,
         ]);
     }
 }

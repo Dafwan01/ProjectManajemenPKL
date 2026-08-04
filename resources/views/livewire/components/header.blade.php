@@ -158,6 +158,41 @@
 
          <!-- User Profile & Dynamic Theme Toggle -->
          <div class="flex items-center gap-3">
+
+             <!-- Notifikasi Bell -->
+             <div class="relative" x-data="{ openNotif: false }" @click.outside="openNotif = false" wire:poll.30s="loadNotifikasi">
+                 <button @click="openNotif = !openNotif" type="button" class="relative p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Notifikasi">
+                     <i class="fa-solid fa-bell text-lg"></i>
+                     @if($jumlahBelumDibaca > 0)
+                         <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-rose-500 text-white text-[10px] font-bold rounded-full px-1">
+                             {{ $jumlahBelumDibaca > 9 ? '9+' : $jumlahBelumDibaca }}
+                         </span>
+                     @endif
+                 </button>
+
+                 <div x-show="openNotif" x-cloak x-transition
+                      class="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg z-50">
+                     <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+                         <span class="text-sm font-semibold text-slate-800 dark:text-slate-100">Notifikasi</span>
+                         @if($jumlahBelumDibaca > 0)
+                             <button wire:click="tandaiSemuaDibaca" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                                 Tandai semua dibaca
+                             </button>
+                         @endif
+                     </div>
+
+                     @forelse($notifikasi as $notif)
+                         <div wire:click="tandaiDibaca('{{ $notif->id }}')"
+                              class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 cursor-pointer transition {{ $notif->read_at ? 'bg-white dark:bg-slate-900' : 'bg-blue-50 dark:bg-slate-800/60' }} hover:bg-slate-50 dark:hover:bg-slate-800">
+                             <p class="text-sm text-slate-700 dark:text-slate-200">{{ $notif->data['message'] ?? '-' }}</p>
+                             <span class="text-xs text-slate-400 dark:text-slate-500">{{ $notif->created_at->diffForHumans() }}</span>
+                         </div>
+                     @empty
+                         <p class="px-4 py-6 text-sm text-center text-slate-400 dark:text-slate-500">Belum ada notifikasi</p>
+                     @endforelse
+                 </div>
+             </div>
+
              <!-- Toggle Light/Dark Mode Button -->
              <button @click="toggleTheme()" type="button" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Ubah Mode Tampilan">
                  <!-- Icon Matahari (Tampil saat Dark Mode aktif) -->

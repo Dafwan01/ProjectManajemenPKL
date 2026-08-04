@@ -5,7 +5,7 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-gray-200 dark:border-gray-700 pb-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">RIWAYAT PRESENSI</h1>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Daftar lengkap catatan kehadiran dan logbook harian Anda selama masa magang.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Daftar lengkap catatan kehadiran, logbook, dan status pengajuan izin/sakit/absen Anda.</p>
             </div>
 
             <!-- Ringkasan Statistik Singkat -->
@@ -17,6 +17,10 @@
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 p-3 rounded-lg text-center flex-1 sm:flex-initial shadow">
                     <span class="text-gray-500 dark:text-gray-400 block mb-0.5">Izin / Sakit</span>
                     <span class="text-yellow-600 dark:text-yellow-400 font-bold text-xl">{{ $totalIzinSakit }} <span class="text-xs font-normal">Hari</span></span>
+                </div>
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 p-3 rounded-lg text-center flex-1 sm:flex-initial shadow">
+                    <span class="text-gray-500 dark:text-gray-400 block mb-0.5">Menunggu</span>
+                    <span class="text-blue-600 dark:text-blue-400 font-bold text-xl">{{ $totalMenunggu }} <span class="text-xs font-normal">Pengajuan</span></span>
                 </div>
             </div>
         </div>
@@ -70,10 +74,14 @@
     <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
         <label class="text-xs text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap shrink-0">Filter Status:</label>
         <select wire:model.live="filterStatus" class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-inner transition cursor-pointer w-full lg:w-auto">
-            <option value="semua">Semua Status Kehadiran</option>
+            <option value="semua">Semua Status</option>
             <option value="hadir">Status: HADIR</option>
+            <option value="terlambat">Status: TERLAMBAT</option>
             <option value="izin">Status: IZIN</option>
             <option value="sakit">Status: SAKIT</option>
+            <option value="menunggu">Absen: Menunggu Persetujuan</option>
+            <option value="ditolak">Absen: Ditolak</option>
+            <option value="disetujui">Absen: Disetujui (Riwayat Pengajuan)</option>
         </select>
     </div>
 </div>
@@ -86,8 +94,8 @@
                         <tr>
                             <th scope="col" class="px-6 py-4 whitespace-nowrap">HARI / TANGGAL</th>
                             <th scope="col" class="px-6 py-4">JAM MASUK / PULANG</th>
-                            <th scope="col" class="px-6 py-4">KEHADIRAN</th>
-                            <th scope="col" class="px-6 py-4">LOGBOOK HARIAN</th>
+                            <th scope="col" class="px-6 py-4">KEHADIRAN / PENGAJUAN</th>
+                            <th scope="col" class="px-6 py-4">LOGBOOK / ALASAN</th>
                             <th scope="col" class="px-6 py-4 text-center">AKSI</th>
                         </tr>
                     </thead>
@@ -108,48 +116,72 @@
                                     </div>
                                 </td>
 
-                                <!-- Kolom Kehadiran -->
+                                <!-- Kolom Kehadiran / Pengajuan -->
                                 <td class="px-6 py-4">
-                                    @if(strtoupper($item['status']) == 'HADIR')
+                                    @php $statusText = strtoupper($item['status']); @endphp
+                                    @if($statusText == 'HADIR')
                                         <span class="bg-green-50 dark:bg-green-950 text-green-600 dark:text-green-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-green-300 dark:border-green-800 flex items-center gap-1.5 w-fit">
                                             <span class="h-2 w-2 rounded-full bg-green-500 inline-block"></span>
                                             HADIR
                                         </span>
-                                    @elseif(strtoupper($item['status']) == 'IZIN')
+                                    @elseif($statusText == 'TERLAMBAT')
+                                        <span class="bg-orange-50 dark:bg-orange-950 text-orange-600 dark:text-orange-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-orange-300 dark:border-orange-800 flex items-center gap-1.5 w-fit">
+                                            <span class="h-2 w-2 rounded-full bg-orange-500 inline-block"></span>
+                                            TERLAMBAT
+                                        </span>
+                                    @elseif($statusText == 'IZIN')
                                         <span class="bg-yellow-50 dark:bg-yellow-950 text-yellow-600 dark:text-yellow-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-yellow-300 dark:border-yellow-800 flex items-center gap-1.5 w-fit">
                                             <span class="h-2 w-2 rounded-full bg-yellow-500 inline-block"></span>
                                             IZIN
                                         </span>
-                                    @elseif(strtoupper($item['status']) == 'SAKIT')
+                                    @elseif($statusText == 'SAKIT')
                                         <span class="bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-red-300 dark:border-red-800 flex items-center gap-1.5 w-fit">
                                             <span class="h-2 w-2 rounded-full bg-red-500 inline-block"></span>
                                             SAKIT
                                         </span>
+                                    @elseif(str_starts_with($statusText, 'MENUNGGU'))
+                                        <span class="bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-blue-300 dark:border-blue-800 flex items-center gap-1.5 w-fit">
+                                            <span class="h-2 w-2 rounded-full bg-blue-500 inline-block animate-pulse"></span>
+                                            {{ $statusText }}
+                                        </span>
+                                    @elseif(str_starts_with($statusText, 'DITOLAK'))
+                                        <span class="bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-rose-300 dark:border-rose-800 flex items-center gap-1.5 w-fit">
+                                            <span class="h-2 w-2 rounded-full bg-rose-500 inline-block"></span>
+                                            {{ $statusText }}
+                                        </span>
+                                    @elseif(str_starts_with($statusText, 'DISETUJUI'))
+                                        <span class="bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-cyan-300 dark:border-cyan-800 flex items-center gap-1.5 w-fit">
+                                            <span class="h-2 w-2 rounded-full bg-cyan-500 inline-block"></span>
+                                            {{ $statusText }}
+                                        </span>
                                     @else
                                         <span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-gray-300 dark:border-gray-600 flex items-center gap-1.5 w-fit">
                                             <span class="h-2 w-2 rounded-full bg-gray-500 inline-block"></span>
-                                            {{ $item['status'] }}
+                                            {{ $statusText }}
                                         </span>
                                     @endif
                                 </td>
 
-                                <!-- Kolom Logbook Harian -->
+                                <!-- Kolom Logbook / Alasan Pengajuan -->
                                 <td class="px-6 py-4 max-w-sm text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
                                     {{ $item['logbook'] ?? '-' }}
                                 </td>
 
                                 <!-- Kolom Aksi Edit -->
-                                <!-- Kolom Aksi Edit -->
-<td class="px-6 py-4 text-center whitespace-nowrap">
-    <button 
-        type="button" 
-        wire:click="editLogbook({{ $item['presensi_id'] }})"
-        class="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 bg-gray-100 dark:bg-gray-700/50 hover:bg-blue-100 dark:hover:bg-blue-600/20 border border-gray-300 dark:border-gray-600 hover:border-blue-500 p-2 rounded-lg transition inline-flex items-center gap-1 text-xs"
-        title="Edit Logbook">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-        <span>Edit</span>
-    </button>
-</td>
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
+                                    @if($item['bisa_edit'] ?? true)
+                                        <button 
+                                            type="button" 
+                                            wire:click="editLogbook({{ $item['presensi_id'] }})"
+                                            class="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 bg-gray-100 dark:bg-gray-700/50 hover:bg-blue-100 dark:hover:bg-blue-600/20 border border-gray-300 dark:border-gray-600 hover:border-blue-500 p-2 rounded-lg transition inline-flex items-center gap-1 text-xs"
+                                            title="Edit Logbook">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                            <span>Edit</span>
+                                        </button>
+                                    @else
+                                        <span class="text-[10px] text-gray-400 dark:text-gray-500 italic">Menunggu diproses admin</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
