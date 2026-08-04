@@ -12,10 +12,13 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use App\Traits\Toastable;
 
 #[Layout('layouts.dashboard')]
 class SuratPenerimaanMagang extends Component
 {
+    use Toastable;
+
     use WithPagination, WithFileUploads;
 
     public string $search = '';
@@ -113,7 +116,7 @@ class SuratPenerimaanMagang extends Component
 
         unset($this->files[$userId]);
 
-        session()->flash('message', 'Surat penerimaan magang (PDF) untuk ' . $user->nama . ' berhasil diupload!');
+        $this->toastSuccess( 'Surat penerimaan magang (PDF) untuk ' . $user->nama . ' berhasil diupload!');
     }
 
     public function render()

@@ -7,10 +7,13 @@ use App\Models\presensi as PresensiModel;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Traits\Toastable;
 
 #[Layout('layouts.user')]
 class Riwayat extends Component
 {
+    use Toastable;
+
     use WithPagination;
 
     public $filterStatus = 'semua';
@@ -86,7 +89,7 @@ class Riwayat extends Component
 
         // Pastikan user cuma bisa edit logbook miliknya sendiri
         if ($presensi->user_id !== auth()->id()) {
-            session()->flash('error', 'Anda tidak memiliki akses untuk mengedit logbook ini.');
+            $this->toastError( 'Anda tidak memiliki akses untuk mengedit logbook ini.');
             $this->closeModal();
             return;
         }
@@ -103,7 +106,7 @@ class Riwayat extends Component
         );
 
         $this->closeModal();
-        session()->flash('message', 'Logbook berhasil diperbarui!');
+        $this->toastSuccess( 'Logbook berhasil diperbarui!');
     }
 
     public function closeModal()

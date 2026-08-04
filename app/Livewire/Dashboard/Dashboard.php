@@ -67,6 +67,15 @@ class Dashboard extends Component
             })
             ->count();
 
+        $topAsalSekolah = (clone $pklQuery)
+            ->whereNotNull('asal_sekolah')
+            ->where('asal_sekolah', '!=', '-')
+            ->whereYear('tanggal_mulai', now()->year)
+            ->selectRaw('asal_sekolah, COUNT(*) as total')
+            ->groupBy('asal_sekolah')
+            ->orderByDesc('total')
+            ->first();
+
         return view('livewire.dashboard.dashboard', [
             'totalPeserta' => $totalPeserta,
             'hadirHariIni' => $hadirHariIni,
@@ -75,6 +84,8 @@ class Dashboard extends Component
             'alpaHariIni' => $alpaHariIni,
             'wfhHariIni' => $wfhHariIni,
             'wfoHariIni' => $wfoHariIni,
+            'topAsalSekolah' => $topAsalSekolah?->asal_sekolah ?? 'Belum ada data',
+            'topAsalSekolahCount' => $topAsalSekolah?->total ?? 0,
         ]);
     }
 

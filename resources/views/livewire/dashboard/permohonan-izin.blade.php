@@ -168,15 +168,10 @@
                         $tglMulaiFormatted = $tglAwalObj->translatedFormat('d F Y');
                         $tglAkhirFormatted = $permohonan->tanggal_akhir ? $tglAkhirObj->translatedFormat('d F Y') : null;
 
-                        // Kalkulasi Jumlah Hari / Durasi
-                        $jumlahHari = $permohonan->jumlah_hari ?? ($tglAwalObj->diffInDays($tglAkhirObj) + 1);
-                    @endphp
-
-                    <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4">
-                        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Detail Permohonan</h2>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {{ $permohonan->user->nama ?? $permohonan->user->name ?? 'Pemohon' }} 
-                            &bull; 
+                            // Kalkulasi Jumlah Hari / Durasi (hanya hari kerja, tanpa Sabtu/Minggu)
+                            $jumlahHari = $permohonan->jumlah_hari ?? collect(\Carbon\CarbonPeriod::create($tglAwalObj, $tglAkhirObj))
+                                    ->filter(fn($date) => !$date->isWeekend())
+                                    ->count();
                             {{ $permohonan->user->sekolah ?? $permohonan->user->asal_sekolah ?? '-' }}
                         </p>
                     </div>

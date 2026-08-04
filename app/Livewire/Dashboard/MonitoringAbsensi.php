@@ -10,10 +10,13 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Traits\Toastable;
 
 #[Layout('layouts.dashboard')]
 class MonitoringAbsensi extends Component
 {
+    use Toastable;
+
     use WithPagination;
 
     public string $tanggal = '';
@@ -118,7 +121,7 @@ class MonitoringAbsensi extends Component
                 );
             }
 
-            session()->flash('message', 'Data absensi berhasil diperbarui!');
+            $this->toastSuccess( 'Data absensi berhasil diperbarui!');
             $this->closeEditModal();
         }
     }

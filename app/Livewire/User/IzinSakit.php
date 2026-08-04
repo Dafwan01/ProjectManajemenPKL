@@ -6,10 +6,14 @@ use Livewire\Component;
 use App\Models\PermohonanIzin;
 use App\Enums\UserStatus;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Toastable;
 
 class IzinSakit extends Component
 {
+    use Toastable;
+
     public $nama = '';
     public $sekolah = '';
 
@@ -86,7 +90,7 @@ class IzinSakit extends Component
 
         if (strtolower((string) $userStatus) === 'lulus' || $userStatus === UserStatus::LULUS->value) {
             $this->isLulus = true;
-            session()->flash('warning', 'Status akun Anda adalah LULUS. Anda tidak dapat membuat pengajuan izin/sakit lagi.');
+            $this->toastWarning( 'Status akun Anda adalah LULUS. Anda tidak dapat membuat pengajuan izin/sakit lagi.');
         }
     }
 
@@ -96,7 +100,8 @@ class IzinSakit extends Component
     public function hitungJumlahHari()
     {
         if ($this->tipePengajuan === 'absen') {
-            $this->jumlahHari = 1;
+            $date = Carbon::parse($this->tanggalMulai);
+            $this->jumlahHari = $date->isWeekday() ? 1 : 0;
             return;
         }
 
@@ -106,14 +111,25 @@ class IzinSakit extends Component
                 $end = Carbon::parse($this->tanggalSelesai);
 
                 if ($end->greaterThanOrEqualTo($start)) {
-                    $this->jumlahHari = $start->diffInDays($end) + 1;
+                    $this->jumlahHari = $this->countWeekdaysBetween($start, $end);
                 } else {
                     $this->jumlahHari = 0;
                 }
             } catch (\Exception $e) {
-                $this->jumlahHari = 1;
+                $this->jumlahHari = 0;
             }
         }
+    }
+
+    private function countWeekdaysBetween(Carbon $start, Carbon $end): int
+    {
+        $count = 0;
+        foreach (CarbonPeriod::create($start, $end) as $date) {
+            if ($date->isWeekday()) {
+                $count++;
+            }
+        }
+        return $count;
     }
 
     public function updatedTipePengajuan($value)
@@ -143,7 +159,7 @@ class IzinSakit extends Component
     public function kirimPengajuan()
     {
         if ($this->isLulus) {
-            session()->flash('warning', 'Gagal Pengajuan! Akun Anda telah berstatus LULUS.');
+            $this->toastWarning( 'Gagal Pengajuan! Akun Anda telah berstatus LULUS.');
             return;
         }
 
@@ -152,7 +168,7 @@ class IzinSakit extends Component
         $user = Auth::user();
 
         if (!$user) {
-            session()->flash('error', 'Anda harus login terlebih dahulu.');
+            $this->toastError( 'Anda harus login terlebih dahulu.');
             return;
         }
 
@@ -180,7 +196,7 @@ class IzinSakit extends Component
         $this->tanggalSelesai = $today;
         $this->hitungJumlahHari();
 
-        session()->flash('message', 'Pengajuan ' . strtoupper($this->tipePengajuan) . ' berhasil dikirim ke admin!');
+        $this->toastSuccess( 'Pengajuan ' . strtoupper($this->tipePengajuan) . ' berhasil dikirim ke admin!');
     }
 
     public function render()

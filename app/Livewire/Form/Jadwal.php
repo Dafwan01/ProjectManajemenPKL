@@ -10,9 +10,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use App\Traits\Toastable;
 
 class Jadwal extends Component
 {
+    use Toastable;
+
     #[Layout('layouts.dashboard')]
 
     public array $jadwalData = [];
@@ -101,7 +104,7 @@ class Jadwal extends Component
             }
         });
 
-        session()->flash('message', 'Jadwal kerja berhasil diperbarui!');
+        $this->toastSuccess( 'Jadwal kerja berhasil diperbarui!');
         $this->dispatch('close-jadwal-modal');
     }
 

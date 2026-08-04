@@ -74,6 +74,25 @@
                 @error('link_github') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
             </div>
 
+            <!-- Pilih Kolaborator -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tambahkan Anggota Kolaborator
+                </label>
+                <select 
+                    wire:model.defer="kolaborator_ids"
+                    @disabled($isLulus || !$isProjectOwner)
+                    multiple
+                    class="w-full min-h-[120px] bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 focus:border-purple-500 focus:outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    @foreach($availableCollaborators as $collaborator)
+                        <option value="{{ $collaborator->user_id }}">{{ $collaborator->nama }} @if($collaborator->mentor) (Mentor: {{ $collaborator->mentor }}) @endif</option>
+                    @endforeach
+                </select>
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Pilih satu atau lebih peserta PKL untuk menjadi kolaborator dalam project ini.</p>
+                @error('kolaborator_ids') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+                @error('kolaborator_ids.*') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+            </div>
+
             <!-- Upload File Project -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -112,11 +131,8 @@
             <button 
                 type="submit" 
                 wire:loading.attr="disabled" 
-                @disabled($isLulus)
-                class="w-full py-3 text-white font-semibold rounded-xl transition shadow-lg flex items-center justify-center gap-2 {{ $isLulus ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-60' : 'bg-purple-600 hover:bg-purple-700' }}">
-                
-                @if ($isLulus)
-                    <span>Status Akun Lulus (Form Terkunci)</span>
+                        @disabled($isLulus || !$isProjectOwner)
+                        class="w-full py-3 text-white font-semibold rounded-xl transition shadow-lg flex items-center justify-center gap-2 {{ $isLulus || !$isProjectOwner ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-60' : 'bg-purple-600 hover:bg-purple-700' }}">
                 @else
                     <span wire:loading.remove wire:target="simpanProject">
                         {{ $sudahUpload ? 'Perbarui Project Akhir' : 'Kirim Project Akhir' }}

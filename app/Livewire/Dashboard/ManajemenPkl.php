@@ -13,10 +13,13 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Traits\Toastable;
 
 #[Layout('layouts.dashboard')]
 class ManajemenPkl extends Component
 {
+    use Toastable;
+
     use WithPagination;
 
     public $userId = null;
@@ -131,7 +134,7 @@ class ManajemenPkl extends Component
         if ($this->isEditMode) {
             $user = User::findOrFail($this->userId);
             $user->update($data);
-            session()->flash('message', 'Akun berhasil diperbarui!');
+            $this->toastSuccess( 'Akun berhasil diperbarui!');
         } else {
             // Password default untuk akun baru
             $data['password'] = bcrypt('password123');
@@ -141,7 +144,7 @@ class ManajemenPkl extends Component
             }
 
             User::create($data);
-            session()->flash('message', 'Akun berhasil dibuat! Password default: password123');
+            $this->toastSuccess( 'Akun berhasil dibuat! Password default: password123');
         }
 
         $this->closeModal();
@@ -206,7 +209,7 @@ class ManajemenPkl extends Component
     public function delete($id)
     {
         User::findOrFail($id)->delete();
-        session()->flash('message', 'Akun berhasil dihapus!');
+        $this->toastSuccess( 'Akun berhasil dihapus!');
     }
 
     public function closeModal()

@@ -88,6 +88,26 @@
 
     </div>
 
+    <!-- STATISTIK UNIK: ASAL SEKOLAH TERBANYAK -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div class="p-6 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider uppercase">Asal Sekolah Terbanyak</p>
+                    <h2 class="mt-4 text-2xl font-extrabold text-gray-900 dark:text-white">
+                        {{ $topAsalSekolahCount > 0 ? $topAsalSekolah : 'Belum ada data PKL tahun ini' }}
+                    </h2>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        {{ $topAsalSekolahCount > 0 ? 'Jumlah peserta dari sekolah ini pada tahun ' . now()->year . '.' : 'Data asal sekolah untuk peserta PKL tahun berjalan belum tersedia.' }}
+                    </p>
+                </div>
+                <div class="rounded-3xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 w-16 h-16 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                    <span class="text-lg font-semibold">{{ $topAsalSekolahCount }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- SECTION GRAFIK PIE -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="p-6 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl" wire:ignore>

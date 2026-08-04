@@ -10,9 +10,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Traits\Toastable;
 
 class Nilai extends Component
 {
+    use Toastable;
+
     use WithFileUploads;
 
     public $userId;
@@ -135,7 +138,7 @@ class Nilai extends Component
         $this->sudahAdaNilai = true;
         $this->file = null;
 
-        session()->flash('message', 'Nilai untuk ' . $this->user->nama . ' berhasil disimpan!');
+        $this->toastSuccess( 'Nilai untuk ' . $this->user->nama . ' berhasil disimpan!');
         $this->dispatch('close-nilai-modal');
     }
 

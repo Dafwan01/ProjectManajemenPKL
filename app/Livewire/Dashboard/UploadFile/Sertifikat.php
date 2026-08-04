@@ -11,9 +11,12 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Traits\Toastable;
 
 class Sertifikat extends Component
 {
+    use Toastable;
+
     use WithPagination;
 
     // Property Search
@@ -94,7 +97,7 @@ class Sertifikat extends Component
             $this->pdfUserId = $userId;
             $this->showPdfModal = true;
         } else {
-            session()->flash('error', 'File sertifikat belum tersedia.');
+            $this->toastError( 'File sertifikat belum tersedia.');
         }
     }
 
@@ -136,10 +139,10 @@ class Sertifikat extends Component
                 ]
             );
 
-            session()->flash('message', 'Sertifikat untuk ' . $user->nama . ' berhasil diterbitkan!');
+            $this->toastSuccess( 'Sertifikat untuk ' . $user->nama . ' berhasil diterbitkan!');
             $this->closeForm();
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal membuat sertifikat: ' . $e->getMessage());
+            $this->toastError( 'Gagal membuat sertifikat: ' . $e->getMessage());
         }
     }
 

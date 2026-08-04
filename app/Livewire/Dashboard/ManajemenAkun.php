@@ -17,10 +17,13 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Traits\Toastable;
 
 #[Layout('layouts.dashboard')]
 class ManajemenAkun extends Component
 {
+    use Toastable;
+
     use WithPagination;
 
     // Property Form
@@ -209,7 +212,7 @@ class ManajemenAkun extends Component
 
             $user->update($data);
             $this->ensureDefaultScheduleForPkl($user);
-            session()->flash('message', 'Akun berhasil diperbarui!');
+            $this->toastSuccess( 'Akun berhasil diperbarui!');
         } else {
             $user = User::create([
                 'nama' => $this->nama,
@@ -223,7 +226,7 @@ class ManajemenAkun extends Component
                 'tanggal_mulai' => now(),
             ]);
             $this->ensureDefaultScheduleForPkl($user);
-            session()->flash('message', 'Akun berhasil dibuat!');
+            $this->toastSuccess( 'Akun berhasil dibuat!');
         }
 
         $this->closeModal();
@@ -232,7 +235,7 @@ class ManajemenAkun extends Component
     public function delete($id)
     {
         User::findOrFail($id)->delete();
-        session()->flash('message', 'Akun berhasil dihapus!');
+        $this->toastSuccess( 'Akun berhasil dihapus!');
     }
 
     #[On('close-jadwal-modal')]

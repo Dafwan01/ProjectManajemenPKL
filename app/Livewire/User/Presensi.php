@@ -13,9 +13,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Carbon\Carbon;
+use App\Traits\Toastable;
 
 class Presensi extends Component
 {
+    use Toastable;
+
     public $tipePresensi = 'masuk';
     public $logbook = '';
     public $latitude = null;
@@ -63,7 +66,7 @@ class Presensi extends Component
 
         if (strtolower((string) $userStatus) === 'lulus' || $userStatus === UserStatus::LULUS->value) {
             $this->isLulus = true;
-            session()->flash('warning', 'Status akun Anda adalah LULUS. Anda tidak dapat melakukan presensi lagi.');
+            $this->toastWarning( 'Status akun Anda adalah LULUS. Anda tidak dapat melakukan presensi lagi.');
         }
     }
 
@@ -164,7 +167,7 @@ class Presensi extends Component
     public function simpanPresensi()
     {
         if ($this->isLulus) {
-            session()->flash('warning', 'Gagal Presensi! Akun Anda telah berstatus LULUS.');
+            $this->toastWarning( 'Gagal Presensi! Akun Anda telah berstatus LULUS.');
             return;
         }
 
@@ -172,11 +175,11 @@ class Presensi extends Component
 
         if ($this->tipePresensi === 'pulang') {
             if (!$presensiHariIni || !$presensiHariIni->absen_masuk) {
-                session()->flash('warning', 'Anda belum melakukan presensi MASUK hari ini!');
+                $this->toastWarning( 'Anda belum melakukan presensi MASUK hari ini!');
                 return;
             }
             if ($presensiHariIni->absen_keluar) {
-                session()->flash('warning', 'Anda sudah melakukan presensi PULANG hari ini!');
+                $this->toastWarning( 'Anda sudah melakukan presensi PULANG hari ini!');
                 return;
             }
         }
@@ -201,13 +204,13 @@ class Presensi extends Component
         );
 
         if ($jarakUser > $this->maxRadiusMeters) {
-            session()->flash('warning', 'Gagal Presensi! Lokasi Anda terlalu jauh dari lokasi kantor (' . round($jarakUser) . ' meter).');
+            $this->toastWarning( 'Gagal Presensi! Lokasi Anda terlalu jauh dari lokasi kantor (' . round($jarakUser) . ' meter).');
             return;
         }
 
         $user = $this->currentUser();
         if (!$user) {
-            session()->flash('warning', 'User tidak ditemukan.');
+            $this->toastWarning( 'User tidak ditemukan.');
             return;
         }
 
@@ -223,7 +226,7 @@ class Presensi extends Component
             if ($this->tipePresensi === 'masuk') {
                 
                 if ($presensiHariIni && $presensiHariIni->absen_masuk) {
-                    session()->flash('warning', 'Anda sudah melakukan presensi MASUK hari ini!');
+                    $this->toastWarning( 'Anda sudah melakukan presensi MASUK hari ini!');
                     return;
                 }
 
@@ -249,7 +252,7 @@ class Presensi extends Component
                     ? 'Presensi MASUK berhasil dikirim (Terlambat)!' 
                     : 'Presensi MASUK berhasil dikirim!';
 
-                session()->flash('message', $pesan);
+                $this->toastSuccess( $pesan);
 
             } else {
 
@@ -272,7 +275,7 @@ class Presensi extends Component
                     ]
                 );
 
-                session()->flash('message', 'Presensi PULANG dan Logbook berhasil dikirim!');
+                $this->toastSuccess( 'Presensi PULANG dan Logbook berhasil dikirim!');
             }
 
             DB::commit();
@@ -282,7 +285,7 @@ class Presensi extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            session()->flash('warning', 'Gagal menyimpan: ' . $e->getMessage());
+            $this->toastWarning( 'Gagal menyimpan: ' . $e->getMessage());
         }
     }
 

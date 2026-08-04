@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Traits\Toastable;
 
 class Dokumen extends Component
 {
+    use Toastable;
+
     use WithFileUploads;
 
     public $fileProject;
@@ -62,7 +65,7 @@ class Dokumen extends Component
 
         if (strtolower((string) $userStatus) === 'lulus' || $userStatus === UserStatus::LULUS->value) {
             $this->isLulus = true;
-            session()->flash('warning', 'Status akun Anda adalah LULUS. Anda tidak dapat mengunggah dokumen baru lagi.');
+            $this->toastWarning( 'Status akun Anda adalah LULUS. Anda tidak dapat mengunggah dokumen baru lagi.');
         }
     }
 
@@ -88,7 +91,7 @@ class Dokumen extends Component
     public function submitDocument()
     {
         if ($this->isLulus) {
-            session()->flash('warning', 'Gagal mengunggah! Akun Anda telah berstatus LULUS.');
+            $this->toastWarning( 'Gagal mengunggah! Akun Anda telah berstatus LULUS.');
             return;
         }
 
@@ -97,7 +100,7 @@ class Dokumen extends Component
         $user = Auth::user();
 
         if (!$user) {
-            session()->flash('error', 'Silakan login terlebih dahulu sebelum mengunggah file.');
+            $this->toastError( 'Silakan login terlebih dahulu sebelum mengunggah file.');
             return;
         }
 
@@ -118,7 +121,7 @@ class Dokumen extends Component
 
         $this->reset(['fileProject', 'nama']);
         $this->loadUploadedFiles();
-        session()->flash('message', 'File berhasil disimpan di storage pribadi Anda.');
+        $this->toastSuccess( 'File berhasil disimpan di storage pribadi Anda.');
     }
 
     /**
@@ -141,7 +144,7 @@ class Dokumen extends Component
             $this->fileExtension = $extension;
             $this->showModal = true;
         } else {
-            session()->flash('error', 'File tidak ditemukan di server.');
+            $this->toastError( 'File tidak ditemukan di server.');
         }
     }
 
@@ -169,7 +172,7 @@ class Dokumen extends Component
             return Storage::disk('public')->download($fileRecord->file);
         }
 
-        session()->flash('error', 'File tidak ditemukan di server.');
+        $this->toastError( 'File tidak ditemukan di server.');
     }
 
     public function confirmDelete($fileId)
@@ -207,7 +210,7 @@ class Dokumen extends Component
             $this->closePreviewModal();
         }
 
-        session()->flash('message', 'File berhasil dihapus.');
+        $this->toastSuccess( 'File berhasil dihapus.');
     }
 
     public function loadUploadedFiles()

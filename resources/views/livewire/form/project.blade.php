@@ -42,6 +42,37 @@
                 @endif
             </div>
 
+            <!-- Status Project -->
+            <div>
+                <span class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                    Status Project
+                </span>
+                <div class="p-3.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/80 rounded-2xl">
+                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $project->project_status ?? 'Belum Diajukan' }}</p>
+                </div>
+            </div>
+
+            <!-- Kolaborator -->
+            <div>
+                <span class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                    Anggota Kolaborator
+                </span>
+                <div class="p-3.5 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/80 rounded-2xl">
+                    @if($project->kolaborator_users->isNotEmpty())
+                        <ul class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                            @foreach($project->kolaborator_users as $collaborator)
+                                <li class="flex items-center gap-2">
+                                    <span class="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                                    {{ $collaborator->nama }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <p class="text-xs text-gray-500 dark:text-gray-400 italic">Belum ada kolaborator ditambahkan untuk project ini.</p>
+                    @endif
+                </div>
+            </div>
+
             <!-- File Project -->
             <div>
                 <span class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">

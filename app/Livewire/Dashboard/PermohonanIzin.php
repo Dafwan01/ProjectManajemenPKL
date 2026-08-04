@@ -12,10 +12,13 @@ use Illuminate\Support\Facades\Auth; // Import Auth Facade
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Traits\Toastable;
 
 #[Layout('layouts.dashboard')]
 class PermohonanIzin extends Component
 {
+    use Toastable;
+
     use WithPagination;
 
     public string $search = '';
@@ -89,6 +92,10 @@ class PermohonanIzin extends Component
         $statusKehadiran = ($jenisStr === 'absen') ? 'hadir' : $jenisStr;
 
         foreach ($period as $date) {
+            if ($date->isWeekend()) {
+                continue;
+            }
+
             $tglString = $date->format('Y-m-d');
 
             // Cari presensi user di tanggal tersebut
@@ -119,7 +126,7 @@ class PermohonanIzin extends Component
         }
 
         $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
-        session()->flash('message', 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah disetujui.');
+        $this->toastSuccess( 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah disetujui.');
         
         $this->closeDetail();
     }
@@ -134,7 +141,7 @@ class PermohonanIzin extends Component
         ]);
 
         $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
-        session()->flash('message', 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah ditolak.');
+        $this->toastSuccess( 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah ditolak.');
         
         $this->closeDetail();
     }

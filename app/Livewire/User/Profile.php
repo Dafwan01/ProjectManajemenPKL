@@ -12,9 +12,12 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password; // <-- 1. Import Class Password
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use App\Traits\Toastable;
 
 class Profile extends Component
 {
+    use Toastable;
+
     use WithFileUploads;
 
     public ?User $user = null;
@@ -211,7 +214,7 @@ class Profile extends Component
         $this->password = null;
         $this->confirm_password = null;
 
-        session()->flash('message', 'Profil berhasil diperbarui.');
+        $this->toastSuccess( 'Profil berhasil diperbarui.');
         $this->fillProfileFields();
 
         return redirect()->route('user.profile');
