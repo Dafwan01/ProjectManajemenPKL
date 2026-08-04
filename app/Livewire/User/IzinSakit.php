@@ -24,6 +24,10 @@ class IzinSakit extends Component
     public $alamatIzin = ''; // Property baru untuk alamat selama izin
     public $jumlahHari = 1;  // Property baru untuk kalkulasi jumlah hari
 
+    // Property baru: opsi absen susulan (checkbox)
+    public bool $absenMasuk = false;
+    public bool $absenPulang = false;
+
     // Aturan validasi
     protected function rules()
     {
@@ -93,48 +97,52 @@ class IzinSakit extends Component
     /**
      * Hitung durasi hari secara otomatis
      */
-  public function hitungJumlahHari()
-{
-    if ($this->tipePengajuan === 'absen') {
-        if ($this->tanggalMulai) {
-            $tanggal = Carbon::parse($this->tanggalMulai);
-            $this->jumlahHari = $tanggal->isWeekend() ? 0 : 1;
-        } else {
-            $this->jumlahHari = 1;
-        }
-        return;
-    }
-
-    if ($this->tanggalMulai && $this->tanggalSelesai) {
-        try {
-            $start = Carbon::parse($this->tanggalMulai);
-            $end = Carbon::parse($this->tanggalSelesai);
-
-            if ($end->greaterThanOrEqualTo($start)) {
-                $hariKerja = 0;
-                $cursor = $start->copy();
-
-                while ($cursor->lte($end)) {
-                    if (! $cursor->isWeekend()) {
-                        $hariKerja++;
-                    }
-                    $cursor->addDay();
-                }
-
-                $this->jumlahHari = $hariKerja;
+    public function hitungJumlahHari()
+    {
+        if ($this->tipePengajuan === 'absen') {
+            if ($this->tanggalMulai) {
+                $tanggal = Carbon::parse($this->tanggalMulai);
+                $this->jumlahHari = $tanggal->isWeekend() ? 0 : 1;
             } else {
-                $this->jumlahHari = 0;
+                $this->jumlahHari = 1;
             }
-        } catch (\Exception $e) {
-            $this->jumlahHari = 1;
+            return;
+        }
+
+        if ($this->tanggalMulai && $this->tanggalSelesai) {
+            try {
+                $start = Carbon::parse($this->tanggalMulai);
+                $end = Carbon::parse($this->tanggalSelesai);
+
+                if ($end->greaterThanOrEqualTo($start)) {
+                    $hariKerja = 0;
+                    $cursor = $start->copy();
+
+                    while ($cursor->lte($end)) {
+                        if (! $cursor->isWeekend()) {
+                            $hariKerja++;
+                        }
+                        $cursor->addDay();
+                    }
+
+                    $this->jumlahHari = $hariKerja;
+                } else {
+                    $this->jumlahHari = 0;
+                }
+            } catch (\Exception $e) {
+                $this->jumlahHari = 1;
+            }
         }
     }
-}
 
     public function updatedTipePengajuan($value)
     {
         if ($value === 'absen') {
             $this->tanggalSelesai = $this->tanggalMulai;
+        } else {
+            // Reset opsi absen susulan jika pindah tipe
+            $this->absenMasuk = false;
+            $this->absenPulang = false;
         }
         if ($value !== 'izin') {
             $this->alamatIzin = ''; // Reset alamat jika bukan izin
@@ -161,19 +169,19 @@ class IzinSakit extends Component
             session()->flash('warning', 'Gagal Pengajuan! Akun Anda telah berstatus LULUS.');
             return;
         }
-        if ($this->isLulus) {
-        session()->flash('warning', 'Gagal Pengajuan! Akun Anda telah berstatus LULUS.');
-        return;
-    }
-
-    $this->validate();
-
-    if ($this->jumlahHari <= 0) {
-        session()->flash('warning', 'Tanggal yang dipilih jatuh pada akhir pekan (Sabtu/Minggu) dan tidak dapat diajukan.');
-        return;
-    }
 
         $this->validate();
+
+        if ($this->jumlahHari <= 0) {
+            session()->flash('warning', 'Tanggal yang dipilih jatuh pada akhir pekan (Sabtu/Minggu) dan tidak dapat diajukan.');
+            return;
+        }
+
+        // Validasi khusus tipe 'absen': minimal 1 opsi harus dicentang
+        if ($this->tipePengajuan === 'absen' && !$this->absenMasuk && !$this->absenPulang) {
+            session()->flash('warning', 'Pilih minimal satu opsi: Absen Masuk atau Absen Pulang.');
+            return;
+        }
 
         $user = Auth::user();
 
@@ -197,10 +205,12 @@ class IzinSakit extends Component
             'tanggal_permohonan' => now()->format('Y-m-d'),
             'alasan'             => $this->alasan,
             'status'             => 'pending',
+            'absen_masuk'        => $this->tipePengajuan === 'absen' ? $this->absenMasuk : false,
+            'absen_pulang'       => $this->tipePengajuan === 'absen' ? $this->absenPulang : false,
         ]);
 
         // Reset Form Input
-        $this->reset(['alasan', 'alamatIzin']);
+        $this->reset(['alasan', 'alamatIzin', 'absenMasuk', 'absenPulang']);
         $today = now()->format('Y-m-d');
         $this->tanggalMulai = $today;
         $this->tanggalSelesai = $today;
