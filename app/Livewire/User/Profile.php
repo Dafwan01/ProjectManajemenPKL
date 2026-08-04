@@ -5,6 +5,8 @@ namespace App\Livewire\User;
 use App\Models\User;
 use App\Models\Sekolah;
 use App\Enums\UserRole;
+use App\Models\Divisi;
+use App\Models\Bidang;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +25,10 @@ class Profile extends Component
     public $nama;
     public $email;
     public $sekolah_id;
+
+    // Bidang & Divisi ditentukan oleh admin, user hanya bisa melihat (read-only).
+    public $divisi_id;
+
     public $mentor;
     public $skill;
     public $tanggal_mulai;
@@ -46,6 +52,31 @@ class Profile extends Component
     public function daftarSekolah()
     {
         return Sekolah::orderBy('nama_sekolah', 'asc')->get();
+    }
+
+    // Dipakai untuk menampilkan nama Divisi & Bidang milik user (read-only).
+    // Sengaja ambil kolom bidang_id langsung (bukan lewat relasi $divisi->bidang)
+    // supaya tidak tergantung pada guessing foreign key Eloquent yang pernah bermasalah.
+    #[Computed]
+    public function divisiSaatIni()
+    {
+        if (empty($this->divisi_id)) {
+            return null;
+        }
+
+        return Divisi::find($this->divisi_id);
+    }
+
+    #[Computed]
+    public function bidangSaatIni()
+    {
+        $divisi = $this->divisiSaatIni;
+
+        if (! $divisi || empty($divisi->bidang_id)) {
+            return null;
+        }
+
+        return Bidang::find($divisi->bidang_id);
     }
 
     protected function rules()
@@ -113,6 +144,8 @@ class Profile extends Component
         $this->skill = $this->user->skill;
         $this->tanggal_mulai = $this->formatDateForInput($this->user->tanggal_mulai);
         $this->tanggal_akhir = $this->formatDateForInput($this->user->tanggal_akhir);
+
+        $this->divisi_id = $this->user->divisi_id;
     }
 
     private function formatDateForInput($value): ?string
@@ -150,6 +183,7 @@ class Profile extends Component
         if ($propertyName === 'fotoUpload' || $propertyName === 'fotoCaptured') {
             return;
         }
+
         $this->validateOnly($propertyName);
     }
 

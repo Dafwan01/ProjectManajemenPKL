@@ -1,4 +1,4 @@
-    <div class="w-full mx-auto max-w-4xl space-y-6">
+<div class="w-full mx-auto max-w-4xl space-y-6">
         <!-- Header Section -->
         <div class="border-b border-gray-200 dark:border-gray-800 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -293,6 +293,35 @@
                             </div>
                         </div>
 
+                        <!-- Bidang & Divisi (Read-only, ditentukan oleh admin) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    Bidang <span class="text-gray-400 dark:text-gray-500 font-normal">(Tidak dapat diubah)</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    value="{{ $this->bidangSaatIni?->nama_bidang ?? '-' }}"
+                                    disabled 
+                                    readonly
+                                    class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-200/70 dark:bg-gray-900/80 text-gray-500 dark:text-gray-400 text-sm px-4 py-3 cursor-not-allowed focus:outline-none transition"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    Divisi <span class="text-gray-400 dark:text-gray-500 font-normal">(Tidak dapat diubah)</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    value="{{ $this->divisiSaatIni?->nama_divisi ?? '-' }}"
+                                    disabled 
+                                    readonly
+                                    class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-200/70 dark:bg-gray-900/80 text-gray-500 dark:text-gray-400 text-sm px-4 py-3 cursor-not-allowed focus:outline-none transition"
+                                >
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
         <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -327,7 +356,6 @@
                     </div>
 
                     <!-- Section: Keamanan -->
-                <!-- Section: Keamanan -->
                     <div class="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-800">
                         <h3 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Ubah Password (Opsional)</h3>
                         
@@ -402,6 +430,11 @@
                 </form>
             @else
                 <!-- VIEW MODE (DASHBOARD CARD STYLE) -->
+                @php
+                    $sekolahTerpilih = $this->daftarSekolah->firstWhere('sekolah_id', $sekolah_id);
+                    $divisiTerpilih = $this->divisiSaatIni;
+                    $bidangTerpilih = $this->bidangSaatIni;
+                @endphp
                 <div class="space-y-6">
                     
                     <!-- Hero Card (Foto + Ringkasan Utama) -->
@@ -424,9 +457,15 @@
                                 <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-500/20">
                                     {{ $jurusan ?: 'Jurusan belum diset' }}
                                 </span>
-                              <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-700">
-                                {{ $user->sekolah?->nama_sekolah ?? $asal_sekolah ?? 'Sekolah/Kampus belum diset' }}
-                            </span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-700">
+                                    {{ $sekolahTerpilih?->nama_sekolah ?? 'Sekolah/Kampus belum diset' }}
+                                </span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-300 dark:border-purple-500/20">
+                                    {{ $bidangTerpilih?->nama_bidang ?? 'Bidang belum diset' }}
+                                </span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-500/20">
+                                    {{ $divisiTerpilih?->nama_divisi ?? 'Divisi belum diset' }}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -484,7 +523,26 @@
 
                     </div>
 
-                    <!-- Card 3: Skill Set -->
+                    <!-- Card 3: Bidang & Divisi -->
+                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                        <div class="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">
+                            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 6v-3a1 1 0 011-1h2a1 1 0 011 1v3" /></svg>
+                            <h3 class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Bidang & Divisi</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <p class="text-xs text-gray-400 dark:text-gray-500">Bidang</p>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white mt-0.5">{{ $bidangTerpilih?->nama_bidang ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400 dark:text-gray-500">Divisi</p>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white mt-0.5">{{ $divisiTerpilih?->nama_divisi ?? '-' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Skill Set -->
                     <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 space-y-4 shadow-xl">
                         <div class="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">
                             <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>

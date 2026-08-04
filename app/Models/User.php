@@ -33,7 +33,7 @@ class User extends Authenticatable
         'tanggal_mulai',
         'tanggal_akhir',
         'role',
-        'divisi',
+        'divisi_id',
         'surat_penerimaan',
         'foto',
         'skill',
@@ -57,7 +57,6 @@ class User extends Authenticatable
         // Casting Enum di sini
         'role' => UserRole::class,
         'status' => UserStatus::class,
-        'divisi' => UserDivisi::class,
     ];
 
     public function getTanggalAkhirAttribute($value)
@@ -153,4 +152,9 @@ public function sekolah()
 {
     return $this->belongsTo(Sekolah::class, 'sekolah_id', 'sekolah_id');
 }
+
+public function divisi()
+    {
+        return $this->belongsTo(Divisi::class);
+    }
 }

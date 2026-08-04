@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
             'role' => UserRole::ADMIN,
             'status' => UserStatus::AKTIF,
             'mentor' => 'Budi Santoso',
-            'divisi' => 'APTIKA',
+            'divisi_id' => 1,
         ]);
 
         User::create([
@@ -39,7 +39,7 @@ class UserSeeder extends Seeder
             'role' => UserRole::MENTOR,
             'status' => UserStatus::AKTIF,
             'mentor' => '-',
-            'divisi' => 'APTIKA',
+            'divisi_id' => 1,
         ]);
 
         User::create([
@@ -51,7 +51,7 @@ class UserSeeder extends Seeder
             'sekolah_id' => $sekolah2->sekolah_id,
             'mentor' => 'Budi Santoso',
             'skill' => 'Laravel, React, MySQL',
-            'divisi' => 'APTIKA',
+            'divisi_id' => 1,
         ]);
 
         User::create([
@@ -63,7 +63,7 @@ class UserSeeder extends Seeder
             'sekolah_id' => $sekolah3->sekolah_id,
             'mentor' => 'Bambang Sutrisno',
             'skill' => 'PHP, Vue, PostgreSQL',
-            'divisi' => 'APTIKA',
+            'divisi_id' => 2,
         ]);
 
         User::create([
@@ -75,7 +75,7 @@ class UserSeeder extends Seeder
             'sekolah_id' => $sekolah4->sekolah_id,
             'mentor' => 'Cahyani Putri',
             'skill' => 'Java, Spring Boot, MongoDB',
-            'divisi' => 'APTIKA',
+            'divisi_id' => 3,
         ]);
     }
 }

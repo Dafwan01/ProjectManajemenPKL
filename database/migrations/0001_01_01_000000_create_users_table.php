@@ -25,7 +25,7 @@ return new class extends Migration
                   ->default(UserStatus::AKTIF->value);
                   
             $table->enum('role', array_column(UserRole::cases(), 'value'));
-            $table->enum('divisi', array_column(UserDivisi::cases(), 'value'))->nullable();
+            $table->foreignId('divisi_id')->nullable()->constrained('divisis', 'divisi_id')->onDelete('cascade');
 
             $table->string('email')->unique();
             $table->string('password');
