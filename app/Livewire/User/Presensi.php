@@ -7,6 +7,7 @@ use App\Models\presensi as PresensiModel;
 use App\Models\User;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Services\WorldTimeService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -22,20 +23,23 @@ class Presensi extends Component
     public $longitude = null;
     public $fotoCaptured = null;
 
-    // Flag status presensi hari ini
     public $sudahAbsenMasuk = false;
     public $sudahAbsenKeluar = false;
 
-    // Flag status kelulusan user
     public bool $isLulus = false;
 
-    // Radius, Status Kerja, & Jam Masuk
+    // Flag hari libur (Sabtu/Minggu)
+    public bool $isWeekend = false;
+    public string $namaHariIni = '';
+
     public $isWfa = false;
     public $statusKerja = 'wfo';
     public $jamMasukJadwal = null;
     public $maxRadiusMeters = 150;
     public $targetLat = -6.595181;
     public $targetLng = 106.793836;
+
+    public bool $waktuFallbackServer = false;
 
     protected $messages = [
         'latitude.required'     => 'Koordinat lokasi belum terdeteksi. Izinkan akses lokasi di browser!',
@@ -48,6 +52,7 @@ class Presensi extends Component
     public function mount()
     {
         $this->cekUserStatus();
+        $this->cekHariLibur();
         $this->cekStatusPresensi();
         $this->cekJadwalDanRadius();
     }
@@ -67,6 +72,23 @@ class Presensi extends Component
         }
     }
 
+    /**
+     * Cek apakah hari ini Sabtu/Minggu berdasarkan waktu dunia (bukan waktu device/server).
+     */
+    private function cekHariLibur()
+    {
+        $waktuSekarang = WorldTimeService::now();
+        Carbon::setLocale('id');
+        $this->namaHariIni = $waktuSekarang->translatedFormat('l');
+
+        // isWeekend() Carbon: true jika Sabtu (6) atau Minggu (0)
+        $this->isWeekend = $waktuSekarang->isWeekend();
+
+        if ($this->isWeekend) {
+            session()->flash('warning', 'Hari ini adalah ' . $this->namaHariIni . '. Presensi tidak dapat dilakukan pada akhir pekan (Sabtu/Minggu).');
+        }
+    }
+
     private function cekJadwalDanRadius()
     {
         $userId = $this->currentUserId();
@@ -76,7 +98,7 @@ class Presensi extends Component
         }
 
         Carbon::setLocale('id');
-        $hariIni = Carbon::now()->translatedFormat('l');
+        $hariIni = WorldTimeService::now()->translatedFormat('l');
 
         $jadwalHariIni = DB::table('detail_jadwals')
             ->join('jadwals', 'detail_jadwals.jadwal_id', '=', 'jadwals.jadwal_id')
@@ -145,7 +167,6 @@ class Presensi extends Component
             if ($this->sudahAbsenMasuk && !$this->sudahAbsenKeluar) {
                 $this->tipePresensi = 'pulang';
 
-                // Ambil logbook yang mungkin sudah pernah diisi via Halaman Riwayat
                 $existingLogbook = log_book::where('presensi_id', $presensiHariIni->presensi_id)->first();
                 if ($existingLogbook) {
                     $this->logbook = $existingLogbook->kegiatan;
@@ -157,7 +178,7 @@ class Presensi extends Component
     private function getPresensiHariIni()
     {
         return PresensiModel::where('user_id', $this->currentUserId())
-            ->whereDate('tanggal', Carbon::today()->toDateString())
+            ->whereDate('tanggal', WorldTimeService::now()->toDateString())
             ->first();
     }
 
@@ -165,6 +186,14 @@ class Presensi extends Component
     {
         if ($this->isLulus) {
             session()->flash('warning', 'Gagal Presensi! Akun Anda telah berstatus LULUS.');
+            return;
+        }
+
+        // Guard: blokir presensi di hari Sabtu/Minggu (dicek ulang di sini agar tidak bisa diakali walau form sempat termuat)
+        $waktuSekarang = WorldTimeService::now();
+        if ($waktuSekarang->isWeekend()) {
+            Carbon::setLocale('id');
+            session()->flash('warning', 'Gagal Presensi! Hari ini adalah ' . $waktuSekarang->translatedFormat('l') . '. Presensi tidak dapat dilakukan pada akhir pekan.');
             return;
         }
 
@@ -211,8 +240,11 @@ class Presensi extends Component
             return;
         }
 
+        $waktuDunia = $waktuSekarang;
+        $this->waktuFallbackServer = !WorldTimeService::isFromApi();
+
         $namaUserSlug = Str::slug($user->nama ?? 'user');
-        $tanggalHariIni = Carbon::today()->format('Y-m-d');
+        $tanggalHariIni = $waktuDunia->format('Y-m-d');
         $tipe = $this->tipePresensi;
 
         $namaFile = "{$namaUserSlug}-{$tanggalHariIni}-{$tipe}.jpg";
@@ -221,15 +253,14 @@ class Presensi extends Component
         DB::beginTransaction();
         try {
             if ($this->tipePresensi === 'masuk') {
-                
+
                 if ($presensiHariIni && $presensiHariIni->absen_masuk) {
                     session()->flash('warning', 'Anda sudah melakukan presensi MASUK hari ini!');
                     return;
                 }
 
-                $waktuSekarang = now();
-                $jamSekarangStr = $waktuSekarang->format('H:i:s');
-                
+                $jamSekarangStr = $waktuDunia->format('H:i:s');
+
                 $statusKehadiran = 'hadir';
                 if ($this->jamMasukJadwal && $jamSekarangStr > $this->jamMasukJadwal) {
                     $statusKehadiran = 'terlambat';
@@ -245,9 +276,13 @@ class Presensi extends Component
                     'longitude'        => $this->longitude,
                 ]);
 
-                $pesan = $statusKehadiran === 'terlambat' 
-                    ? 'Presensi MASUK berhasil dikirim (Terlambat)!' 
+                $pesan = $statusKehadiran === 'terlambat'
+                    ? 'Presensi MASUK berhasil dikirim (Terlambat)!'
                     : 'Presensi MASUK berhasil dikirim!';
+
+                if ($this->waktuFallbackServer) {
+                    $pesan .= ' (Catatan: waktu dunia tidak dapat diakses, menggunakan waktu server sebagai cadangan.)';
+                }
 
                 session()->flash('message', $pesan);
 
@@ -257,11 +292,10 @@ class Presensi extends Component
                 $presensiId = $presensiHariIni->{$pkName};
 
                 $presensiHariIni->update([
-                    'absen_keluar' => now()->format('H:i:s'),
+                    'absen_keluar' => $waktuDunia->format('H:i:s'),
                     'foto_keluar'  => $fotoPath,
                 ]);
 
-                // Menggunakan updateOrCreate agar tidak menciptakan duplikasi logbook
                 log_book::updateOrCreate(
                     [
                         'presensi_id' => $presensiId,
@@ -272,7 +306,12 @@ class Presensi extends Component
                     ]
                 );
 
-                session()->flash('message', 'Presensi PULANG dan Logbook berhasil dikirim!');
+                $pesan = 'Presensi PULANG dan Logbook berhasil dikirim!';
+                if ($this->waktuFallbackServer) {
+                    $pesan .= ' (Catatan: waktu dunia tidak dapat diakses, menggunakan waktu server sebagai cadangan.)';
+                }
+
+                session()->flash('message', $pesan);
             }
 
             DB::commit();
