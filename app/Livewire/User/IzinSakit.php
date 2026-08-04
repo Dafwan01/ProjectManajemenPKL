@@ -104,11 +104,17 @@ class IzinSakit extends Component
             $this->jumlahHari = $date->isWeekday() ? 1 : 0;
             return;
         }
+        return;
+    }
 
-        if ($this->tanggalMulai && $this->tanggalSelesai) {
-            try {
-                $start = Carbon::parse($this->tanggalMulai);
-                $end = Carbon::parse($this->tanggalSelesai);
+    if ($this->tanggalMulai && $this->tanggalSelesai) {
+        try {
+            $start = Carbon::parse($this->tanggalMulai);
+            $end = Carbon::parse($this->tanggalSelesai);
+
+            if ($end->greaterThanOrEqualTo($start)) {
+                $hariKerja = 0;
+                $cursor = $start->copy();
 
                 if ($end->greaterThanOrEqualTo($start)) {
                     $this->jumlahHari = $this->countWeekdaysBetween($start, $end);
@@ -128,9 +134,12 @@ class IzinSakit extends Component
             if ($date->isWeekday()) {
                 $count++;
             }
+        } catch (\Exception $e) {
+            $this->jumlahHari = 1;
         }
         return $count;
     }
+}
 
     public function updatedTipePengajuan($value)
     {
@@ -162,6 +171,17 @@ class IzinSakit extends Component
             $this->toastWarning( 'Gagal Pengajuan! Akun Anda telah berstatus LULUS.');
             return;
         }
+        if ($this->isLulus) {
+        session()->flash('warning', 'Gagal Pengajuan! Akun Anda telah berstatus LULUS.');
+        return;
+    }
+
+    $this->validate();
+
+    if ($this->jumlahHari <= 0) {
+        session()->flash('warning', 'Tanggal yang dipilih jatuh pada akhir pekan (Sabtu/Minggu) dan tidak dapat diajukan.');
+        return;
+    }
 
         $this->validate();
 

@@ -18,7 +18,9 @@ class MonitoringAbsensi extends Component
     use Toastable;
 
     use WithPagination;
-
+public bool $showLogbookModal = false;
+public string $selectedLogbookText = '';
+public string $selectedLogbookUser = '';
     public string $tanggal = '';
     public bool $showMap = false;
     public $locations = [];
@@ -167,6 +169,19 @@ class MonitoringAbsensi extends Component
     {
         $this->showMap = false;
     }
+    public function openLogbookModal($text, $nama)
+{
+    $this->selectedLogbookText = $text;
+    $this->selectedLogbookUser = $nama;
+    $this->showLogbookModal = true;
+}
+
+public function closeLogbookModal()
+{
+    $this->showLogbookModal = false;
+    $this->selectedLogbookText = '';
+    $this->selectedLogbookUser = '';
+}
 
     // --- RENDER COMPONENT ---
     public function render()

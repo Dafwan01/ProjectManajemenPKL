@@ -5,6 +5,22 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Pantau dan kelola data kehadiran serta logbook harian peserta PKL.</p>
     </div>
 
+    <!-- Flash Message Notification -->
+    @if (session()->has('message'))
+        <div class="mb-4 p-3 bg-green-100 dark:bg-green-900/40 border border-green-400 dark:border-green-600/60 text-green-700 dark:text-green-300 text-sm rounded-xl flex items-center gap-2 shadow">
+            <svg class="w-4 h-4 text-green-500 dark:text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <span>{{ session('message') }}</span>
+        </div>
+    @endif
+
+    <!-- Disclaimer Status Kerja Default WFO -->
+    <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 text-xs rounded-xl flex items-start gap-2 shadow-sm">
+        <svg class="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>
+            <strong>Catatan:</strong> Status magang secara default diset <strong>WFO</strong>. Disarankan untuk melakukan pengaturan ulang status kerja (WFO/WFA) setiap awal minggu agar data monitoring tetap akurat.
+        </span>
+    </div>
+
     <div class="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-xl">
         <!-- Top Bar -->
         <div class="flex items-center justify-between p-5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 gap-4 overflow-x-auto no-scrollbar">
@@ -87,6 +103,10 @@
                                     }
                                 }
                             }
+
+                            // Cek panjang logbook untuk truncate
+                            $kegiatan = $presensi->logBooks->first()?->kegiatan ?? '-';
+                            $isLogbookPanjang = strlen($kegiatan) > 60;
                         @endphp
                         <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition">
                             <th scope="row" class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
@@ -164,7 +184,18 @@
 
                             <!-- Logbook -->
                             <td class="px-6 py-4 text-sm max-w-xs text-gray-600 dark:text-gray-300">
-                                <span class="block whitespace-normal break-words leading-relaxed">{{ $presensi->logBooks->first()?->kegiatan ?? '-' }}</span>
+                                @if($isLogbookPanjang)
+                                    <button 
+                                        type="button"
+                                        wire:click="openLogbookModal(@js($kegiatan), @js($user->nama ?? $user->name ?? '-'))"
+                                        class="text-left w-full hover:text-blue-600 dark:hover:text-blue-400 transition group"
+                                    >
+                                        <span class="block truncate leading-relaxed group-hover:underline">{{ Str::limit($kegiatan, 60) }}</span>
+                                        <span class="text-[10px] text-blue-500 dark:text-blue-400 font-medium">Lihat selengkapnya</span>
+                                    </button>
+                                @else
+                                    <span class="block whitespace-normal break-words leading-relaxed">{{ $kegiatan }}</span>
+                                @endif
                             </td>
 
                             <!-- Tombol Aksi Edit -->
@@ -211,6 +242,14 @@
                     </button>
                 </div>
 
+                <!-- Warning di dalam modal (muncul sebelum submit jika ada error) -->
+                @if (session()->has('warning'))
+                    <div class="mx-6 mt-5 p-3 bg-amber-100 dark:bg-amber-900/40 border border-amber-400 dark:border-amber-600/60 text-amber-700 dark:text-amber-300 text-xs rounded-xl flex items-center gap-2 shadow">
+                        <svg class="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <span>{{ session('warning') }}</span>
+                    </div>
+                @endif
+
                 <!-- Form Modal -->
                 <form wire:submit.prevent="updateAbsen" class="p-6 space-y-4">
                     <!-- Status Kehadiran -->
@@ -255,6 +294,36 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- MODAL DETAIL LOGBOOK -->
+    @if($showLogbookModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+            <div class="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <!-- Header Modal -->
+                <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/50">
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Logbook - {{ $selectedLogbookUser }}
+                    </h3>
+                    <button type="button" wire:click="closeLogbookModal" class="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white p-1 rounded-lg transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Isi Logbook -->
+                <div class="p-6">
+                    <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ $selectedLogbookText }}</p>
+                </div>
+
+                <!-- Footer -->
+                <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-200 dark:border-gray-800">
+                    <button type="button" wire:click="closeLogbookModal" class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition">
+                        Tutup
+                    </button>
+                </div>
             </div>
         </div>
     @endif

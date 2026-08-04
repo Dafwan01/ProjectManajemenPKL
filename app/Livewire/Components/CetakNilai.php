@@ -19,10 +19,33 @@ class CetakNilai extends RoutingController
         // Ambil 1 record Nilai berdasarkan user_id
         $nilaiUser = Nilai::where('user_id', $selectedUser->user_id ?? $selectedUser->id)->first();
 
+        // Tentukan predikat untuk setiap aspek penilaian & rata-rata
+        $predikat = null;
+        $predikatPerAspek = [];
+
+        if ($nilaiUser) {
+            $aspek = [
+                'kedisiplinan',
+                'kemampuan_teknis',
+                'problem_solving',
+                'komunikasi_kerjasama',
+                'kualitas_ketepatan',
+            ];
+
+            foreach ($aspek as $key) {
+                $nilai = $nilaiUser->{$key} ?? null;
+                $predikatPerAspek[$key] = $this->tentukanPredikat($nilai);
+            }
+
+            $predikat = $this->tentukanPredikat($nilaiUser->rata_rata ?? null);
+        }
+
         // Render PDF menggunakan DomPDF
         $pdf = Pdf::loadView('livewire.components.cetak-nilai', [
-            'selectedUser' => $selectedUser,
-            'nilaiUser'    => $nilaiUser,
+            'selectedUser'      => $selectedUser,
+            'nilaiUser'         => $nilaiUser,
+            'predikat'          => $predikat,
+            'predikatPerAspek'  => $predikatPerAspek,
         ])->setPaper('a4', 'portrait');
 
         return response()->stream(
@@ -36,4 +59,28 @@ class CetakNilai extends RoutingController
             ]
         );
     }
+
+    /**
+     * Menentukan predikat berdasarkan rentang nilai.
+     */
+   private function tentukanPredikat($nilai): ?string
+{
+    if ($nilai === null || $nilai === '') {
+        return null;
+    }
+
+    $nilai = (float) $nilai;
+
+    return match (true) {
+        $nilai >= 95 => 'Sangat Baik',
+        $nilai >= 86 => 'Sangat Baik',
+        $nilai >= 80 => 'Baik Sekali',
+        $nilai >= 75 => 'Baik',
+        $nilai >= 70 => 'Baik',
+        $nilai >= 65 => 'Cukup Baik',
+        $nilai >= 60 => 'Cukup',
+        $nilai >= 40 => 'Kurang',
+        default      => 'Sangat Kurang',
+    };
+}
 }
