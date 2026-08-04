@@ -4,8 +4,10 @@ namespace App\Livewire\Dashboard;
 
 use App\Enums\UserRole;
 use App\Models\log_book;
+use App\Models\PermohonanIzin;
 use App\Models\presensi;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -15,9 +17,9 @@ use Livewire\WithPagination;
 class MonitoringAbsensi extends Component
 {
     use WithPagination;
-public bool $showLogbookModal = false;
-public string $selectedLogbookText = '';
-public string $selectedLogbookUser = '';
+    public bool $showLogbookModal = false;
+    public string $selectedLogbookText = '';
+    public string $selectedLogbookUser = '';
     public string $tanggal = '';
     public bool $showMap = false;
     public $locations = [];
@@ -41,9 +43,6 @@ public string $selectedLogbookUser = '';
         $this->resetPage();
     }
 
-    /**
-     * Helper untuk mengecek apakah user yang login adalah Mentor secara aman
-     */
     private function isMentorUser(): bool
     {
         $currentUser = Auth::user();
@@ -51,7 +50,6 @@ public string $selectedLogbookUser = '';
             return false;
         }
 
-        // Ambil string value role secara konsisten (baik bertipe Enum maupun String)
         $userRole = $currentUser->role instanceof \UnitEnum 
             ? $currentUser->role->value 
             : $currentUser->role;
@@ -59,7 +57,6 @@ public string $selectedLogbookUser = '';
         return $userRole === UserRole::MENTOR->value;
     }
 
-    // --- BUKA MODAL EDIT ---
     public function editAbsen($presensiId)
     {
         $presensi = presensi::with(['user', 'logBooks.user'])->find($presensiId);
@@ -87,7 +84,6 @@ public string $selectedLogbookUser = '';
         $this->reset(['selectedPresensiId', 'editNamaUser', 'editStatusKehadiran', 'editAbsenMasuk', 'editAbsenKeluar', 'editLogbook']);
     }
 
-    // --- SIMPAN EDIT ABSEN ---
     public function updateAbsen()
     {
         $this->validate([
@@ -100,14 +96,12 @@ public string $selectedLogbookUser = '';
         $presensi = presensi::find($this->selectedPresensiId);
 
         if ($presensi) {
-            // Update data presensi
             $presensi->update([
                 'status_kehadiran' => $this->editStatusKehadiran,
                 'absen_masuk'      => $this->editAbsenMasuk ?: null,
                 'absen_keluar'     => $this->editAbsenKeluar ?: null,
             ]);
 
-            // Update atau buat logbook baru jika ada input kegiatan
             if ($this->editLogbook) {
                 log_book::updateOrCreate(
                     [
@@ -125,7 +119,6 @@ public string $selectedLogbookUser = '';
         }
     }
 
-    // --- PETA LOKASI ---
     public function openMap()
     {
         $currentUser = Auth::user();
@@ -135,7 +128,6 @@ public string $selectedLogbookUser = '';
             ->whereHas('user', function ($query) use ($currentUser, $isMentor) {
                 $query->where('role', UserRole::PKL->value);
 
-                // Filter berdasarkan nama mentor jika pengakses adalah Mentor
                 if ($isMentor) {
                     $query->where('mentor', $currentUser->nama);
                 }
@@ -166,31 +158,48 @@ public string $selectedLogbookUser = '';
     {
         $this->showMap = false;
     }
+
     public function openLogbookModal($text, $nama)
-{
-    $this->selectedLogbookText = $text;
-    $this->selectedLogbookUser = $nama;
-    $this->showLogbookModal = true;
-}
+    {
+        $this->selectedLogbookText = $text;
+        $this->selectedLogbookUser = $nama;
+        $this->showLogbookModal = true;
+    }
 
-public function closeLogbookModal()
-{
-    $this->showLogbookModal = false;
-    $this->selectedLogbookText = '';
-    $this->selectedLogbookUser = '';
-}
+    public function closeLogbookModal()
+    {
+        $this->showLogbookModal = false;
+        $this->selectedLogbookText = '';
+        $this->selectedLogbookUser = '';
+    }
 
-    // --- RENDER COMPONENT ---
+    /**
+     * Bentuk label jenis pengajuan untuk baris virtual (izin/sakit/absen).
+     */
+    private function labelJenisPengajuan(PermohonanIzin $p): string
+    {
+        $label = strtoupper($p->jenis);
+
+        if ($p->jenis === 'absen') {
+            $bagian = [];
+            if ($p->absen_masuk) $bagian[] = 'Masuk';
+            if ($p->absen_pulang) $bagian[] = 'Pulang';
+            $label .= ' (' . implode(' & ', $bagian) . ')';
+        }
+
+        return $label;
+    }
+
     public function render()
     {
         $currentUser = Auth::user();
         $isMentor = $this->isMentorUser();
 
+        // 1) Data presensi asli pada tanggal terpilih
         $presensis = presensi::with(['user', 'logBooks.user', 'user.detailJadwals.jadwal'])
             ->whereHas('user', function ($query) use ($currentUser, $isMentor) {
                 $query->where('role', UserRole::PKL->value);
 
-                // Filter khusus anak bimbingan jika pengakses adalah Mentor
                 if ($isMentor) {
                     $query->where('mentor', $currentUser->nama);
                 }
@@ -198,11 +207,82 @@ public function closeLogbookModal()
             ->when($this->tanggal, function ($query) {
                 $query->whereDate('tanggal', $this->tanggal);
             })
-            ->orderBy('presensi_id', 'desc')
-            ->paginate(10);
+            ->get();
+
+        foreach ($presensis as $p) {
+            $p->is_pengajuan = false;
+            $p->pengajuan_label = null;
+        }
+
+        $userIdSudahAda = $presensis->pluck('user_id')->toArray();
+        $baris = $presensis->values();
+
+        // 2) Baris virtual dari pengajuan pending/ditolak (user belum punya presensi di tanggal ini)
+        if ($this->tanggal) {
+            $tglTarget = Carbon::parse($this->tanggal);
+
+            $permohonans = PermohonanIzin::with('user')
+                ->whereIn('status', ['pending', 'ditolak'])
+                ->whereHas('user', function ($query) use ($currentUser, $isMentor) {
+                    $query->where('role', UserRole::PKL->value);
+                    if ($isMentor) {
+                        $query->where('mentor', $currentUser->nama);
+                    }
+                })
+                ->get()
+                ->filter(function ($p) use ($tglTarget, $userIdSudahAda) {
+                    if (in_array($p->user_id, $userIdSudahAda)) {
+                        return false;
+                    }
+
+                    $awal = Carbon::parse($p->tanggal_awal ?? $p->tanggal_permohonan);
+                    $akhir = $p->tanggal_akhir ? Carbon::parse($p->tanggal_akhir) : $awal;
+
+                    return $tglTarget->betweenIncluded($awal, $akhir);
+                });
+
+            foreach ($permohonans as $p) {
+                $prefix = $p->status === 'pending' ? 'MENUNGGU: ' : 'DITOLAK: ';
+
+                $virtual = new \stdClass();
+                $virtual->presensi_id = null;
+                $virtual->user = $p->user;
+                $virtual->tanggal = $tglTarget->copy();
+                $virtual->foto_masuk = null;
+                $virtual->foto_keluar = null;
+                $virtual->absen_masuk = null;
+                $virtual->absen_keluar = null;
+                $virtual->status_kehadiran = null;
+                $virtual->logBooks = collect();
+                $virtual->is_pengajuan = true;
+                $virtual->pengajuan_status = $p->status;
+                $virtual->pengajuan_label = $prefix . $this->labelJenisPengajuan($p);
+                $virtual->alasan_pengajuan = $p->alasan;
+
+                $baris->push($virtual);
+            }
+        }
+
+        // Urutkan berdasarkan nama
+        $sorted = $baris->sortBy(function ($item) {
+            return $item->user->nama ?? $item->user->name ?? '';
+        })->values();
+
+        // Pagination manual atas hasil gabungan
+        $page = LengthAwarePaginator::resolveCurrentPage() ?: 1;
+        $perPage = 10;
+        $items = $sorted->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $presensisPaginated = new LengthAwarePaginator(
+            $items,
+            $sorted->count(),
+            $perPage,
+            $page,
+            ['path' => LengthAwarePaginator::resolveCurrentPath()]
+        );
 
         return view('livewire.dashboard.monitoring-absensi', [
-            'presensis' => $presensis,
+            'presensis' => $presensisPaginated,
         ]);
     }
 }
