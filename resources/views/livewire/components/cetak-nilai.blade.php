@@ -66,16 +66,33 @@
             font-size: 9pt;
         }
 
-        .signature-section {
-            margin-top: 30px;
+        .keterangan-box {
+            margin-top: 10px;
+            font-size: 8.5pt;
+            border: 1px solid #000;
+            padding: 8px 10px;
+        }
+
+        .keterangan-box table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .keterangan-box td {
+            padding: 2px 8px 2px 0;
+        }
+
+        .date-section {
+            margin-top: 25px;
             width: 100%;
             float: right;
         }
 
-        .signature-box {
+        .date-box {
             float: right;
             width: 220px;
             text-align: center;
+            font-size: 9.5pt;
         }
     </style>
 </head>
@@ -84,6 +101,10 @@
     <div class="header">
         <h3>LAPORAN REKAPITULASI NILAI PESERTA</h3>
     </div>
+
+    <p style="text-align: center; font-size: 8.5pt; font-style: italic; margin: -12px 0 20px 0;">
+       Dokumen ini merupakan lampiran resmi yang tidak dapat dipisahkan dari Sertifikat Magang, dan menjadi bagian sah dari keseluruhan dokumen penilaian peserta didik/mahasiswa selama masa Praktik Kerja Lapangan (PKL) yang bersangkutan.
+    </p>
 
     <table class="info-table">
         <tr>
@@ -106,9 +127,10 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 8%;">NO</th>
-                <th style="width: 60%;">ASPEK PENILAIAN</th>
-                <th style="width: 32%;">NILAI (0-100)</th>
+                <th style="width: 6%;">NO</th>
+                <th style="width: 48%;">ASPEK PENILAIAN</th>
+                <th style="width: 18%;">NILAI (0-100)</th>
+                <th style="width: 28%;">PREDIKAT</th>
             </tr>
         </thead>
         <tbody>
@@ -117,40 +139,47 @@
                     <td class="text-center">1</td>
                     <td>Kedisiplinan dan Profesionalisme (Integritas Work Ethic)</td>
                     <td class="text-center">{{ $nilaiUser->kedisiplinan ?? '-' }}</td>
+                    <td class="text-center">{{ $predikatPerAspek['kedisiplinan'] ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td class="text-center">2</td>
                     <td>Kemampuan Teknis dan Implementasi Tugas (Hard Skills)</td>
                     <td class="text-center">{{ $nilaiUser->kemampuan_teknis ?? '-' }}</td>
+                    <td class="text-center">{{ $predikatPerAspek['kemampuan_teknis'] ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td class="text-center">3</td>
                     <td>Kemampuan Logika Pemecahan Masalah (Problem Solving)</td>
                     <td class="text-center">{{ $nilaiUser->problem_solving ?? '-' }}</td>
+                    <td class="text-center">{{ $predikatPerAspek['problem_solving'] ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td class="text-center">4</td>
                     <td>Komunikasi dan Kerja Sama Tim (Soft Skills)</td>
                     <td class="text-center">{{ $nilaiUser->komunikasi_kerjasama ?? '-' }}</td>
+                    <td class="text-center">{{ $predikatPerAspek['komunikasi_kerjasama'] ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td class="text-center">5</td>
                     <td>Kualitas dan Ketepatan Waktu Output Kerja (Deliverables)</td>
                     <td class="text-center">{{ $nilaiUser->kualitas_ketepatan ?? '-' }}</td>
+                    <td class="text-center">{{ $predikatPerAspek['kualitas_ketepatan'] ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td colspan="2" style="text-align: right; font-weight: bold; padding-right: 10px;">Rata-Rata Nilai:</td>
                     <td class="text-center" style="font-weight: bold;">{{ $nilaiUser->rata_rata ?? '-' }}</td>
+                    <td class="text-center" style="font-weight: bold;">{{ $predikat ?? '-' }}</td>
                 </tr>
             @else
                 <tr>
-                    <td colspan="3" class="text-center" style="padding: 15px;">
+                    <td colspan="4" class="text-center" style="padding: 15px;">
                         Belum ada data nilai untuk peserta ini.
                     </td>
                 </tr>
             @endif
         </tbody>
     </table>
+
 
     @if($nilaiUser && !empty($nilaiUser->catatan))
         <div class="catatan-box">
@@ -159,12 +188,9 @@
         </div>
     @endif
 
-    <div class="signature-section">
-        <div class="signature-box">
-            <p>Bogor, {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('j F Y') }}</p>
-            <p>Pembimbing / Penilai,</p>
-            <br><br><br>
-            <p><strong>( _____________________ )</strong></p>
+    <div class="date-section">
+        <div class="date-box">
+            <p style="margin: 0;">Bogor, {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('j F Y') }}</p>
         </div>
     </div>
 

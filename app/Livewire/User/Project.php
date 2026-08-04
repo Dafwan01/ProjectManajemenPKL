@@ -5,7 +5,7 @@ namespace App\Livewire\User;
 use App\Models\project as ProjectModel;
 use App\Models\User;
 use App\Enums\UserRole;
-use App\Enums\UserStatus; // 1. Import Enum UserStatus
+use App\Enums\UserStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,12 +18,19 @@ class Project extends Component
 
     public $nama_project = '';
     public $link_github = '';
-    public $file_project = null; // Menyimpan temporary uploaded file
-    public $existing_file = null; // Path file lama jika sudah pernah upload
+    public $file_project = null;
+    public $existing_file = null;
     public $sudahUpload = false;
 
-    // Flag status kelulusan user
-    public bool $isLulus = false; // 2. State untuk mengecek apakah user sudah lulus
+    public bool $isLulus = false;
+
+    // Fitur Kerja Kelompok
+    public array $anggotaLain = [];           // user_id yang dipilih sebagai anggota tim
+    public array $daftarAnggotaTerpilih = [];  // anggota yang tersimpan sebelumnya di DB
+
+    // Modal Pilih Anggota
+    public bool $showAnggotaModal = false;
+    public string $searchAnggota = '';
 
     protected $messages = [
         'nama_project.required' => 'Nama project/laporan wajib diisi!',
@@ -35,7 +42,7 @@ class Project extends Component
     public function mount()
     {
         $this->loadDataProject();
-        $this->cekUserStatus(); // 3. Panggil pengecekan status lulus saat komponen dimuat
+        $this->cekUserStatus();
     }
 
     private function currentUser()
@@ -43,9 +50,6 @@ class Project extends Component
         return Auth::user() ?? User::where('role', UserRole::PKL)->first();
     }
 
-    /**
-     * Pengecekan apakah status user saat ini adalah LULUS
-     */
     private function cekUserStatus()
     {
         $user = $this->currentUser();
@@ -53,7 +57,6 @@ class Project extends Component
 
         $userStatus = $user->status instanceof \UnitEnum ? $user->status->value : $user->status;
 
-        // Cek jika status user adalah 'lulus' (baik via Enum maupun String)
         if (strtolower((string) $userStatus) === 'lulus' || $userStatus === UserStatus::LULUS->value) {
             $this->isLulus = true;
             session()->flash('warning', 'Status akun Anda adalah LULUS. Anda tidak dapat mengunggah atau mengubah project lagi.');
@@ -72,12 +75,77 @@ class Project extends Component
             $this->link_github   = $project->link_github;
             $this->existing_file = $project->file_project;
             $this->sudahUpload   = true;
+
+            if (!empty($project->nama_project)) {
+                $anggota = ProjectModel::where('nama_project', $project->nama_project)
+                    ->where('user_id', '!=', $user->user_id)
+                    ->pluck('user_id')
+                    ->toArray();
+
+                $this->anggotaLain = $anggota;
+                $this->daftarAnggotaTerpilih = $anggota;
+            }
         }
+    }
+
+    /**
+     * Daftar user PKL lain yang cocok dengan pencarian, untuk ditampilkan di modal.
+     */
+    public function getHasilPencarianAnggotaProperty()
+    {
+        $user = $this->currentUser();
+        if (!$user) return collect();
+
+        return User::where('role', UserRole::PKL)
+            ->where('user_id', '!=', $user->user_id)
+            ->when($this->searchAnggota, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('nama', 'like', '%' . $this->searchAnggota . '%')
+                      ->orWhere('asal_sekolah', 'like', '%' . $this->searchAnggota . '%');
+                });
+            })
+            ->orderBy('nama')
+            ->limit(30)
+            ->get(['user_id', 'nama', 'asal_sekolah', 'foto']);
+    }
+
+    /**
+     * Daftar lengkap user yang sudah terpilih (untuk ditampilkan sebagai chip di luar modal).
+     */
+    public function getAnggotaTerpilihDetailProperty()
+    {
+        if (empty($this->anggotaLain)) return collect();
+
+        return User::whereIn('user_id', $this->anggotaLain)->get(['user_id', 'nama', 'foto']);
+    }
+
+    public function openAnggotaModal()
+    {
+        $this->searchAnggota = '';
+        $this->showAnggotaModal = true;
+    }
+
+    public function closeAnggotaModal()
+    {
+        $this->showAnggotaModal = false;
+    }
+
+    public function toggleAnggota($userId)
+    {
+        if (in_array($userId, $this->anggotaLain)) {
+            $this->anggotaLain = array_values(array_diff($this->anggotaLain, [$userId]));
+        } else {
+            $this->anggotaLain[] = $userId;
+        }
+    }
+
+    public function hapusAnggota($userId)
+    {
+        $this->anggotaLain = array_values(array_diff($this->anggotaLain, [$userId]));
     }
 
     public function simpanProject()
     {
-        // 4. Guard Clause: Blokir jika user sudah LULUS
         if ($this->isLulus) {
             session()->flash('warning', 'Gagal menyimpan! Akun Anda telah berstatus LULUS.');
             return;
@@ -90,9 +158,11 @@ class Project extends Component
         }
 
         $rules = [
-            'nama_project' => 'required|string|max:255',
-            'link_github'  => 'nullable|url',
-            'file_project' => 'nullable|file|mimes:zip,rar,pdf,docx|max:20480',
+            'nama_project'   => 'required|string|max:255',
+            'link_github'    => 'nullable|url',
+            'file_project'   => 'nullable|file|mimes:zip,rar,pdf,docx|max:20480',
+            'anggotaLain'    => 'nullable|array',
+            'anggotaLain.*'  => 'exists:users,user_id',
         ];
 
         $this->validate($rules);
@@ -110,19 +180,55 @@ class Project extends Component
                 $filePath = $this->file_project->storeAs('projects', $filename, 'public');
             }
 
+            $dataProject = [
+                'nama_project' => $this->nama_project,
+                'link_github'  => $this->link_github,
+                'file_project' => $filePath,
+            ];
+
             ProjectModel::updateOrCreate(
                 ['user_id' => $user->user_id],
-                [
-                    'nama_project'  => $this->nama_project,
-                    'link_github'   => $this->link_github,
-                    'file_project'  => $filePath,
-                ]
+                $dataProject
             );
+
+            if (!empty($this->anggotaLain)) {
+                foreach ($this->anggotaLain as $anggotaId) {
+                    $anggotaUser = User::find($anggotaId);
+                    if (!$anggotaUser) continue;
+
+                    $statusAnggota = $anggotaUser->status instanceof \UnitEnum
+                        ? $anggotaUser->status->value
+                        : $anggotaUser->status;
+
+                    if (strtolower((string) $statusAnggota) === 'lulus') {
+                        continue;
+                    }
+
+                    ProjectModel::updateOrCreate(
+                        ['user_id' => $anggotaId],
+                        $dataProject
+                    );
+                }
+            }
+
+            $anggotaDihapus = array_diff($this->daftarAnggotaTerpilih, $this->anggotaLain);
+            if (!empty($anggotaDihapus)) {
+                foreach ($anggotaDihapus as $anggotaId) {
+                    ProjectModel::where('user_id', $anggotaId)
+                        ->where('nama_project', $this->nama_project)
+                        ->delete();
+                }
+            }
 
             $this->file_project = null;
             $this->loadDataProject();
 
-            session()->flash('message', 'Project Akhir berhasil disimpan!');
+            $jumlahAnggota = count($this->anggotaLain);
+            $pesanTambahan = $jumlahAnggota > 0
+                ? " Project juga otomatis ditambahkan untuk {$jumlahAnggota} anggota tim yang dipilih."
+                : '';
+
+            session()->flash('message', 'Project Akhir berhasil disimpan!' . $pesanTambahan);
 
         } catch (\Exception $e) {
             session()->flash('warning', 'Gagal menyimpan: ' . $e->getMessage());

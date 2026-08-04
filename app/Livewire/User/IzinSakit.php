@@ -93,28 +93,43 @@ class IzinSakit extends Component
     /**
      * Hitung durasi hari secara otomatis
      */
-    public function hitungJumlahHari()
-    {
-        if ($this->tipePengajuan === 'absen') {
+  public function hitungJumlahHari()
+{
+    if ($this->tipePengajuan === 'absen') {
+        if ($this->tanggalMulai) {
+            $tanggal = Carbon::parse($this->tanggalMulai);
+            $this->jumlahHari = $tanggal->isWeekend() ? 0 : 1;
+        } else {
             $this->jumlahHari = 1;
-            return;
         }
+        return;
+    }
 
-        if ($this->tanggalMulai && $this->tanggalSelesai) {
-            try {
-                $start = Carbon::parse($this->tanggalMulai);
-                $end = Carbon::parse($this->tanggalSelesai);
+    if ($this->tanggalMulai && $this->tanggalSelesai) {
+        try {
+            $start = Carbon::parse($this->tanggalMulai);
+            $end = Carbon::parse($this->tanggalSelesai);
 
-                if ($end->greaterThanOrEqualTo($start)) {
-                    $this->jumlahHari = $start->diffInDays($end) + 1;
-                } else {
-                    $this->jumlahHari = 0;
+            if ($end->greaterThanOrEqualTo($start)) {
+                $hariKerja = 0;
+                $cursor = $start->copy();
+
+                while ($cursor->lte($end)) {
+                    if (! $cursor->isWeekend()) {
+                        $hariKerja++;
+                    }
+                    $cursor->addDay();
                 }
-            } catch (\Exception $e) {
-                $this->jumlahHari = 1;
+
+                $this->jumlahHari = $hariKerja;
+            } else {
+                $this->jumlahHari = 0;
             }
+        } catch (\Exception $e) {
+            $this->jumlahHari = 1;
         }
     }
+}
 
     public function updatedTipePengajuan($value)
     {
@@ -146,6 +161,17 @@ class IzinSakit extends Component
             session()->flash('warning', 'Gagal Pengajuan! Akun Anda telah berstatus LULUS.');
             return;
         }
+        if ($this->isLulus) {
+        session()->flash('warning', 'Gagal Pengajuan! Akun Anda telah berstatus LULUS.');
+        return;
+    }
+
+    $this->validate();
+
+    if ($this->jumlahHari <= 0) {
+        session()->flash('warning', 'Tanggal yang dipilih jatuh pada akhir pekan (Sabtu/Minggu) dan tidak dapat diajukan.');
+        return;
+    }
 
         $this->validate();
 
