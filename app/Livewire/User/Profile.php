@@ -3,13 +3,15 @@
 namespace App\Livewire\User;
 
 use App\Models\User;
+use App\Models\Sekolah;
 use App\Enums\UserRole;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password; // <-- 1. Import Class Password
+use Illuminate\Validation\Rules\Password;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -20,7 +22,7 @@ class Profile extends Component
     public ?User $user = null;
     public $nama;
     public $email;
-    public $asal_sekolah;
+    public $sekolah_id;
     public $mentor;
     public $skill;
     public $tanggal_mulai;
@@ -36,17 +38,22 @@ class Profile extends Component
     public $jurusan;
 
     // Foto profil
-    public $fotoUpload = null;   // untuk upload file biasa
-    public $fotoCaptured = null; // untuk hasil jepretan kamera (base64)
+    public $fotoUpload = null;   // upload file biasa
+    public $fotoCaptured = null; // hasil jepretan kamera (base64)
     public bool $showPhotoOptions = false;
+
+    #[Computed]
+    public function daftarSekolah()
+    {
+        return Sekolah::orderBy('nama_sekolah', 'asc')->get();
+    }
 
     protected function rules()
     {
-        // 2. Definisi Aturan Password Kompleks
         $passwordRule = Password::min(8)
-            ->mixedCase() // Minimal 1 huruf besar & 1 huruf kecil
-            ->numbers()   // Minimal 1 angka
-            ->symbols();  // Minimal 1 karakter spesial (!@#$%^&* dll)
+            ->mixedCase()
+            ->numbers()
+            ->symbols();
 
         return [
             'nama' => ['required', 'string', 'max:255'],
@@ -58,14 +65,15 @@ class Profile extends Component
             'tempat_lahir' => ['nullable', 'string', 'max:255'],
             'tanggal_lahir' => ['nullable', 'date'],
             'jenis_kelamin' => ['nullable', 'string', 'in:Laki-laki,Perempuan'],
-            'asal_sekolah' => ['nullable', 'string', 'max:255'],
+            'sekolah_id' => ['nullable', 'integer'],
             'jurusan' => ['nullable', 'string', 'max:255'],
             'skill' => ['nullable', 'string', 'max:500'],
             'tanggal_mulai' => ['nullable', 'date'],
             'tanggal_akhir' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
-            'password' => ['nullable', $passwordRule, 'same:confirm_password'], // <-- 3. Gunakan $passwordRule (Tetap Nullable saat edit profile)
+            'password' => ['nullable', $passwordRule, 'same:confirm_password'],
             'confirm_password' => ['nullable', 'string'],
             'fotoUpload' => ['nullable', 'image', 'max:2048'],
+            'fotoCaptured' => ['nullable', 'string', 'max:5000000'],
         ];
     }
 
@@ -81,24 +89,17 @@ class Profile extends Component
         'fotoUpload.max' => 'Ukuran gambar maksimal 2MB.',
     ];
 
-   public function mount()
-{
-    $authUser = Auth::user();
-    logger('Auth::id() = ' . Auth::id());
-    logger('Auth::user() null? ' . (is_null($authUser) ? 'YA' : 'TIDAK'));
+    public function mount()
+    {
+        $this->user = Auth::user();
 
-    $this->user = $authUser ?? User::where('role', UserRole::PKL)->first();
+        if (! $this->user) {
+            abort(403, 'Akses tidak diizinkan.');
+        }
 
-    logger('user_id yang dipakai: ' . $this->user->user_id);
-    logger('tanggal_akhir: ' . $this->user->tanggal_akhir);
+        $this->fillProfileFields();
+    }
 
-    if (! $this->user) abort(403);
-    $this->fillProfileFields();
-}
-
-    /**
-     * Mengisi nilai field dengan konversi tanggal yang aman
-     */
     private function fillProfileFields(): void
     {
         $this->nama = $this->user->nama;
@@ -106,7 +107,7 @@ class Profile extends Component
         $this->tempat_lahir = $this->user->tempat_lahir;
         $this->tanggal_lahir = $this->formatDateForInput($this->user->tanggal_lahir);
         $this->jenis_kelamin = $this->normalizeGenderValue($this->user->jenis_kelamin);
-        $this->asal_sekolah = $this->user->asal_sekolah;
+        $this->sekolah_id = $this->user->sekolah_id;
         $this->jurusan = $this->user->jurusan;
         $this->mentor = $this->user->mentor;
         $this->skill = $this->user->skill;
@@ -114,9 +115,6 @@ class Profile extends Component
         $this->tanggal_akhir = $this->formatDateForInput($this->user->tanggal_akhir);
     }
 
-    /**
-     * Helper aman untuk mengubah data tanggal menjadi string 'Y-m-d' tanpa error
-     */
     private function formatDateForInput($value): ?string
     {
         if (empty($value)) {
@@ -127,7 +125,11 @@ class Profile extends Component
             return $value->format('Y-m-d');
         }
 
-        return Carbon::parse($value)->format('Y-m-d');
+        try {
+            return Carbon::parse($value)->format('Y-m-d');
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     private function normalizeGenderValue($value): ?string
@@ -182,7 +184,7 @@ class Profile extends Component
             'tempat_lahir' => $validated['tempat_lahir'] ?? null,
             'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
             'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
-            'asal_sekolah' => $validated['asal_sekolah'] ?? null,
+            'sekolah_id' => $validated['sekolah_id'] ?? null,
             'jurusan' => $validated['jurusan'] ?? null,
             'skill' => $validated['skill'] ?? null,
             'tanggal_mulai' => $validated['tanggal_mulai'] ?? null,
@@ -193,15 +195,12 @@ class Profile extends Component
             $updateData['password'] = bcrypt($validated['password']);
         }
 
-        // Simpan foto kalau ada perubahan (upload file atau hasil kamera)
         $fotoPath = $this->simpanFoto();
         if ($fotoPath) {
             $updateData['foto'] = $fotoPath;
         }
 
         $this->user->update($updateData);
-        
-        // Refresh instance user agar data terbaru (termasuk foto & tanggal) dimuat ulang
         $this->user->refresh();
 
         $this->editing = false;

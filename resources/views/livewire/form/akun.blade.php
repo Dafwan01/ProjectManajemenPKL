@@ -66,7 +66,7 @@
                     </label>
                     <select 
                         id="role" 
-                        wire:model="role" 
+                        wire:model.live="role" 
                         class="bg-gray-50 dark:bg-gray-800/60 border @error('role') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
                         @if(count($this->availableRoles) === 1) disabled @endif
                     >
@@ -114,47 +114,88 @@
                 </div>
             </div>
 
-            <!-- Baris 3: Mentor & Asal Sekolah/Instansi -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <div>
-                    <label for="mentor" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Mentor Pembimbing <span class="text-red-500">*</span>
-                    </label>
-                    <select 
-                        id="mentor" 
-                        wire:model="mentor" 
-                        @disabled($isMentorUser)
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('mentor') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                        <option value="">-- Pilih Mentor --</option>
-                        @foreach($mentors as $mentorUser)
-                            <option value="{{ $mentorUser->nama }}">{{ $mentorUser->nama }}</option>
-                        @endforeach
-                    </select>
+          @php
+    $isRolePklSelected = $role === App\Enums\UserRole::PKL->value;
+@endphp
 
-                    @if($isMentorUser)
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                            * Otomatis disesuaikan dengan nama Anda sebagai Mentor.
-                        </p>
-                    @endif
+<!-- Baris 3: Mentor & Asal Sekolah/Instansi -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+        <label for="mentor" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            Mentor Pembimbing @if($isRolePklSelected)<span class="text-red-500">*</span>@endif
+        </label>
+        <select 
+            id="mentor" 
+            wire:model="mentor" 
+            @disabled($isMentorUser || !$isRolePklSelected)
+            class="bg-gray-50 dark:bg-gray-800/60 border @error('mentor') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+            <option value="">-- Pilih Mentor --</option>
+            @foreach($mentors as $mentorUser)
+                <option value="{{ $mentorUser->nama }}">{{ $mentorUser->nama }}</option>
+            @endforeach
+        </select>
 
-                    @error('mentor') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                </div>
+        @if($isMentorUser)
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                * Otomatis disesuaikan dengan nama Anda sebagai Mentor.
+            </p>
+        @elseif(!$isRolePklSelected)
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                * Tidak berlaku untuk role selain Peserta PKL.
+            </p>
+        @endif
 
-                <div>
-                    <label for="asal_sekolah" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Asal Sekolah / Instansi
-                    </label>
-                    <input 
-                        type="text" 
-                        id="asal_sekolah" 
-                        wire:model="asal_sekolah" 
-                        placeholder="Contoh: SMK Negeri 1 Bogor" 
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('asal_sekolah') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition placeholder-gray-400 dark:placeholder-gray-500"
-                    >
-                    @error('asal_sekolah') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                </div>
+        @error('mentor') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+    </div>
+
+    <div>
+        <label for="asal_sekolah" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            Asal Sekolah / Instansi @if($isRolePklSelected)<span class="text-red-500">*</span>@endif
+        </label>
+
+        @if(!$tambahSekolahBaru)
+            <select 
+                id="sekolah_id" 
+                wire:model.live="sekolah_id" 
+                @disabled(!$isRolePklSelected)
+                class="bg-gray-50 dark:bg-gray-800/60 border @error('sekolah_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+                <option value="">-- Pilih Sekolah --</option>
+                @foreach($this->daftarSekolah as $sekolah)
+                    <option value="{{ $sekolah->sekolah_id }}">{{ $sekolah->nama_sekolah }}</option>
+                @endforeach
+                <option value="__tambah_baru__">+ Tambah Sekolah Baru</option>
+            </select>
+        @else
+            <div class="flex items-center gap-2">
+                <input 
+                    type="text" 
+                    wire:model="namaSekolahBaru" 
+                    placeholder="Ketik nama sekolah baru..." 
+                    class="bg-gray-50 dark:bg-gray-800/60 border @error('namaSekolahBaru') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition placeholder-gray-400 dark:placeholder-gray-500"
+                >
+                <button 
+                    type="button" 
+                    wire:click="batalTambahSekolah" 
+                    class="shrink-0 px-3 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-2xl transition border border-gray-200 dark:border-gray-700"
+                    title="Batal, pilih dari daftar"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
+            @error('namaSekolahBaru') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+        @endif
+
+        @if(!$isRolePklSelected)
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                * Tidak berlaku untuk role selain Peserta PKL.
+            </p>
+        @endif
+
+        @error('sekolah_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+    </div>
+</div>
 
             <!-- Baris 4: Password & Konfirmasi Password -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-800/80">

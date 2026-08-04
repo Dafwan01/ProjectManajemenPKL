@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id('user_id');
             $table->string('nama');
-            $table->string('asal_sekolah')->nullable();
+       $table->foreignId('sekolah_id')
+                  ->nullable()
+                  ->constrained('sekolahs', 'sekolah_id')
+                  ->onDelete('cascade');
             $table->string('mentor')->nullable();
             
             // Ambil semua daftar value dari file Enum

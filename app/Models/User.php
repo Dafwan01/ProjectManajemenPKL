@@ -25,7 +25,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'nama',
-        'asal_sekolah',
+        'sekolah_id',
         'mentor',
         'status',
         'email',
@@ -148,4 +148,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(file::class, 'user_id', 'user_id');
     }
+
+public function sekolah()
+{
+    return $this->belongsTo(Sekolah::class, 'sekolah_id', 'sekolah_id');
+}
 }

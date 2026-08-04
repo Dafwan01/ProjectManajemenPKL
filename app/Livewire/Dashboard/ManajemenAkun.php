@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\DetailJadwal;
 use App\Models\Jadwal;
+use App\Models\Sekolah;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,25 +24,24 @@ class ManajemenAkun extends Component
 {
     use WithPagination;
 
-    // Property Form
     public $userId = null;
     public $nama = '';
     public $email = '';
     public $role = '';
-    public $asal_sekolah = '';
+    public $sekolah_id = null;
     public $mentor = '';
     public $password = '';
     public $confirm_password = '';
     public $divisi = '';
 
-    // UI States
+    // State Sekolah
+    public bool $tambahSekolahBaru = false;
+    public string $namaSekolahBaru = '';
+
     public bool $showModal = false;
     public bool $isEditMode = false;
     public string $search = '';
 
-    /**
-     * Helper untuk mengambil string value role pengguna secara aman
-     */
     private function getUserRole(): string
     {
         $role = Auth::user()?->role;
@@ -72,27 +72,57 @@ class ManajemenAkun extends Component
         return [];
     }
 
-   protected function rules()
+    /**
+     * Daftar sekolah untuk dropdown (diambil dari tabel sekolahs).
+     */
+    public function getDaftarSekolahProperty()
+    {
+        return Sekolah::orderBy('nama_sekolah')->get();
+    }
+
+    /**
+     * Cek apakah role yang sedang dipilih di form adalah PKL.
+     * Dipakai untuk menentukan apakah field Mentor & Asal Sekolah wajib diisi / dikunci.
+     */
+    public function getIsRolePklProperty(): bool
+    {
+        return $this->role === UserRole::PKL->value;
+    }
+
+    protected function rules()
     {
         $allowedRoleValues = array_map(fn($role) => $role->value, $this->availableRoles);
 
-        // Definisi aturan password kompleksitas
         $passwordRule = Password::min(8)
-            ->mixedCase() // Minimal 1 huruf besar & 1 huruf kecil
-            ->numbers()   // Minimal 1 angka
-            ->symbols();  // Minimal 1 karakter spesial (!@#$%^&* dll)
+            ->mixedCase()
+            ->numbers()
+            ->symbols();
 
-        return [
+        $rules = [
             'nama' => 'required|min:3',
             'email' => 'required|email|unique:users,email,' . $this->userId . ',user_id',
             'role' => ['required', Rule::in($allowedRoleValues)],
             'divisi' => ['required', Rule::enum(UserDivisi::class)],
-            'asal_sekolah' => 'nullable|string',
-            'mentor' => 'required|string',
-            'password' => $this->isEditMode 
-                ? ['nullable', $passwordRule, 'same:confirm_password'] 
+            'password' => $this->isEditMode
+                ? ['nullable', $passwordRule, 'same:confirm_password']
                 : ['required', $passwordRule, 'same:confirm_password'],
         ];
+
+        // Mentor & Asal Sekolah hanya wajib/divalidasi jika role-nya PKL
+        if ($this->isRolePkl) {
+            $rules['mentor'] = 'required|string';
+
+            if ($this->tambahSekolahBaru) {
+                $rules['namaSekolahBaru'] = 'required|string|min:3|unique:sekolahs,nama_sekolah';
+            } else {
+                $rules['sekolah_id'] = 'required|exists:sekolahs,sekolah_id';
+            }
+        } else {
+            $rules['mentor'] = 'nullable|string';
+            $rules['sekolah_id'] = 'nullable|exists:sekolahs,sekolah_id';
+        }
+
+        return $rules;
     }
 
     protected $messages = [
@@ -105,9 +135,43 @@ class ManajemenAkun extends Component
         'role.in' => 'Anda tidak memiliki hak akses untuk memilih role tersebut.',
         'divisi.required' => 'Silakan pilih divisi pengguna.',
         'mentor.required' => 'Mentor wajib dipilih atau diisi.',
+        'sekolah_id.required' => 'Asal sekolah wajib dipilih.',
+        'sekolah_id.exists' => 'Asal sekolah tidak valid.',
+        'namaSekolahBaru.required' => 'Nama sekolah baru wajib diisi.',
+        'namaSekolahBaru.min' => 'Nama sekolah minimal 3 karakter.',
+        'namaSekolahBaru.unique' => 'Sekolah ini sudah terdaftar, silakan pilih dari daftar.',
         'password.required' => 'Password wajib diisi.',
         'password.same' => 'Konfirmasi password tidak cocok.',
     ];
+
+    /**
+     * Dipanggil otomatis tiap kali dropdown Role berubah.
+     * Kalau role bukan PKL, kosongkan mentor & asal sekolah + reset toggle tambah sekolah.
+     */
+    public function updatedRole($value)
+    {
+        if ($value !== UserRole::PKL->value) {
+            $this->mentor = '';
+            $this->sekolah_id = null;
+            $this->tambahSekolahBaru = false;
+            $this->namaSekolahBaru = '';
+        }
+    }
+
+    public function updatedSekolahId($value)
+    {
+        if ($value === '__tambah_baru__') {
+            $this->tambahSekolahBaru = true;
+            $this->sekolah_id = null;
+        }
+    }
+
+    public function batalTambahSekolah()
+    {
+        $this->tambahSekolahBaru = false;
+        $this->namaSekolahBaru = '';
+        $this->sekolah_id = null;
+    }
 
     public function resetFields()
     {
@@ -116,10 +180,12 @@ class ManajemenAkun extends Component
         $this->email = '';
         $this->role = '';
         $this->divisi = '';
-        $this->asal_sekolah = '';
+        $this->sekolah_id = null;
         $this->mentor = '';
         $this->password = '';
         $this->confirm_password = '';
+        $this->tambahSekolahBaru = false;
+        $this->namaSekolahBaru = '';
         $this->resetValidation();
     }
 
@@ -135,10 +201,10 @@ class ManajemenAkun extends Component
 
         $currentUser = Auth::user();
         if ($this->isMentor()) {
-            // Set otomatis mentor & divisi mengikuti akun mentor yang login
+            $this->role = UserRole::PKL->value;
             $this->mentor = $currentUser->nama;
-            $this->divisi = $currentUser->divisi instanceof \UnitEnum 
-                ? $currentUser->divisi->value 
+            $this->divisi = $currentUser->divisi instanceof \UnitEnum
+                ? $currentUser->divisi->value
                 : (string) $currentUser->divisi;
         }
 
@@ -149,20 +215,20 @@ class ManajemenAkun extends Component
     {
         $this->resetFields();
         $this->isEditMode = true;
-        
+
         $user = User::findOrFail($id);
         $this->userId = $user->user_id;
         $this->nama = $user->nama;
         $this->email = $user->email;
         $this->role = $user->role instanceof \UnitEnum ? $user->role->value : $user->role;
         $this->divisi = $user->divisi instanceof \UnitEnum ? $user->divisi->value : $user->divisi;
-        $this->asal_sekolah = $user->asal_sekolah;
+        $this->sekolah_id = $user->sekolah_id;
 
         $currentUser = Auth::user();
         if ($this->isMentor()) {
             $this->mentor = $currentUser->nama;
-            $this->divisi = $currentUser->divisi instanceof \UnitEnum 
-                ? $currentUser->divisi->value 
+            $this->divisi = $currentUser->divisi instanceof \UnitEnum
+                ? $currentUser->divisi->value
                 : (string) $currentUser->divisi;
         } else {
             $this->mentor = $user->mentor;
@@ -181,16 +247,21 @@ class ManajemenAkun extends Component
     {
         $currentUser = Auth::user();
 
-        // Proteksi backend: Kunci nilai role, mentor, dan divisi jika user yang login adalah MENTOR
         if ($this->isMentor()) {
             $this->role = UserRole::PKL->value;
             $this->mentor = $currentUser->nama;
-            $this->divisi = $currentUser->divisi instanceof \UnitEnum 
-                ? $currentUser->divisi->value 
+            $this->divisi = $currentUser->divisi instanceof \UnitEnum
+                ? $currentUser->divisi->value
                 : (string) $currentUser->divisi;
         }
 
         $this->validate();
+
+        // Jika user menambahkan sekolah baru, simpan ke tabel sekolahs & pakai sebagai sekolah_id
+        if ($this->isRolePkl && $this->tambahSekolahBaru && !empty($this->namaSekolahBaru)) {
+            $sekolahBaru = Sekolah::create(['nama_sekolah' => $this->namaSekolahBaru]);
+            $this->sekolah_id = $sekolahBaru->sekolah_id;
+        }
 
         if ($this->isEditMode) {
             $user = User::findOrFail($this->userId);
@@ -199,10 +270,10 @@ class ManajemenAkun extends Component
                 'email' => $this->email,
                 'role' => $this->role,
                 'divisi' => $this->divisi,
-                'asal_sekolah' => $this->asal_sekolah,
-                'mentor' => $this->mentor,
+                'sekolah_id' => $this->isRolePkl ? $this->sekolah_id : null,
+                'mentor' => $this->isRolePkl ? $this->mentor : null,
             ];
-            
+
             if (!empty($this->password)) {
                 $data['password'] = bcrypt($this->password);
             }
@@ -217,8 +288,8 @@ class ManajemenAkun extends Component
                 'role' => $this->role,
                 'divisi' => $this->divisi,
                 'status' => UserStatus::AKTIF->value,
-                'asal_sekolah' => $this->asal_sekolah,
-                'mentor' => $this->mentor,
+                'sekolah_id' => $this->isRolePkl ? $this->sekolah_id : null,
+                'mentor' => $this->isRolePkl ? $this->mentor : null,
                 'password' => bcrypt($this->password),
                 'tanggal_mulai' => now(),
             ]);
@@ -254,7 +325,9 @@ class ManajemenAkun extends Component
                 $query->where(function ($q) {
                     $q->where('nama', 'like', '%' . $this->search . '%')
                       ->orWhere('email', 'like', '%' . $this->search . '%')
-                      ->orWhere('asal_sekolah', 'like', '%' . $this->search . '%');
+                      ->orWhereHas('sekolah', function ($q2) {
+                          $q2->where('nama_sekolah', 'like', '%' . $this->search . '%');
+                      });
                 });
             })
             ->latest('tanggal_mulai')
