@@ -12,8 +12,8 @@ class PermohonanIzin extends Model
     protected $fillable = [
         'user_id',
         'tanggal_permohonan',
-         'tanggal_awal',
-          'tanggal_akhir',
+        'tanggal_awal',
+        'tanggal_akhir',
         'jenis',
         'alasan',
         'lampiran',
@@ -21,10 +21,14 @@ class PermohonanIzin extends Model
         'catatan_admin',
         'alamat_izin',
         'jumlah_hari',
+        'absen_masuk',
+        'absen_pulang',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'absen_masuk' => 'boolean',
+        'absen_pulang' => 'boolean',
     ];
 
     public function user()

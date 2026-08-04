@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\SertifikatController;
 use App\Livewire\Components\CetakNilai;
 use App\Livewire\Components\CetakRekapAbsensi;
 use App\Livewire\Dashboard\Dashboard;

@@ -91,6 +91,23 @@
                     @endif
                 </div>
 
+                <!-- Opsi Absen Susulan (Hanya muncul jika Tipe = Absen) -->
+                @if ($tipePengajuan === 'absen')
+                    <div>
+                        <label class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">Absen yang Terlupa (boleh pilih salah satu atau keduanya)</label>
+                        <div class="flex flex-wrap gap-4">
+                            <label class="inline-flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
+                                <input type="checkbox" wire:model="absenMasuk" class="w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500">
+                                Absen Masuk
+                            </label>
+                            <label class="inline-flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
+                                <input type="checkbox" wire:model="absenPulang" class="w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500">
+                                Absen Pulang
+                            </label>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Indikator Total Durasi Hari -->
                 <div class="flex items-center gap-2 text-xs bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg w-fit">
                     <span class="text-[11px] font-medium">Total Durasi:</span>
@@ -180,6 +197,15 @@
                                     'ditolak', 'rejected'               => 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 border border-red-400 dark:border-red-600/50',
                                     default                             => 'bg-yellow-100 dark:bg-yellow-900/60 text-yellow-700 dark:text-yellow-300 border border-yellow-400 dark:border-yellow-600/50',
                                 };
+
+                                // Keterangan sub-label untuk tipe 'absen'
+                                $absenLabel = null;
+                                if (strtolower($item->jenis) === 'absen') {
+                                    $bagian = [];
+                                    if ($item->absen_masuk) $bagian[] = 'Masuk';
+                                    if ($item->absen_pulang) $bagian[] = 'Pulang';
+                                    $absenLabel = implode(' & ', $bagian);
+                                }
                             @endphp
                             <tr class="border-t border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors">
                                 <!-- NAMA -->
@@ -192,7 +218,12 @@
                                 <td class="px-3 py-3 text-gray-800 dark:text-gray-200 font-medium whitespace-nowrap">{{ $item->jumlah_hari ?? 1 }} Hari</td>
 
                                 <!-- TIPE PENGAJUAN (Izin / Sakit / Absen) -->
-                                <td class="px-3 py-3 uppercase font-semibold text-blue-600 dark:text-blue-400">{{ $item->jenis }}</td>
+                                <td class="px-3 py-3 uppercase font-semibold text-blue-600 dark:text-blue-400">
+                                    {{ $item->jenis }}
+                                    @if($absenLabel)
+                                        <div class="text-[9px] normal-case font-normal text-gray-400 dark:text-gray-500">({{ $absenLabel }})</div>
+                                    @endif
+                                </td>
                                 
                                 <!-- ALASAN & ALAMAT (Jika ada) -->
                                 <td class="px-3 py-3 text-gray-600 dark:text-gray-300 max-w-[20rem]" title="{{ $item->alasan }}">

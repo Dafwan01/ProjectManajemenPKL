@@ -23,6 +23,12 @@
         </div>
     @endif
 
+    @if (session()->has('warning'))
+        <div class="p-4 mb-6 text-sm text-amber-700 dark:text-amber-400 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-between" role="alert">
+            <span class="font-medium">{{ session('warning') }}</span>
+        </div>
+    @endif
+
     <div class="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-xl">
         <!-- Top Bar -->
         <div class="flex items-center justify-between p-5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 gap-4 overflow-x-auto no-scrollbar">
@@ -97,6 +103,14 @@
                                 'absen' => 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
                                 default => 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-500/20',
                             };
+
+                            $absenLabel = null;
+                            if ($permohonan->jenis === 'absen') {
+                                $bagian = [];
+                                if ($permohonan->absen_masuk) $bagian[] = 'Masuk';
+                                if ($permohonan->absen_pulang) $bagian[] = 'Pulang';
+                                $absenLabel = implode(' & ', $bagian);
+                            }
                         @endphp
                         <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition" wire:key="permohonan-{{ $permohonan->permohonan_id }}">
                             <th scope="row" class="px-5 py-4 font-semibold text-gray-900 dark:text-white truncate">
@@ -109,6 +123,9 @@
                                 <span class="inline-flex items-center justify-center w-full capitalize px-2.5 py-1 text-xs font-semibold rounded-full border {{ $jenisColor }}">
                                     {{ $permohonan->jenis }}
                                 </span>
+                                @if($absenLabel)
+                                    <div class="text-center text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">({{ $absenLabel }})</div>
+                                @endif
                             </td>
                             <td class="px-5 py-4">
                                 <span class="block truncate text-gray-600 dark:text-gray-300" title="{{ $permohonan->alasan }}">{{ $permohonan->alasan }}</span>
@@ -168,8 +185,15 @@
                         $tglMulaiFormatted = $tglAwalObj->translatedFormat('d F Y');
                         $tglAkhirFormatted = $permohonan->tanggal_akhir ? $tglAkhirObj->translatedFormat('d F Y') : null;
 
-                        // Kalkulasi Jumlah Hari / Durasi
                         $jumlahHari = $permohonan->jumlah_hari ?? ($tglAwalObj->diffInDays($tglAkhirObj) + 1);
+
+                        $absenLabelModal = null;
+                        if ($permohonan->jenis === 'absen') {
+                            $bagian = [];
+                            if ($permohonan->absen_masuk) $bagian[] = 'Absen Masuk';
+                            if ($permohonan->absen_pulang) $bagian[] = 'Absen Pulang';
+                            $absenLabelModal = implode(' & ', $bagian);
+                        }
                     @endphp
 
                     <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4">
@@ -205,6 +229,16 @@
                                 </p>
                             </div>
                         </div>
+
+                        <!-- Info Absen Masuk/Pulang (Hanya muncul jika Jenis = Absen) -->
+                        @if($absenLabelModal)
+                            <div>
+                                <span class="block mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Diajukan Untuk</span>
+                                <p class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 bg-rose-50 dark:bg-rose-500/10 p-3 rounded-2xl border border-rose-200 dark:border-rose-500/20">
+                                    {{ $absenLabelModal }}
+                                </p>
+                            </div>
+                        @endif
 
                         <!-- Alamat Selama Izin (Hanya muncul jika ada nilainya) -->
                         @if(!empty($permohonan->alamat_izin))

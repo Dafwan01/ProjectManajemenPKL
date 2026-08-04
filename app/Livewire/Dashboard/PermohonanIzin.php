@@ -2,13 +2,14 @@
 
 namespace App\Livewire\Dashboard;
 
-use App\Enums\UserRole; // Import Enum UserRole
+use App\Enums\UserRole;
+use App\Models\DetailJadwal;
 use App\Models\log_book;
 use App\Models\PermohonanIzin as PermohonanIzinModel;
 use App\Models\presensi;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Illuminate\Support\Facades\Auth; // Import Auth Facade
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -28,7 +29,6 @@ class PermohonanIzin extends Component
 
     public function mount()
     {
-        // Opsional: Kosongkan tanggal saat mount agar menampilkan semua permohonan secara default
         $this->tanggal = '';
     }
 
@@ -77,39 +77,49 @@ class PermohonanIzin extends Component
             'catatan_admin' => $this->catatanAdmin,
         ]);
 
-        // Tentukan tanggal awal dan akhir
+        $jenisStr = strtolower($permohonan->jenis);
+
+        if ($jenisStr === 'absen') {
+            $this->prosesAbsenSusulan($permohonan);
+        } else {
+            $this->prosesIzinSakit($permohonan, $jenisStr);
+        }
+
+        $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
+        session()->flash('message', 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah disetujui.');
+
+        $this->closeDetail();
+    }
+
+    /**
+     * Logic lama: untuk pengajuan izin/sakit, tandai status_kehadiran
+     * di presensi sepanjang rentang tanggal.
+     */
+    private function prosesIzinSakit($permohonan, string $statusKehadiran)
+    {
         $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
         $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
 
         $period = CarbonPeriod::create($startDate, $endDate);
 
-        // Tentukan status kehadiran berdasarkan Enum yang valid
-        // Jika tipe pengajuan 'absen', kita set sebagai 'hadir' sesuai instruksi
-        $jenisStr = strtolower($permohonan->jenis);
-        $statusKehadiran = ($jenisStr === 'absen') ? 'hadir' : $jenisStr;
-
         foreach ($period as $date) {
             $tglString = $date->format('Y-m-d');
 
-            // Cari presensi user di tanggal tersebut
             $presensi = presensi::where('user_id', $permohonan->user_id)
                 ->whereDate('tanggal', $tglString)
                 ->first();
 
             if ($presensi) {
-                // Update status kehadiran jika data presensi sudah ada
                 $presensi->update([
                     'status_kehadiran' => $statusKehadiran,
                 ]);
             } else {
-                // Buat record presensi baru dengan status kehadiran 'hadir' (jika pengajuan absen)
                 $presensiNew = presensi::create([
                     'user_id'          => $permohonan->user_id,
                     'tanggal'          => $tglString,
                     'status_kehadiran' => $statusKehadiran,
                 ]);
 
-                // Catat ke LogBook
                 log_book::create([
                     'user_id'     => $permohonan->user_id,
                     'presensi_id' => $presensiNew->presensi_id ?? $presensiNew->id,
@@ -117,11 +127,82 @@ class PermohonanIzin extends Component
                 ]);
             }
         }
+    }
 
-        $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
-        session()->flash('message', 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah disetujui.');
-        
-        $this->closeDetail();
+    /**
+     * Logic baru: untuk pengajuan absen susulan (lupa absen masuk/pulang),
+     * isi jam absen_masuk / absen_keluar di presensi sesuai jam default
+     * dari jadwal magang user pada hari tersebut.
+     */
+    private function prosesAbsenSusulan($permohonan)
+    {
+        $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
+        $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
+
+        $period = CarbonPeriod::create($startDate, $endDate);
+        $tanggalTanpaJadwal = [];
+
+        foreach ($period as $date) {
+            $tglString = $date->format('Y-m-d');
+            $namaHari  = $date->copy()->locale('id')->translatedFormat('l'); // Senin, Selasa, dst
+
+            $detailJadwal = DetailJadwal::with('jadwal')
+                ->where('user_id', $permohonan->user_id)
+                ->whereRaw('LOWER(hari) = ?', [strtolower($namaHari)])
+                ->first();
+
+            if (!$detailJadwal || !$detailJadwal->jadwal) {
+                $tanggalTanpaJadwal[] = $tglString;
+                continue;
+            }
+
+            $jadwal = $detailJadwal->jadwal;
+
+            $presensi = presensi::where('user_id', $permohonan->user_id)
+                ->whereDate('tanggal', $tglString)
+                ->first();
+
+            if (!$presensi) {
+                $presensi = presensi::create([
+                    'user_id' => $permohonan->user_id,
+                    'tanggal' => $tglString,
+                ]);
+            }
+
+            $dataUpdate = [];
+
+            // Hanya isi jika benar-benar dicentang saat pengajuan, dan belum ada datanya
+            if ($permohonan->absen_masuk && !$presensi->absen_masuk) {
+                $dataUpdate['absen_masuk'] = $jadwal->jam_masuk;
+            }
+
+            if ($permohonan->absen_pulang && !$presensi->absen_keluar) {
+                $dataUpdate['absen_keluar'] = $jadwal->jam_keluar;
+            }
+
+            if (!empty($dataUpdate)) {
+                $dataUpdate['status_kehadiran'] = 'hadir';
+                $presensi->update($dataUpdate);
+
+                $keterangan = [];
+                if (isset($dataUpdate['absen_masuk'])) $keterangan[] = 'Masuk';
+                if (isset($dataUpdate['absen_keluar'])) $keterangan[] = 'Pulang';
+
+                log_book::updateOrCreate(
+                    [
+                        'presensi_id' => $presensi->presensi_id ?? $presensi->id,
+                        'user_id'     => $permohonan->user_id,
+                    ],
+                    [
+                        'kegiatan' => '(ABSEN SUSULAN - ' . implode(' & ', $keterangan) . ') ' . $permohonan->alasan,
+                    ]
+                );
+            }
+        }
+
+        if (!empty($tanggalTanpaJadwal)) {
+            session()->flash('warning', 'Sebagian tanggal (' . implode(', ', $tanggalTanpaJadwal) . ') tidak memiliki jadwal magang untuk user ini, sehingga jam absen tidak bisa diisi otomatis.');
+        }
     }
 
     public function tolak($id)
@@ -144,7 +225,6 @@ class PermohonanIzin extends Component
         $currentUser = Auth::user();
 
         $permohonans = PermohonanIzinModel::with('user')
-            // Filter anak bimbingan jika pengakses adalah Mentor
             ->when($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value, function ($query) use ($currentUser) {
                 $query->whereHas('user', function ($q) use ($currentUser) {
                     $q->where('mentor', $currentUser->nama);
@@ -169,7 +249,6 @@ class PermohonanIzin extends Component
             ->latest('created_at')
             ->paginate(10);
 
-        // Counter total pending juga difilter sesuai mentor
         $totalPending = PermohonanIzinModel::where('status', 'pending')
             ->when($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value, function ($query) use ($currentUser) {
                 $query->whereHas('user', function ($q) use ($currentUser) {
