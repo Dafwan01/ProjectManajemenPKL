@@ -4,7 +4,9 @@ namespace App\Livewire\Dashboard;
 
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
-use App\Models\Sekolah; // <-- Wajib ditambahkan
+use App\Models\Sekolah;
+use App\Models\Divisi;
+use App\Models\Bidang;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -25,13 +27,19 @@ class ManajemenPkl extends Component
     public $email = '';
     public $role = UserRole::PKL->value;
     public $status = UserStatus::AKTIF->value;
-    
+
     // Perubahan: asal_sekolah dihapus, diganti sekolah_id
-    public $sekolah_id = null; 
+    public $sekolah_id = null;
     public $mentor = '';
     public $tanggal_mulai = null;
     public $tanggal_akhir = null;
     public $skill = '';
+
+    // Bidang & Divisi
+    // bidang_id bersifat transient (hanya untuk memfilter pilihan Divisi di dropdown,
+    // tidak disimpan ke tabel users). Yang disimpan ke database hanya divisi_id.
+    public $bidang_id = null;
+    public $divisi_id = null;
 
     // Field Tambahan Profil
     public $tempat_lahir = '';
@@ -51,11 +59,46 @@ class ManajemenPkl extends Component
     public $selectedUserId = null;
 
     /**
+     * Cek apakah user yang sedang login adalah Mentor.
+     */
+    private function isMentorUser(): bool
+    {
+        $currentUser = Auth::user();
+
+        return $currentUser->role === UserRole::MENTOR
+            || $currentUser->role?->value === UserRole::MENTOR->value;
+    }
+
+    /**
      * Mengambil daftar sekolah untuk Dropdown
      */
     public function getDaftarSekolahProperty()
     {
         return Sekolah::orderBy('nama_sekolah')->get();
+    }
+
+    /**
+     * Mengambil daftar bidang untuk Dropdown.
+     */
+    public function getDaftarBidangProperty()
+    {
+        return Bidang::orderBy('nama_bidang')->get();
+    }
+
+    /**
+     * Mengambil daftar divisi untuk Dropdown, difilter sesuai bidang_id yang dipilih.
+     * Query langsung ke kolom bidang_id (bukan lewat relasi Eloquent) supaya tidak
+     * tergantung pada guessing foreign key yang pernah bermasalah.
+     */
+    public function getDaftarDivisiProperty()
+    {
+        if (empty($this->bidang_id)) {
+            return collect();
+        }
+
+        return Divisi::where('bidang_id', $this->bidang_id)
+            ->orderBy('nama_divisi')
+            ->get();
     }
 
     protected function rules()
@@ -69,6 +112,7 @@ class ManajemenPkl extends Component
             'tanggal_lahir' => 'nullable|date',
             'jenis_kelamin' => ['nullable', 'string', 'in:Laki-laki,Perempuan,laki-laki,perempuan'],
             'jurusan' => 'nullable|string|max:255',
+            'divisi_id' => 'nullable|integer|exists:divisis,divisi_id',
             'mentor' => 'nullable|string|max:255',
             'tanggal_mulai' => 'nullable|date',
             'tanggal_akhir' => 'nullable|date|after_or_equal:tanggal_mulai',
@@ -94,6 +138,7 @@ class ManajemenPkl extends Component
         'role.required' => 'Silakan pilih role pengguna.',
         'status.required' => 'Silakan pilih status akun.',
         'jenis_kelamin.in' => 'Pilihan jenis kelamin tidak valid.',
+        'divisi_id.exists' => 'Divisi tidak valid.',
         'tanggal_akhir.after_or_equal' => 'Tanggal akhir harus sama atau setelah tanggal mulai.',
         'namaSekolahBaru.required' => 'Nama sekolah baru wajib diisi.',
         'namaSekolahBaru.min' => 'Nama sekolah minimal 3 karakter.',
@@ -110,6 +155,20 @@ class ManajemenPkl extends Component
             $this->tambahSekolahBaru = true;
             $this->sekolah_id = null;
         }
+    }
+
+    /**
+     * Trigger ketika dropdown Bidang berubah.
+     * Reset Divisi supaya tidak "nyangkut" ke divisi lama dari bidang sebelumnya.
+     * Tidak berlaku untuk Mentor karena field-nya terkunci.
+     */
+    public function updatedBidangId($value)
+    {
+        if ($this->isMentorUser()) {
+            return;
+        }
+
+        $this->divisi_id = null;
     }
 
     /**
@@ -134,14 +193,16 @@ class ManajemenPkl extends Component
         $this->jenis_kelamin = '';
         $this->jurusan = '';
         $this->sekolah_id = null;
+        $this->bidang_id = null;
+        $this->divisi_id = null;
         $this->mentor = '';
         $this->tanggal_mulai = null;
         $this->tanggal_akhir = null;
         $this->skill = '';
-        
+
         $this->tambahSekolahBaru = false;
         $this->namaSekolahBaru = '';
-        
+
         $this->resetValidation();
     }
 
@@ -150,12 +211,28 @@ class ManajemenPkl extends Component
         $this->resetPage();
     }
 
+    /**
+     * Kunci Bidang & Divisi ke milik Mentor yang sedang login.
+     * bidang_id diturunkan dari divisi_id milik mentor (bukan kolom di tabel users).
+     */
+    private function lockDivisiToMentor(User $currentUser): void
+    {
+        $this->divisi_id = $currentUser->divisi_id;
+
+        $divisiMentor = $this->divisi_id
+            ? Divisi::find($this->divisi_id)
+            : null;
+
+        $this->bidang_id = $divisiMentor?->bidang_id;
+    }
+
     public function save()
     {
         $currentUser = Auth::user();
 
-        if ($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value) {
+        if ($this->isMentorUser()) {
             $this->mentor = $currentUser->nama;
+            $this->lockDivisiToMentor($currentUser);
         }
 
         $this->validate();
@@ -176,6 +253,7 @@ class ManajemenPkl extends Component
             'jenis_kelamin' => $this->jenis_kelamin ?: null,
             'jurusan' => $this->jurusan ?: null,
             'sekolah_id' => $this->sekolah_id ?: null, // Simpan sekolah_id
+            'divisi_id' => $this->divisi_id ?: null,
             'mentor' => $this->mentor ?: null,
             'tanggal_mulai' => $this->tanggal_mulai ?: null,
             'tanggal_akhir' => $this->tanggal_akhir ?: null,
@@ -209,8 +287,9 @@ class ManajemenPkl extends Component
         $this->isEditMode = false;
 
         $currentUser = Auth::user();
-        if ($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value) {
+        if ($this->isMentorUser()) {
             $this->mentor = $currentUser->nama;
+            $this->lockDivisiToMentor($currentUser);
         }
 
         $this->showEditProfileModal = true;
@@ -227,15 +306,23 @@ class ManajemenPkl extends Component
         $this->status = $user->status->value ?? $user->status;
         $this->tempat_lahir = $user->tempat_lahir;
         $this->tanggal_lahir = $this->formatDateForInput($user->tanggal_lahir);
-       $this->jenis_kelamin = strtolower($user->jenis_kelamin ?? '');
+        $this->jenis_kelamin = strtolower($user->jenis_kelamin ?? '');
         $this->jurusan = $user->jurusan;
         $this->sekolah_id = $user->sekolah_id; // Tarik sekolah_id saat edit
 
         $currentUser = Auth::user();
-        if ($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value) {
+        if ($this->isMentorUser()) {
             $this->mentor = $currentUser->nama;
+            $this->lockDivisiToMentor($currentUser);
         } else {
             $this->mentor = $user->mentor;
+            $this->divisi_id = $user->divisi_id;
+
+            $divisiUser = $this->divisi_id
+                ? Divisi::find($this->divisi_id)
+                : null;
+
+            $this->bidang_id = $divisiUser?->bidang_id;
         }
 
         $this->tanggal_mulai = $this->formatDateForInput($user->tanggal_mulai);

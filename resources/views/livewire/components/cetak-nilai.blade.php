@@ -106,6 +106,16 @@
        Dokumen ini merupakan lampiran resmi yang tidak dapat dipisahkan dari Sertifikat Magang, dan menjadi bagian sah dari keseluruhan dokumen penilaian peserta didik/mahasiswa selama masa Praktik Kerja Lapangan (PKL) yang bersangkutan.
     </p>
 
+    @php
+        $namaSekolah = $selectedUser->sekolah?->nama_sekolah
+            ?? \App\Models\Sekolah::find($selectedUser->sekolah_id)?->nama_sekolah
+            ?? '-';
+
+        $divisiBidangText = collect([$namaDivisi, $namaBidang])
+            ->filter()
+            ->implode(' / ') ?: '-';
+    @endphp
+
     <table class="info-table">
         <tr>
             <td style="width: 18%;">Nama</td>
@@ -115,12 +125,12 @@
         <tr>
             <td>Asal Sekolah</td>
             <td>:</td>
-            <td>{{ $selectedUser->asal_sekolah ?? '-' }}</td>
+            <td>{{ $namaSekolah }}</td>
         </tr>
         <tr>
             <td>Divisi / Bidang</td>
             <td>:</td>
-            <td>{{ $selectedUser->divisi?->value ?? $selectedUser->divisi ?? '-' }}</td>
+            <td>{{ $divisiBidangText }}</td>
         </tr>
     </table>
 

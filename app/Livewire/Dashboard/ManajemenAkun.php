@@ -3,10 +3,11 @@
 namespace App\Livewire\Dashboard;
 
 use App\Enums\JadwalStatusKerja;
-use App\Enums\UserDivisi;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Models\Bidang;
 use App\Models\DetailJadwal;
+use App\Models\Divisi;
 use App\Models\Jadwal;
 use App\Models\Sekolah;
 use App\Models\User;
@@ -32,7 +33,10 @@ class ManajemenAkun extends Component
     public $mentor = '';
     public $password = '';
     public $confirm_password = '';
-    public $divisi = '';
+
+    // Bidang & Divisi
+    public $bidang_id = null; // hanya dipakai untuk filter dropdown divisi, tidak disimpan ke users
+    public $divisi_id = null;
 
     // State Sekolah
     public bool $tambahSekolahBaru = false;
@@ -81,6 +85,28 @@ class ManajemenAkun extends Component
     }
 
     /**
+     * Daftar bidang untuk dropdown.
+     */
+    public function getDaftarBidangProperty()
+    {
+        return Bidang::orderBy('nama_bidang')->get();
+    }
+
+    /**
+     * Daftar divisi untuk dropdown, difilter berdasarkan bidang yang dipilih.
+     */
+    public function getDaftarDivisiProperty()
+    {
+        if (!$this->bidang_id) {
+            return collect();
+        }
+
+        return Divisi::where('bidang_id', $this->bidang_id)
+            ->orderBy('nama_divisi')
+            ->get();
+    }
+
+    /**
      * Cek apakah role yang sedang dipilih di form adalah PKL.
      * Dipakai untuk menentukan apakah field Mentor & Asal Sekolah wajib diisi / dikunci.
      */
@@ -102,7 +128,8 @@ class ManajemenAkun extends Component
             'nama' => 'required|min:3',
             'email' => 'required|email|unique:users,email,' . $this->userId . ',user_id',
             'role' => ['required', Rule::in($allowedRoleValues)],
-            'divisi' => ['required', Rule::enum(UserDivisi::class)],
+            'bidang_id' => 'required|exists:bidangs,bidang_id',
+            'divisi_id' => 'required|exists:divisis,divisi_id',
             'password' => $this->isEditMode
                 ? ['nullable', $passwordRule, 'same:confirm_password']
                 : ['required', $passwordRule, 'same:confirm_password'],
@@ -133,7 +160,10 @@ class ManajemenAkun extends Component
         'email.unique' => 'Email ini sudah terdaftar.',
         'role.required' => 'Silakan pilih role pengguna.',
         'role.in' => 'Anda tidak memiliki hak akses untuk memilih role tersebut.',
-        'divisi.required' => 'Silakan pilih divisi pengguna.',
+        'bidang_id.required' => 'Silakan pilih bidang.',
+        'bidang_id.exists' => 'Bidang tidak valid.',
+        'divisi_id.required' => 'Silakan pilih divisi.',
+        'divisi_id.exists' => 'Divisi tidak valid.',
         'mentor.required' => 'Mentor wajib dipilih atau diisi.',
         'sekolah_id.required' => 'Asal sekolah wajib dipilih.',
         'sekolah_id.exists' => 'Asal sekolah tidak valid.',
@@ -158,6 +188,15 @@ class ManajemenAkun extends Component
         }
     }
 
+    /**
+     * Dipanggil otomatis tiap kali dropdown Bidang berubah (interaksi user di form).
+     * Divisi direset karena daftar divisi tergantung bidang yang dipilih.
+     */
+    public function updatedBidangId($value)
+    {
+        $this->divisi_id = null;
+    }
+
     public function updatedSekolahId($value)
     {
         if ($value === '__tambah_baru__') {
@@ -179,7 +218,8 @@ class ManajemenAkun extends Component
         $this->nama = '';
         $this->email = '';
         $this->role = '';
-        $this->divisi = '';
+        $this->bidang_id = null;
+        $this->divisi_id = null;
         $this->sekolah_id = null;
         $this->mentor = '';
         $this->password = '';
@@ -187,6 +227,18 @@ class ManajemenAkun extends Component
         $this->tambahSekolahBaru = false;
         $this->namaSekolahBaru = '';
         $this->resetValidation();
+    }
+
+    /**
+     * Set bidang_id & divisi_id pada form supaya sama dengan bidang/divisi Mentor yang login.
+     */
+    private function applyMentorBidangDivisi(User $mentorUser): void
+    {
+        $this->mentor = $mentorUser->nama;
+        $this->divisi_id = $mentorUser->divisi_id;
+
+        $divisi = Divisi::find($mentorUser->divisi_id);
+        $this->bidang_id = $divisi?->bidang_id;
     }
 
     public function openCreateModal()
@@ -202,10 +254,7 @@ class ManajemenAkun extends Component
         $currentUser = Auth::user();
         if ($this->isMentor()) {
             $this->role = UserRole::PKL->value;
-            $this->mentor = $currentUser->nama;
-            $this->divisi = $currentUser->divisi instanceof \UnitEnum
-                ? $currentUser->divisi->value
-                : (string) $currentUser->divisi;
+            $this->applyMentorBidangDivisi($currentUser);
         }
 
         $this->showModal = true;
@@ -221,17 +270,17 @@ class ManajemenAkun extends Component
         $this->nama = $user->nama;
         $this->email = $user->email;
         $this->role = $user->role instanceof \UnitEnum ? $user->role->value : $user->role;
-        $this->divisi = $user->divisi instanceof \UnitEnum ? $user->divisi->value : $user->divisi;
         $this->sekolah_id = $user->sekolah_id;
 
         $currentUser = Auth::user();
         if ($this->isMentor()) {
-            $this->mentor = $currentUser->nama;
-            $this->divisi = $currentUser->divisi instanceof \UnitEnum
-                ? $currentUser->divisi->value
-                : (string) $currentUser->divisi;
+            $this->applyMentorBidangDivisi($currentUser);
         } else {
             $this->mentor = $user->mentor;
+            $this->divisi_id = $user->divisi_id;
+
+            $divisi = Divisi::find($user->divisi_id);
+            $this->bidang_id = $divisi?->bidang_id;
         }
 
         $this->showModal = true;
@@ -249,10 +298,7 @@ class ManajemenAkun extends Component
 
         if ($this->isMentor()) {
             $this->role = UserRole::PKL->value;
-            $this->mentor = $currentUser->nama;
-            $this->divisi = $currentUser->divisi instanceof \UnitEnum
-                ? $currentUser->divisi->value
-                : (string) $currentUser->divisi;
+            $this->applyMentorBidangDivisi($currentUser);
         }
 
         $this->validate();
@@ -269,7 +315,7 @@ class ManajemenAkun extends Component
                 'nama' => $this->nama,
                 'email' => $this->email,
                 'role' => $this->role,
-                'divisi' => $this->divisi,
+                'divisi_id' => $this->divisi_id,
                 'sekolah_id' => $this->isRolePkl ? $this->sekolah_id : null,
                 'mentor' => $this->isRolePkl ? $this->mentor : null,
             ];
@@ -286,7 +332,7 @@ class ManajemenAkun extends Component
                 'nama' => $this->nama,
                 'email' => $this->email,
                 'role' => $this->role,
-                'divisi' => $this->divisi,
+                'divisi_id' => $this->divisi_id,
                 'status' => UserStatus::AKTIF->value,
                 'sekolah_id' => $this->isRolePkl ? $this->sekolah_id : null,
                 'mentor' => $this->isRolePkl ? $this->mentor : null,
