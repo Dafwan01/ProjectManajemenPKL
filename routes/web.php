@@ -12,6 +12,8 @@ use App\Livewire\Dashboard\RekapAbsensi;
 use App\Livewire\Dashboard\UploadFile\Nilai;
 use App\Livewire\Dashboard\UploadFile\Sertifikat;
 use App\Livewire\Dashboard\UploadFile\SuratPenerimaanMagang;
+use App\Livewire\Forum;
+use App\Livewire\ForumDetail;
 use App\Livewire\Login;
 use App\Livewire\User\Dokumen;
 use App\Livewire\User\IzinSakit;
@@ -91,4 +93,10 @@ Route::middleware(['auth', 'role:PKL'])->group(function () {
     Route::get('/user/profile', Profile::class)->name('user.profile');
     Route::get('/user/dokumen', Dokumen::class)->name('user.dokumen');
     Route::get('/user/project', UserProject::class)->name('user.project');
+ 
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/user/forum', Forum::class)->name('user.forum');
+    Route::get('/user/forum/{forum}', ForumDetail::class)->name('user.forum.show');
 });

@@ -7,7 +7,7 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Livewire\User\Presensi;
 use App\Models\DetailJadwal;
-use App\Models\Project;
+use App\Models\project;
 use App\Models\Nilai;
 use App\Models\file;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -129,7 +129,11 @@ class User extends Authenticatable
     {
         return $this->hasMany(Project::class, 'user_id', 'user_id');
     }
-
+// Tambahkan method ini di bawah method projects()
+public function project()
+{
+    return $this->hasOne(Project::class, 'user_id', 'user_id')->latestOfMany('project_id');
+}
       public function nilais()
     {
         return $this->hasMany(Nilai::class, 'user_id', 'user_id');
@@ -157,4 +161,15 @@ public function divisi()
     {
         return $this->belongsTo(Divisi::class);
     }
+
+    public function forums()
+{
+    return $this->hasMany(Forum::class);
+}
+
+public function forumMessages()
+{
+    return $this->hasMany(ForumMessage::class);
+}
+
 }
