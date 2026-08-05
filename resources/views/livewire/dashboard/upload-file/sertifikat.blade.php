@@ -76,7 +76,6 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center justify-center gap-2">
-                                    <!-- Tombol Generate / Regenerate -->
                                     <button 
                                         type="button"
                                         wire:click="openForm({{ $user->user_id }})"
@@ -88,7 +87,6 @@
                                         <span>{{ $hasSertifikat ? 'Regenerate' : 'Generate' }}</span>
                                     </button>
 
-                                    <!-- Tombol Preview PDF -->
                                     @if($hasSertifikat)
                                         <button 
                                             type="button"
@@ -149,21 +147,21 @@
                 </div>
 
                 <!-- Modal Body -->
-               <form wire:submit.prevent="generate" class="p-5 space-y-4">
+                <form wire:submit.prevent="generate" class="p-5 space-y-4">
 
-    <!-- 🔥 Alert Error di Dalam Modal (Tambahkan Ini) -->
-    @if (session()->has('error'))
-        <div class="p-3 text-xs text-rose-700 dark:text-rose-400 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-between" role="alert">
-            <span class="font-medium">{{ session('error') }}</span>
-        </div>
-    @endif
+                    <!-- Alert Error di Dalam Modal -->
+                    @if (session()->has('error'))
+                        <div class="p-3 text-xs text-rose-700 dark:text-rose-400 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-between" role="alert">
+                            <span class="font-medium">{{ session('error') }}</span>
+                        </div>
+                    @endif
 
-    <!-- Detail Peserta -->
-    <div class="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl space-y-1 border border-gray-100 dark:border-gray-700/50">
-        <p class="text-xs text-gray-500 dark:text-gray-400">Peserta Magang:</p>
-        <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ $targetUser?->nama }}</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $targetUser?->asal_sekolah }} (Mentor: {{ $targetUser?->mentor ?? '-' }})</p>
-    </div>
+                    <!-- Detail Peserta -->
+                    <div class="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl space-y-1 border border-gray-100 dark:border-gray-700/50">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Peserta Magang:</p>
+                        <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ $targetUser?->nama }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $targetUser?->asal_sekolah }} (Mentor: {{ $targetUser?->mentor ?? '-' }})</p>
+                    </div>
 
                     <!-- Input Nomor Sertifikat -->
                     <div>
@@ -185,6 +183,46 @@
                             class="w-full p-2.5 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
                         >
                         @error('tanggalTerbit') <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Input Nama Penandatangan -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Nama Penandatangan</label>
+                        <input 
+                            type="text" 
+                            wire:model="namaPenandatangan" 
+                            placeholder="Contoh: Dr. Budi Santoso, M.T."
+                            class="w-full p-2.5 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                        >
+                        @error('namaPenandatangan') <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Input Jabatan Penandatangan -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Jabatan Penandatangan</label>
+                        <input 
+                            type="text" 
+                            wire:model="jabatanPenandatangan" 
+                            placeholder="Contoh: Head of Human Resources"
+                            class="w-full p-2.5 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                        >
+                        @error('jabatanPenandatangan') <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Pilihan Jenis Tanda Tangan -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Jenis Tanda Tangan</label>
+                        <div class="grid grid-cols-2 gap-3 mt-1">
+                            <label class="flex items-center gap-2 p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                                <input type="radio" wire:model="jenisTtd" value="elektronik" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-700">
+                                <span class="text-xs font-medium text-gray-800 dark:text-gray-200">TTD Elektronik</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                                <input type="radio" wire:model="jenisTtd" value="non_elektronik" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-700">
+                                <span class="text-xs font-medium text-gray-800 dark:text-gray-200">Non-Elektronik</span>
+                            </label>
+                        </div>
+                        @error('jenisTtd') <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Modal Footer -->

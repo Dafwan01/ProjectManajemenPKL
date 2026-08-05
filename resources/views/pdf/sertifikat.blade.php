@@ -144,27 +144,43 @@
             No. {{ $nomorSertifikat ?? 'SERT/2026/0001' }}
         </div>
 
-        <div class="keterangan">
-            Telah menyelesaikan Program Magang / PKL
-            @if(!empty($user->asal_sekolah))
-                dari <span class="sekolah">{{ $user->asal_sekolah }}</span>
-            @endif
-        </div>
+       <div class="keterangan">
+    Telah menyelesaikan Program Magang / PKL di <br>
+    <strong>Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor</strong>
+    @if(!empty($user->sekolah?->nama_sekolah))
+        <br>dari <span class="sekolah">{{ $user->sekolah->nama_sekolah }}</span>
+    @elseif(!empty($user->asal_sekolah))
+        <br>dari <span class="sekolah">{{ $user->asal_sekolah }}</span>
+    @endif
+    
+    <div style="margin-top: 10px; font-size: 18px;">
+        dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong><br>
+        di bawah bimbingan <strong>{{ $user->mentor ?? '-' }}</strong>
+    </div>
+</div>
 
         <div class="tanggal">
             Diterbitkan pada: {{ \Carbon\Carbon::parse($tanggalTerbit ?? now())->isoFormat('D MMMM Y') }}
         </div>
     </div>
 
-    <!-- BLOCK 3: NAMA PEMBIMBING (KIRI) -->
-    <div class="section-pembimbing">
-        {{ $user->pembimbing->nama ?? $pembimbingNama ?? '' }}
+   <div class="section-ttd">
+    <!-- 1. Panggil Jabatan Penandatangan -->
+    <div class="jabatan">{{ $jabatanPenandatangan }}</div>
+
+    <div class="box-ttd">
+        <!-- 2. Pengecekan Jenis TTD Elektronik / Non-Elektronik -->
+        @if($jenisTtd === 'elektronik')
+            <div class="badge-ttd-elektronik">
+                Ditandatangani secara elektronik oleh<br>
+                <strong>{{ $namaPenandatangan }}</strong>
+            </div>
+        @endif
+        <!-- Jika 'non_elektronik', area ini dibiarkan kosong untuk TTD basah -->
     </div>
 
-    <!-- BLOCK 4: NAMA MENTOR (KANAN) -->
-    <div class="section-mentor">
-        {{ $user->mentor->nama ?? $mentorNama ?? $user->mentor_nama ?? 'Bambang Sutrisno' }}
-    </div>
+    <!-- 3. Panggil Nama Penandatangan -->
+    <div class="nama-penandatangan">{{ $namaPenandatangan }}</div>
 
 </body>
 </html>

@@ -32,6 +32,9 @@ class Sertifikat extends Component
     // Form Fields
     public string $nomorSertifikat = '';
     public string $tanggalTerbit = '';
+    public string $namaPenandatangan = '';
+    public string $jabatanPenandatangan = '';
+    public string $jenisTtd = 'elektronik'; // Default: 'elektronik' atau 'non_elektronik'
 
     public function mount(): void
     {
@@ -65,6 +68,9 @@ class Sertifikat extends Component
     {
         $this->selectedUserId = $userId;
         $this->nomorSertifikat = 'SERT/' . date('Y') . '/' . str_pad((string) $userId, 4, '0', STR_PAD_LEFT);
+        $this->namaPenandatangan = '';
+        $this->jabatanPenandatangan = '';
+        $this->jenisTtd = 'elektronik';
         $this->showModal = true;
     }
 
@@ -112,8 +118,11 @@ class Sertifikat extends Component
     public function generate(): void
     {
         $this->validate([
-            'nomorSertifikat' => 'required|string',
-            'tanggalTerbit'   => 'required|date',
+            'nomorSertifikat'      => 'required|string',
+            'tanggalTerbit'        => 'required|date',
+            'namaPenandatangan'    => 'required|string|max:255',
+            'jabatanPenandatangan' => 'required|string|max:255',
+            'jenisTtd'             => 'required|in:elektronik,non_elektronik',
         ]);
 
         try {
@@ -123,7 +132,10 @@ class Sertifikat extends Component
             $relativeFilePath = $certificateService->generateForUser(
                 $user,
                 $this->nomorSertifikat,
-                $this->tanggalTerbit
+                $this->tanggalTerbit,
+                $this->namaPenandatangan,
+                $this->jabatanPenandatangan,
+                $this->jenisTtd
             );
 
             FileModel::updateOrCreate(

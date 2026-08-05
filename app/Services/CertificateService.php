@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\User;
@@ -7,19 +8,30 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class CertificateService
 {
-    public function generateForUser(User $user, string $nomorSertifikat, string $tanggalTerbit): string
-    {
-        // Load view PDF sertifikat
-        $pdf = Pdf::loadView('pdf.sertifikat', compact('user', 'nomorSertifikat', 'tanggalTerbit'));
+    public function generateForUser(
+    User $user, 
+    string $nomorSertifikat, 
+    string $tanggalTerbit,
+    string $namaPenandatangan,
+    string $jabatanPenandatangan,
+    string $jenisTtd
+): string {
+    // Eager load relasi project
+    $user->load('project');
 
-        // Buat nama file unik
-        $fileName = 'sertifikat_' . $user->user_id . '_' . time() . '.pdf';
-        
-        // Simpan ke storage/app/public/user-sertifikat/
-        $relativePath = 'user-sertifikat/' . $fileName;
-        Storage::disk('public')->put($relativePath, $pdf->output());
+    $pdf = Pdf::loadView('pdf.sertifikat', compact(
+        'user', 
+        'nomorSertifikat', 
+        'tanggalTerbit',
+        'namaPenandatangan',
+        'jabatanPenandatangan',
+        'jenisTtd'
+    ))->setPaper('a4', 'landscape');
 
-        // Kembalikan path relatif untuk disimpan ke kolom 'file' di tabel 'files'
-        return $relativePath;
-    }
+    $fileName = 'sertifikat_' . $user->user_id . '_' . time() . '.pdf';
+    $relativePath = 'user-sertifikat/' . $fileName;
+    Storage::disk('public')->put($relativePath, $pdf->output());
+
+    return $relativePath;
+}
 }

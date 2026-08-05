@@ -135,6 +135,13 @@
                             <span>Project</span>
                         </a>
                         @endif
+                        <a href="{{ route('user.forum') }}" 
+   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all {{ request()->routeIs('user.forum') ? 'bg-blue-600 text-white font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-.64-.025-1.289-.06-1.938-.105-.286-.02-.572-.045-.858-.073A9.012 9.012 0 0 1 3 10.5M16.5 3a9 9 0 0 0-9 9c0 .762.09 1.503.26 2.213" />
+    </svg>
+    <span>Forum</span>
+</a>
                         <a href="{{ route('user.profile') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                             <span>Profile</span>
@@ -187,6 +194,13 @@
                         <span>Project</span>
                     </a>
                     @endif
+                  <a href="{{ route('user.forum') }}" 
+   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all {{ request()->routeIs('user.forum') ? 'bg-blue-600 text-white font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-.64-.025-1.289-.06-1.938-.105-.286-.02-.572-.045-.858-.073A9.012 9.012 0 0 1 3 10.5M16.5 3a9 9 0 0 0-9 9c0 .762.09 1.503.26 2.213" />
+    </svg>
+    <span>Forum</span>
+</a>  
                     <a href="{{ route('user.profile') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         <span>Profile</span>
