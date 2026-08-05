@@ -33,7 +33,7 @@ class ManajemenAkun extends Component
     public $mentor = '';
     public $password = '';
     public $confirm_password = '';
-
+public $status = '';
     // Bidang & Divisi
     public $bidang_id = null; // hanya dipakai untuk filter dropdown divisi, tidak disimpan ke users
     public $divisi_id = null;
@@ -134,7 +134,9 @@ class ManajemenAkun extends Component
                 ? ['nullable', $passwordRule, 'same:confirm_password']
                 : ['required', $passwordRule, 'same:confirm_password'],
         ];
-
+ if ($this->isEditMode) {
+        $rules['status'] = ['required', Rule::enum(UserStatus::class)];
+    }
         // Mentor & Asal Sekolah hanya wajib/divalidasi jika role-nya PKL
         if ($this->isRolePkl) {
             $rules['mentor'] = 'required|string';
@@ -172,6 +174,7 @@ class ManajemenAkun extends Component
         'namaSekolahBaru.unique' => 'Sekolah ini sudah terdaftar, silakan pilih dari daftar.',
         'password.required' => 'Password wajib diisi.',
         'password.same' => 'Konfirmasi password tidak cocok.',
+        'status.required' => 'Status akun wajib dipilih.',
     ];
 
     /**
@@ -214,19 +217,20 @@ class ManajemenAkun extends Component
 
     public function resetFields()
     {
-        $this->userId = null;
-        $this->nama = '';
-        $this->email = '';
-        $this->role = '';
-        $this->bidang_id = null;
-        $this->divisi_id = null;
-        $this->sekolah_id = null;
-        $this->mentor = '';
-        $this->password = '';
-        $this->confirm_password = '';
-        $this->tambahSekolahBaru = false;
-        $this->namaSekolahBaru = '';
-        $this->resetValidation();
+            $this->userId = null;
+    $this->nama = '';
+    $this->email = '';
+    $this->role = '';
+    $this->status = '';
+    $this->bidang_id = null;
+    $this->divisi_id = null;
+    $this->sekolah_id = null;
+    $this->mentor = '';
+    $this->password = '';
+    $this->confirm_password = '';
+    $this->tambahSekolahBaru = false;
+    $this->namaSekolahBaru = '';
+    $this->resetValidation();
     }
 
     /**
@@ -261,30 +265,31 @@ class ManajemenAkun extends Component
     }
 
     public function openEditModal($id)
-    {
-        $this->resetFields();
-        $this->isEditMode = true;
+{
+    $this->resetFields();
+    $this->isEditMode = true;
 
-        $user = User::findOrFail($id);
-        $this->userId = $user->user_id;
-        $this->nama = $user->nama;
-        $this->email = $user->email;
-        $this->role = $user->role instanceof \UnitEnum ? $user->role->value : $user->role;
-        $this->sekolah_id = $user->sekolah_id;
+    $user = User::findOrFail($id);
+    $this->userId = $user->user_id;
+    $this->nama = $user->nama;
+    $this->email = $user->email;
+    $this->role = $user->role instanceof \UnitEnum ? $user->role->value : $user->role;
+    $this->status = $user->status instanceof \UnitEnum ? $user->status->value : $user->status;
+    $this->sekolah_id = $user->sekolah_id;
 
-        $currentUser = Auth::user();
-        if ($this->isMentor()) {
-            $this->applyMentorBidangDivisi($currentUser);
-        } else {
-            $this->mentor = $user->mentor;
-            $this->divisi_id = $user->divisi_id;
+    $currentUser = Auth::user();
+    if ($this->isMentor()) {
+        $this->applyMentorBidangDivisi($currentUser);
+    } else {
+        $this->mentor = $user->mentor;
+        $this->divisi_id = $user->divisi_id;
 
-            $divisi = Divisi::find($user->divisi_id);
-            $this->bidang_id = $divisi?->bidang_id;
-        }
-
-        $this->showModal = true;
+        $divisi = Divisi::find($user->divisi_id);
+        $this->bidang_id = $divisi?->bidang_id;
     }
+
+    $this->showModal = true;
+}
 
     public function closeModal()
     {
@@ -292,59 +297,59 @@ class ManajemenAkun extends Component
         $this->resetFields();
     }
 
-    public function save()
-    {
-        $currentUser = Auth::user();
+   public function save()
+{
+    $currentUser = Auth::user();
 
-        if ($this->isMentor()) {
-            $this->role = UserRole::PKL->value;
-            $this->applyMentorBidangDivisi($currentUser);
-        }
-
-        $this->validate();
-
-        // Jika user menambahkan sekolah baru, simpan ke tabel sekolahs & pakai sebagai sekolah_id
-        if ($this->isRolePkl && $this->tambahSekolahBaru && !empty($this->namaSekolahBaru)) {
-            $sekolahBaru = Sekolah::create(['nama_sekolah' => $this->namaSekolahBaru]);
-            $this->sekolah_id = $sekolahBaru->sekolah_id;
-        }
-
-        if ($this->isEditMode) {
-            $user = User::findOrFail($this->userId);
-            $data = [
-                'nama' => $this->nama,
-                'email' => $this->email,
-                'role' => $this->role,
-                'divisi_id' => $this->divisi_id,
-                'sekolah_id' => $this->isRolePkl ? $this->sekolah_id : null,
-                'mentor' => $this->isRolePkl ? $this->mentor : null,
-            ];
-
-            if (!empty($this->password)) {
-                $data['password'] = bcrypt($this->password);
-            }
-
-            $user->update($data);
-            $this->ensureDefaultScheduleForPkl($user);
-            session()->flash('message', 'Akun berhasil diperbarui!');
-        } else {
-            $user = User::create([
-                'nama' => $this->nama,
-                'email' => $this->email,
-                'role' => $this->role,
-                'divisi_id' => $this->divisi_id,
-                'status' => UserStatus::AKTIF->value,
-                'sekolah_id' => $this->isRolePkl ? $this->sekolah_id : null,
-                'mentor' => $this->isRolePkl ? $this->mentor : null,
-                'password' => bcrypt($this->password),
-                'tanggal_mulai' => now(),
-            ]);
-            $this->ensureDefaultScheduleForPkl($user);
-            session()->flash('message', 'Akun berhasil dibuat!');
-        }
-
-        $this->closeModal();
+    if ($this->isMentor()) {
+        $this->role = UserRole::PKL->value;
+        $this->applyMentorBidangDivisi($currentUser);
     }
+
+    $this->validate();
+
+    if ($this->isRolePkl && $this->tambahSekolahBaru && !empty($this->namaSekolahBaru)) {
+        $sekolahBaru = Sekolah::create(['nama_sekolah' => $this->namaSekolahBaru]);
+        $this->sekolah_id = $sekolahBaru->sekolah_id;
+    }
+
+    if ($this->isEditMode) {
+        $user = User::findOrFail($this->userId);
+        $data = [
+            'nama' => $this->nama,
+            'email' => $this->email,
+            'role' => $this->role,
+            'status' => $this->status, // <-- ambil dari form, bisa diubah
+            'divisi_id' => $this->divisi_id,
+            'sekolah_id' => $this->isRolePkl ? $this->sekolah_id : null,
+            'mentor' => $this->isRolePkl ? $this->mentor : null,
+        ];
+
+        if (!empty($this->password)) {
+            $data['password'] = bcrypt($this->password);
+        }
+
+        $user->update($data);
+        $this->ensureDefaultScheduleForPkl($user);
+        session()->flash('message', 'Akun berhasil diperbarui!');
+    } else {
+        $user = User::create([
+            'nama' => $this->nama,
+            'email' => $this->email,
+            'role' => $this->role,
+            'divisi_id' => $this->divisi_id,
+            'status' => UserStatus::AKTIF->value, // <-- selalu Aktif saat create, TIDAK dari form
+            'sekolah_id' => $this->isRolePkl ? $this->sekolah_id : null,
+            'mentor' => $this->isRolePkl ? $this->mentor : null,
+            'password' => bcrypt($this->password),
+            'tanggal_mulai' => now(),
+        ]);
+        $this->ensureDefaultScheduleForPkl($user);
+        session()->flash('message', 'Akun berhasil dibuat!');
+    }
+
+    $this->closeModal();
+}
 
     public function delete($id)
     {
@@ -424,4 +429,8 @@ class ManajemenAkun extends Component
             }
         });
     }
+    public function getDaftarStatusProperty(): array
+{
+    return UserStatus::cases();
+}
 }

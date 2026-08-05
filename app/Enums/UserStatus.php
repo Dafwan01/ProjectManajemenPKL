@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum UserStatus: string
 {
+    
     case AKTIF = 'Aktif';
     case LULUS = 'Lulus'; // <-- Ubah 'lulus' menjadi 'LULUS' (Huruf Kapital)
 

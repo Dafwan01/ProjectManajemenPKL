@@ -225,7 +225,26 @@
         @error('sekolah_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
     </div>
 </div>
-
+@if($isEditMode)
+    <!-- Baris 3.5: Status Akun (Hanya muncul saat Edit) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+            <label for="status" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Status Akun <span class="text-red-500">*</span>
+            </label>
+            <select 
+                id="status" 
+                wire:model="status" 
+                class="bg-gray-50 dark:bg-gray-800/60 border @error('status') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition"
+            >
+                @foreach($this->daftarStatus as $statusEnum)
+                    <option value="{{ $statusEnum->value }}">{{ $statusEnum->label() }}</option>
+                @endforeach
+            </select>
+            @error('status') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+        </div>
+    </div>
+@endif
             <!-- Baris 4: Password & Konfirmasi Password -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-800/80">
                 <!-- Field Password -->
