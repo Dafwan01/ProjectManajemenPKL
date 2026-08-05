@@ -116,14 +116,32 @@
               </li>
 
               <!-- 7. Permohonan Izin/Sakit -->
-              <li>
-                 <a href="{{ route('permohonan-izin') }}" wire:navigate class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('permohonan-izin') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
-                     <svg class="w-5 h-5 transition duration-75 {{ request()->routeIs('permohonan-izin') ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                     </svg>
-                     <span class="flex-1 ms-3 text-sm whitespace-nowrap">Permohonan Izin/Sakit</span>
-                 </a>
-              </li>
+             <!-- 7. Permohonan Izin/Sakit -->
+<li>
+   @php
+       $totalPendingIzin = \App\Models\PermohonanIzin::where('status', 'pending')
+           ->when(
+               auth()->user()->role === \App\Enums\UserRole::MENTOR || auth()->user()->role?->value === \App\Enums\UserRole::MENTOR->value,
+               function ($query) {
+                   $query->whereHas('user', function ($q) {
+                       $q->where('mentor', auth()->user()->nama);
+                   });
+               }
+           )
+           ->count();
+   @endphp
+   <a href="{{ route('permohonan-izin') }}" wire:navigate class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('permohonan-izin') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
+       <svg class="w-5 h-5 transition duration-75 {{ request()->routeIs('permohonan-izin') ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+           <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+       </svg>
+       <span class="flex-1 ms-3 text-sm whitespace-nowrap">Permohonan Izin/Sakit</span>
+       @if($totalPendingIzin > 0)
+           <span class="ms-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full {{ request()->routeIs('permohonan-izin') ? 'bg-white text-blue-600' : 'bg-rose-500 text-white' }}">
+               {{ $totalPendingIzin > 99 ? '99+' : $totalPendingIzin }}
+           </span>
+       @endif
+   </a>
+</li>
            </ul>
         </div>
 
