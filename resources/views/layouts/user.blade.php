@@ -7,13 +7,9 @@
 
     <title>{{ $title ?? 'SIMPATI (Sistem Informasi Magang dan Presensi dan Aktivitas)' }}</title>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
-
+ 
+   <script src="{{ asset('vendor/mediapipe/camera_utils.js') }}"></script>
+<script src="{{ asset('vendor/mediapipe/face_detection.js') }}"></script>
     <!-- Script Anti-Flicker Theme (Inisialisasi Tema Sesuai OS / LocalStorage) -->
     <script>
         (function() {

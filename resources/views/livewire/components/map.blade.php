@@ -14,7 +14,6 @@
                         this.map.remove();
                         this.map = null;
                     }
-
                     // KOORDINAT DEFAULT BALAI KOTA BOGOR
                     const defaultLat = -6.5952;
                     const defaultLng = 106.7937;

@@ -1,11 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap');
+
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 @source "../views";
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source "../../storage/framework/views/*.php";
 @source "../../app/Livewire";
-@import '@fontsource/inter'; // Ini otomatis meng-import font Inter lokal
+@import '@fontsource/inter'; 
+
 :root {
     --font-brand: "Outfit", "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
 }
