@@ -13,36 +13,28 @@ class IzinSakit extends Component
     public $nama = '';
     public $sekolah = '';
 
-    // Flag status kelulusan user
     public bool $isLulus = false;
 
-    // State Form
-    public $tipePengajuan = 'izin'; // 'izin', 'sakit', atau 'absen'
+    // State Form: 'izin', 'sakit', 'absen', atau 'absen_pulang'
+    public $tipePengajuan = 'izin';
     public $tanggalMulai = '';
     public $tanggalSelesai = '';
     public $alasan = '';
-    public $alamatIzin = ''; // Property baru untuk alamat selama izin
-    public $jumlahHari = 1;  // Property baru untuk kalkulasi jumlah hari
+    public $alamatIzin = '';
+    public $jumlahHari = 1;
 
-    // Property baru: opsi absen susulan (checkbox)
-    public bool $absenMasuk = false;
-    public bool $absenPulang = false;
-
-    // Aturan validasi
     protected function rules()
     {
         $rules = [
-            'tipePengajuan' => 'required|in:izin,sakit,absen',
+            'tipePengajuan' => 'required|in:izin,sakit,absen,absen_pulang',
             'tanggalMulai'  => 'required|date',
             'alasan'        => 'required|min:10',
         ];
 
-        // Jika BUKAN 'absen', wajibkan tanggalSelesai
-        if ($this->tipePengajuan !== 'absen') {
+        if (!in_array($this->tipePengajuan, ['absen', 'absen_pulang'])) {
             $rules['tanggalSelesai'] = 'required|date|after_or_equal:tanggalMulai';
         }
 
-        // Jika tipe pengajuan 'izin', wajibkan alamatIzin
         if ($this->tipePengajuan === 'izin') {
             $rules['alamatIzin'] = 'required|min:5';
         }
@@ -94,12 +86,9 @@ class IzinSakit extends Component
         }
     }
 
-    /**
-     * Hitung durasi hari secara otomatis
-     */
     public function hitungJumlahHari()
     {
-        if ($this->tipePengajuan === 'absen') {
+        if (in_array($this->tipePengajuan, ['absen', 'absen_pulang'])) {
             if ($this->tanggalMulai) {
                 $tanggal = Carbon::parse($this->tanggalMulai);
                 $this->jumlahHari = $tanggal->isWeekend() ? 0 : 1;
@@ -137,22 +126,18 @@ class IzinSakit extends Component
 
     public function updatedTipePengajuan($value)
     {
-        if ($value === 'absen') {
+        if (in_array($value, ['absen', 'absen_pulang'])) {
             $this->tanggalSelesai = $this->tanggalMulai;
-        } else {
-            // Reset opsi absen susulan jika pindah tipe
-            $this->absenMasuk = false;
-            $this->absenPulang = false;
         }
         if ($value !== 'izin') {
-            $this->alamatIzin = ''; // Reset alamat jika bukan izin
+            $this->alamatIzin = '';
         }
         $this->hitungJumlahHari();
     }
 
     public function updatedTanggalMulai($value)
     {
-        if ($this->tipePengajuan === 'absen') {
+        if (in_array($this->tipePengajuan, ['absen', 'absen_pulang'])) {
             $this->tanggalSelesai = $value;
         }
         $this->hitungJumlahHari();
@@ -177,12 +162,6 @@ class IzinSakit extends Component
             return;
         }
 
-        // Validasi khusus tipe 'absen': minimal 1 opsi harus dicentang
-        if ($this->tipePengajuan === 'absen' && !$this->absenMasuk && !$this->absenPulang) {
-            session()->flash('warning', 'Pilih minimal satu opsi: Absen Masuk atau Absen Pulang.');
-            return;
-        }
-
         $user = Auth::user();
 
         if (!$user) {
@@ -190,14 +169,16 @@ class IzinSakit extends Component
             return;
         }
 
-        $tglAkhir = ($this->tipePengajuan === 'absen') 
-            ? $this->tanggalMulai 
-            : $this->tanggalSelesai;
+        $isTipeAbsen = in_array($this->tipePengajuan, ['absen', 'absen_pulang']);
+        $tglAkhir = $isTipeAbsen ? $this->tanggalMulai : $this->tanggalSelesai;
 
-        // Simpan Ke Database
+        // Mapping value form -> value enum database
+        // 'absen_pulang' (form) disimpan sebagai 'absen pulang' (enum, ada spasi)
+        $jenisTersimpan = $this->tipePengajuan === 'absen_pulang' ? 'absen pulang' : $this->tipePengajuan;
+
         PermohonanIzin::create([
             'user_id'            => $user->id ?? $user->user_id,
-            'jenis'              => $this->tipePengajuan,
+            'jenis'              => $jenisTersimpan,
             'tanggal_awal'       => $this->tanggalMulai,
             'tanggal_akhir'      => $tglAkhir,
             'jumlah_hari'        => $this->jumlahHari,
@@ -205,18 +186,22 @@ class IzinSakit extends Component
             'tanggal_permohonan' => now()->format('Y-m-d'),
             'alasan'             => $this->alasan,
             'status'             => 'pending',
-            'absen_masuk'        => $this->tipePengajuan === 'absen' ? $this->absenMasuk : false,
-            'absen_pulang'       => $this->tipePengajuan === 'absen' ? $this->absenPulang : false,
         ]);
 
+        $labelPesan = match($this->tipePengajuan) {
+            'absen'        => 'Absen',
+            'absen_pulang' => 'Absen Pulang',
+            default        => ucfirst($this->tipePengajuan),
+        };
+
         // Reset Form Input
-        $this->reset(['alasan', 'alamatIzin', 'absenMasuk', 'absenPulang']);
+        $this->reset(['alasan', 'alamatIzin']);
         $today = now()->format('Y-m-d');
         $this->tanggalMulai = $today;
         $this->tanggalSelesai = $today;
         $this->hitungJumlahHari();
 
-        session()->flash('message', 'Pengajuan ' . strtoupper($this->tipePengajuan) . ' berhasil dikirim ke admin!');
+        session()->flash('message', "Pengajuan {$labelPesan} berhasil dikirim ke admin!");
     }
 
     public function render()

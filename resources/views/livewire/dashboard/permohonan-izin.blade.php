@@ -81,7 +81,7 @@
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                     <tr>
                         <th scope="col" class="px-5 py-4 w-[16%] font-bold">Nama</th>
-                        <th scope="col" class="px-5 py-4 w-[16%] font-bold">Tanggal / Rentang</th>
+                        <th scope="col" class="px-5 py-4 w-[16%] font-bold">Tanggal Permohonan</th>
                         <th scope="col" class="px-5 py-4 w-[12%] font-bold">Jenis</th>
                         <th scope="col" class="px-5 py-4 w-[28%] font-bold">Alasan</th>
                         <th scope="col" class="px-5 py-4 w-[14%] font-bold">Status</th>
@@ -116,9 +116,9 @@
                             <th scope="row" class="px-5 py-4 font-semibold text-gray-900 dark:text-white truncate">
                                 {{ $permohonan->user->nama ?? $permohonan->user->name ?? '-' }}
                             </th>
-                            <td class="px-5 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
-                                {{ $tglTampilan }}
-                            </td>
+                           <td class="px-5 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
+        {{ \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->format('d/m/Y') }}
+    </td>
                             <td class="px-5 py-4">
                                 <span class="inline-flex items-center justify-center w-full capitalize px-2.5 py-1 text-xs font-semibold rounded-full border {{ $jenisColor }}">
                                     {{ $permohonan->jenis }}
@@ -198,37 +198,44 @@
 
                     <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4">
                         <h2 class="text-lg font-bold text-gray-900 dark:text-white">Detail Permohonan</h2>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {{ $permohonan->user->nama ?? $permohonan->user->name ?? 'Pemohon' }} 
-                            &bull; 
-                            {{ $permohonan->user->sekolah ?? $permohonan->user->asal_sekolah ?? '-' }}
-                        </p>
+                       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+    {{ $permohonan->user->nama ?? $permohonan->user->name ?? 'Pemohon' }} 
+    &bull; 
+    {{ $permohonan->user->sekolah->nama_sekolah ?? $permohonan->user->asal_sekolah ?? '-' }}
+</p>
                     </div>
 
                     <div class="space-y-4">
                         <!-- Grid 3 Kolom: Jenis, Tanggal, & Durasi Hari -->
-                        <div class="grid grid-cols-3 gap-3">
-                            <div>
-                                <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jenis</span>
-                                <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white capitalize">{{ $permohonan->jenis }}</p>
-                            </div>
-                            <div>
-                                <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal / Rentang</span>
-                                <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
-                                    @if($tglAkhirFormatted && $tglMulaiFormatted !== $tglAkhirFormatted)
-                                        {{ $tglMulaiFormatted }} s/d {{ $tglAkhirFormatted }}
-                                    @else
-                                        {{ $tglMulaiFormatted }}
-                                    @endif
-                                </p>
-                            </div>
-                            <div>
-                                <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durasi</span>
-                                <p class="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400">
-                                    {{ $jumlahHari }} Hari
-                                </p>
-                            </div>
-                        </div>
+                       <!-- Grid 4 Kolom: Jenis, Tanggal Permohonan, Tanggal/Rentang, & Durasi Hari -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div>
+        <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jenis</span>
+        <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white capitalize">{{ $permohonan->jenis }}</p>
+    </div>
+    <div>
+        <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal Pengajuan</span>
+        <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
+            {{ \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->translatedFormat('d F Y') }}
+        </p>
+    </div>
+    <div>
+        <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal / Rentang</span>
+        <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
+            @if($tglAkhirFormatted && $tglMulaiFormatted !== $tglAkhirFormatted)
+                {{ $tglMulaiFormatted }} s/d {{ $tglAkhirFormatted }}
+            @else
+                {{ $tglMulaiFormatted }}
+            @endif
+        </p>
+    </div>
+    <div>
+        <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durasi</span>
+        <p class="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400">
+            {{ $jumlahHari }} Hari
+        </p>
+    </div>
+</div>
 
                         <!-- Info Absen Masuk/Pulang (Hanya muncul jika Jenis = Absen) -->
                         @if($absenLabelModal)
@@ -291,6 +298,8 @@
                             ></textarea>
                         </div>
                     </div>
+
+                    
 
                     <div class="flex items-center justify-end gap-3 pt-5 mt-6 border-t border-gray-200 dark:border-gray-800">
                         <button type="button" wire:click="closeDetail" class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition">

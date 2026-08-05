@@ -16,36 +16,19 @@ class BidangDivisiSeeder extends Seeder
         // Struktur Data Bidang dan Divisinya
         $data = [
             [
-                'nama_bidang' => 'Teknologi Informasi & Komunikasi',
+                'nama_bidang' => 'IKP (Informasi Dan Komunikasi Publik)',
                 'divisi' => [
-                    'Software Engineering',
-                    'Network & Infrastructure',
-                    'Cyber Security',
-                    'Data Analytics',
+                    'Social Media Spesialist',
+                    'Broadcast Spesialist',
+                    'Multimedia Spesialist',
+                    'Public Relation Spesialist ',
                 ],
             ],
             [
-                'nama_bidang' => 'Sumber Daya Manusia & Umum',
+                'nama_bidang' => 'APTIKA (Aplikasi Informatika)',
                 'divisi' => [
-                    'Rekrutmen & Talenta',
-                    'Pelatihan & Pengembangan',
-                    'Kesejahteraan & Hubungan Industrial',
-                ],
-            ],
-            [
-                'nama_bidang' => 'Keuangan & Akuntansi',
-                'divisi' => [
-                    'Perencanaan Keuangan (FP&A)',
-                    'Akuntansi & Perpajakan',
-                    'Pengadaan (Procurement)',
-                ],
-            ],
-            [
-                'nama_bidang' => 'Pemasaran & Hubungan Masyarakat',
-                'divisi' => [
-                    'Digital Marketing',
-                    'Public Relations (PR)',
-                    'Desain Kreatif & Media',
+                    'Programming',
+                    'Jaringan',
                 ],
             ],
         ];
@@ -58,7 +41,7 @@ class BidangDivisiSeeder extends Seeder
 
             foreach ($item['divisi'] as $namaDivisi) {
                 Divisi::create([
-                    'bidang_id' => $bidang->id,
+                    'bidang_id' => $bidang->bidang_id,
                     'nama_divisi' => $namaDivisi,
                 ]);
             }

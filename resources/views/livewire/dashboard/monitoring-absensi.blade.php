@@ -2,7 +2,7 @@
     <!-- HEADER TITLE & SUBTITLE -->
     <div class="mb-6">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">Monitoring Absensi</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Pantau dan kelola data kehadiran, logbook, serta pengajuan izin/sakit/absen peserta PKL.</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Pantau dan kelola data kehadiran serta logbook harian peserta PKL.</p>
     </div>
 
     <!-- Flash Message Notification -->
@@ -73,19 +73,27 @@
                     @forelse($presensis as $presensi)
                         @php
                             $user = $presensi->user ?? $presensi->logBooks->first()?->user;
-                            $isPengajuan = $presensi->is_pengajuan ?? false;
                             $status = strtolower($presensi->status_kehadiran?->value ?? $presensi->status_kehadiran ?? '');
                             
+                            // Mapping hari Inggris ke Indonesia
                             $hariMapping = [
-                                'monday' => 'senin', 'tuesday' => 'selasa', 'wednesday' => 'rabu',
-                                'thursday' => 'kamis', 'friday' => 'jumat', 'saturday' => 'sabtu', 'sunday' => 'minggu',
+                                'monday' => 'senin',
+                                'tuesday' => 'selasa',
+                                'wednesday' => 'rabu',
+                                'thursday' => 'kamis',
+                                'friday' => 'jumat',
+                                'saturday' => 'sabtu',
+                                'sunday' => 'minggu',
                             ];
                             
+                            // Cari jadwal user untuk hari presensi
                             $statusKerja = '-';
                             if ($user && $presensi->tanggal) {
+                                // Ambil hari dari tanggal presensi dalam format Inggris
                                 $hariInggris = strtolower(\Carbon\Carbon::parse($presensi->tanggal)->format('l'));
                                 $hariIndonesia = $hariMapping[$hariInggris] ?? null;
                                 
+                                // Cek apakah user memiliki detail jadwal
                                 if ($hariIndonesia && $user->detailJadwals) {
                                     foreach ($user->detailJadwals as $detail) {
                                         if ($detail->hari && strtolower($detail->hari) === $hariIndonesia) {
@@ -96,122 +104,85 @@
                                 }
                             }
 
-                            // Deteksi absen susulan: ada jam absen tapi tidak ada foto
-                            $isSusulanMasuk = !$isPengajuan && !$presensi->foto_masuk && $presensi->absen_masuk;
-                            $isSusulanKeluar = !$isPengajuan && !$presensi->foto_keluar && $presensi->absen_keluar;
-
-                            $kegiatan = $isPengajuan
-                                ? ($presensi->alasan_pengajuan ?? '-')
-                                : ($presensi->logBooks->first()?->kegiatan ?? '-');
+                            // Cek panjang logbook untuk truncate
+                            $kegiatan = $presensi->logBooks->first()?->kegiatan ?? '-';
                             $isLogbookPanjang = strlen($kegiatan) > 60;
                         @endphp
-                        <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition {{ $isPengajuan ? 'opacity-90' : '' }}">
+                        <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition">
                             <th scope="row" class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                                 {{ $user->nama ?? $user->name ?? '-' }}
                             </th>
                             <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ $user->asal_sekolah ?? '-' }}</td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-col gap-2">
-                                    @if($isPengajuan)
-                                        <!-- Badge Status Pengajuan (belum tersentuh presensi) -->
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border w-fit
-                                            @if($presensi->pengajuan_status === 'pending')
+                                    <!-- Status Kehadiran -->
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border
+                                        @if($status === 'hadir')
+                                            bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20
+                                        @elseif($status === 'izin' || $status === 'sakit')
+                                            bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20
+                                        @else
+                                            bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20
+                                        @endif
+                                    ">
+                                        <span class="w-1.5 h-1.5 rounded-full 
+                                            @if($status === 'hadir') bg-emerald-500 dark:bg-emerald-400
+                                            @elseif($status === 'izin' || $status === 'sakit') bg-amber-500 dark:bg-amber-400
+                                            @else bg-rose-500 dark:bg-rose-400 @endif">
+                                        </span>
+                                        {{ $presensi->status_kehadiran?->value ?? $presensi->status_kehadiran ?? '-' }}
+                                    </span>
+                                    
+                                    <!-- Status Kerja (WFA/WFO) -->
+                                    @if($statusKerja !== '-')
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border
+                                            @if($statusKerja === 'WFH' || $statusKerja === 'WFA')
                                                 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20
                                             @else
-                                                bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20
-                                            @endif
-                                        ">
-                                            <span class="w-1.5 h-1.5 rounded-full
-                                                @if($presensi->pengajuan_status === 'pending') bg-blue-500 dark:bg-blue-400 animate-pulse
-                                                @else bg-rose-500 dark:bg-rose-400 @endif">
-                                            </span>
-                                            {{ $presensi->pengajuan_label }}
-                                        </span>
-                                    @else
-                                        <!-- Status Kehadiran -->
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border w-fit
-                                            @if($status === 'hadir')
-                                                bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20
-                                            @elseif($status === 'terlambat')
-                                                bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-500/20
-                                            @elseif($status === 'izin' || $status === 'sakit')
-                                                bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20
-                                            @else
-                                                bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20
+                                                bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20
                                             @endif
                                         ">
                                             <span class="w-1.5 h-1.5 rounded-full 
-                                                @if($status === 'hadir') bg-emerald-500 dark:bg-emerald-400
-                                                @elseif($status === 'terlambat') bg-orange-500 dark:bg-orange-400
-                                                @elseif($status === 'izin' || $status === 'sakit') bg-amber-500 dark:bg-amber-400
-                                                @else bg-rose-500 dark:bg-rose-400 @endif">
+                                                @if($statusKerja === 'WFH' || $statusKerja === 'WFA') bg-blue-500 dark:bg-blue-400
+                                                @else bg-purple-500 dark:bg-purple-400 @endif">
                                             </span>
-                                            {{ $presensi->status_kehadiran?->value ?? $presensi->status_kehadiran ?? '-' }}
+                                            {{ $statusKerja }}
                                         </span>
-
-                                        <!-- Status Kerja (WFA/WFO) -->
-                                        @if($statusKerja !== '-')
-                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border w-fit
-                                                @if($statusKerja === 'WFH' || $statusKerja === 'WFA')
-                                                    bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20
-                                                @else
-                                                    bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20
-                                                @endif
-                                            ">
-                                                <span class="w-1.5 h-1.5 rounded-full 
-                                                    @if($statusKerja === 'WFH' || $statusKerja === 'WFA') bg-blue-500 dark:bg-blue-400
-                                                    @else bg-purple-500 dark:bg-purple-400 @endif">
-                                                </span>
-                                                {{ $statusKerja }}
-                                            </span>
-                                        @endif
                                     @endif
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                @if($isPengajuan)
-                                    <span class="text-[10px] text-gray-400 dark:text-gray-500 italic">Belum ada data</span>
-                                @else
-                                    <div class="flex flex-col items-center justify-center gap-2">
-                                        @if($presensi->foto_masuk)
-                                            <a href="{{ asset('storage/' . $presensi->foto_masuk) }}" target="_blank" class="block group relative">
-                                                <img src="{{ asset('storage/' . $presensi->foto_masuk) }}" alt="Foto Masuk" class="w-12 h-12 object-cover rounded-xl border border-gray-200 dark:border-gray-700/80 shadow-sm group-hover:border-blue-500 transition">
-                                            </a>
-                                        @elseif($isSusulanMasuk)
-                                            <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 border border-dashed border-blue-300 dark:border-blue-700 flex items-center justify-center text-[9px] font-semibold text-blue-600 dark:text-blue-400 text-center leading-tight px-1">Absen Susulan</div>
-                                        @else
-                                            <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-dashed border-gray-300 dark:border-gray-800 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">No Photo</div>
-                                        @endif
-                                        <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-500/20">
-                                            In: {{ $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) : '-' }}
-                                        </span>
-                                    </div>
-                                @endif
+                                <div class="flex flex-col items-center justify-center gap-2">
+                                    @if($presensi->foto_masuk)
+                                        <a href="{{ asset('storage/' . $presensi->foto_masuk) }}" target="_blank" class="block group relative">
+                                            <img src="{{ asset('storage/' . $presensi->foto_masuk) }}" alt="Foto Masuk" class="w-12 h-12 object-cover rounded-xl border border-gray-200 dark:border-gray-700/80 shadow-sm group-hover:border-blue-500 transition">
+                                        </a>
+                                    @else
+                                        <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-dashed border-gray-300 dark:border-gray-800 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">No Photo</div>
+                                    @endif
+                                    <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-500/20">
+                                        In: {{ $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) : '-' }}
+                                    </span>
+                                </div>
                             </td>
 
                             <!-- Foto + Jam Keluar -->
                             <td class="px-6 py-4 text-center">
-                                @if($isPengajuan)
-                                    <span class="text-[10px] text-gray-400 dark:text-gray-500 italic">Belum ada data</span>
-                                @else
-                                    <div class="flex flex-col items-center justify-center gap-2">
-                                        @if($presensi->foto_keluar)
-                                            <a href="{{ asset('storage/' . $presensi->foto_keluar) }}" target="_blank" class="block group relative">
-                                                <img src="{{ asset('storage/' . $presensi->foto_keluar) }}" alt="Foto Keluar" class="w-12 h-12 object-cover rounded-xl border border-gray-200 dark:border-gray-700/80 shadow-sm group-hover:border-blue-500 transition">
-                                            </a>
-                                        @elseif($isSusulanKeluar)
-                                            <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 border border-dashed border-blue-300 dark:border-blue-700 flex items-center justify-center text-[9px] font-semibold text-blue-600 dark:text-blue-400 text-center leading-tight px-1">Absen Susulan</div>
-                                        @else
-                                            <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-dashed border-gray-300 dark:border-gray-800 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">No Photo</div>
-                                        @endif
-                                        <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-200 dark:border-amber-500/20">
-                                            Out: {{ $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) : '-' }}
-                                        </span>
-                                    </div>
-                                @endif
+                                <div class="flex flex-col items-center justify-center gap-2">
+                                    @if($presensi->foto_keluar)
+                                        <a href="{{ asset('storage/' . $presensi->foto_keluar) }}" target="_blank" class="block group relative">
+                                            <img src="{{ asset('storage/' . $presensi->foto_keluar) }}" alt="Foto Keluar" class="w-12 h-12 object-cover rounded-xl border border-gray-200 dark:border-gray-700/80 shadow-sm group-hover:border-blue-500 transition">
+                                        </a>
+                                    @else
+                                        <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-dashed border-gray-300 dark:border-gray-800 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">No Photo</div>
+                                    @endif
+                                    <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-200 dark:border-amber-500/20">
+                                        Out: {{ $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) : '-' }}
+                                    </span>
+                                </div>
                             </td>
 
-                            <!-- Logbook / Alasan Pengajuan -->
+                            <!-- Logbook -->
                             <td class="px-6 py-4 text-sm max-w-xs text-gray-600 dark:text-gray-300">
                                 @if($isLogbookPanjang)
                                     <button 
@@ -229,23 +200,16 @@
 
                             <!-- Tombol Aksi Edit -->
                             <td class="px-6 py-4 text-center">
-                                @if($isPengajuan)
-                                    <a href="{{ route('permohonan-izin') }}" class="px-3.5 py-2 text-xs font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 rounded-xl transition shadow-sm inline-flex items-center gap-1.5">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                        Proses
-                                    </a>
-                                @else
-                                    <button 
-                                        type="button" 
-                                        wire:click="editAbsen({{ $presensi->presensi_id }})"
-                                        class="px-3.5 py-2 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 border border-amber-200 dark:border-amber-500/30 rounded-xl transition shadow-sm flex items-center gap-1.5 mx-auto"
-                                    >
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                        </svg>
-                                        Edit
-                                    </button>
-                                @endif
+                                <button 
+                                    type="button" 
+                                    wire:click="editAbsen({{ $presensi->presensi_id }})"
+                                    class="px-3.5 py-2 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 border border-amber-200 dark:border-amber-500/30 rounded-xl transition shadow-sm flex items-center gap-1.5 mx-auto"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                    Edit
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -267,6 +231,7 @@
     @if($showEditModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
             <div class="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <!-- Header Modal -->
                 <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/50">
                     <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <svg class="w-5 h-5 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -277,6 +242,7 @@
                     </button>
                 </div>
 
+                <!-- Warning di dalam modal (muncul sebelum submit jika ada error) -->
                 @if (session()->has('warning'))
                     <div class="mx-6 mt-5 p-3 bg-amber-100 dark:bg-amber-900/40 border border-amber-400 dark:border-amber-600/60 text-amber-700 dark:text-amber-300 text-xs rounded-xl flex items-center gap-2 shadow">
                         <svg class="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -284,19 +250,20 @@
                     </div>
                 @endif
 
+                <!-- Form Modal -->
                 <form wire:submit.prevent="updateAbsen" class="p-6 space-y-4">
+                    <!-- Status Kehadiran -->
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Status Kehadiran</label>
                         <select wire:model="editStatusKehadiran" class="w-full p-3 text-sm rounded-2xl border border-gray-300 dark:border-gray-700/80 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                             <option value="hadir">Hadir</option>
-                            <option value="terlambat">Terlambat</option>
                             <option value="izin">Izin</option>
-                            <option value="sakit">Sakit</option>
-                            <option value="tidak_hadir">Tidak Hadir</option>
+                            <option value="alfa">Alfa / Tidak Hadir</option>
                         </select>
                         @error('editStatusKehadiran') <span class="text-xs text-rose-500 dark:text-rose-400 mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
+                    <!-- Jam Masuk & Jam Keluar -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Jam Masuk</label>
@@ -310,12 +277,14 @@
                         </div>
                     </div>
 
+                    <!-- Logbook / Kegiatan -->
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Kegiatan Logbook</label>
                         <textarea wire:model="editLogbook" rows="3" class="w-full p-3 text-sm rounded-2xl border border-gray-300 dark:border-gray-700/80 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Isi catatan logbook..."></textarea>
                         @error('editLogbook') <span class="text-xs text-rose-500 dark:text-rose-400 mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
+                    <!-- Footer / Actions -->
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                         <button type="button" wire:click="closeEditModal" class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition">
                             Batal
@@ -333,6 +302,7 @@
     @if($showLogbookModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
             <div class="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <!-- Header Modal -->
                 <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/50">
                     <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <svg class="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -343,10 +313,12 @@
                     </button>
                 </div>
 
+                <!-- Isi Logbook -->
                 <div class="p-6">
                     <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">{{ $selectedLogbookText }}</p>
                 </div>
 
+                <!-- Footer -->
                 <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-200 dark:border-gray-800">
                     <button type="button" wire:click="closeLogbookModal" class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition">
                         Tutup

@@ -31,9 +31,13 @@
         <!-- Card Container Compact Form -->
         <div class="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-lg">
             <form wire:submit.prevent="kirimPengajuan" class="space-y-4">
-                
+
+                @php
+                    $isTipeAbsen = in_array($tipePengajuan, ['absen', 'absen_pulang']);
+                @endphp
+
                 <!-- Baris 1: Dynamic Grid bergantung tipe pengajuan -->
-                <div class="grid grid-cols-1 {{ $tipePengajuan === 'absen' ? 'md:grid-cols-2' : 'md:grid-cols-3' }} gap-3">
+                <div class="grid grid-cols-1 {{ $isTipeAbsen ? 'md:grid-cols-2' : 'md:grid-cols-3' }} gap-3">
                     
                     <!-- Dropdown Tipe Pengajuan -->
                     <div>
@@ -46,6 +50,7 @@
                                 <option value="izin">Izin</option>
                                 <option value="sakit">Sakit</option>
                                 <option value="absen">Absen</option>
+                                <option value="absen_pulang">Absen Pulang</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400 dark:text-gray-400">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,7 +66,7 @@
                     <!-- Tanggal Mulai / Tanggal Absen -->
                     <div>
                         <label for="tanggalMulai" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            {{ $tipePengajuan === 'absen' ? 'Tanggal' : 'Tanggal Mulai' }}
+                            {{ $isTipeAbsen ? 'Tanggal' : 'Tanggal Mulai' }}
                         </label>
                         <input 
                             type="date" 
@@ -75,7 +80,7 @@
                     </div>
 
                     <!-- Tanggal Selesai (Hanya muncul jika Izin atau Sakit) -->
-                    @if ($tipePengajuan !== 'absen')
+                    @if (!$isTipeAbsen)
                         <div>
                             <label for="tanggalSelesai" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Selesai</label>
                             <input 
@@ -90,23 +95,6 @@
                         </div>
                     @endif
                 </div>
-
-                <!-- Opsi Absen Susulan (Hanya muncul jika Tipe = Absen) -->
-                @if ($tipePengajuan === 'absen')
-                    <div>
-                        <label class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">Absen yang Terlupa (boleh pilih salah satu atau keduanya)</label>
-                        <div class="flex flex-wrap gap-4">
-                            <label class="inline-flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
-                                <input type="checkbox" wire:model="absenMasuk" class="w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500">
-                                Absen Masuk
-                            </label>
-                            <label class="inline-flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
-                                <input type="checkbox" wire:model="absenPulang" class="w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500">
-                                Absen Pulang
-                            </label>
-                        </div>
-                    </div>
-                @endif
 
                 <!-- Indikator Total Durasi Hari -->
                 <div class="flex items-center gap-2 text-xs bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg w-fit">
@@ -153,7 +141,7 @@
                         class="w-full sm:w-auto text-white bg-blue-600 hover:bg-blue-500 focus:ring-2 focus:ring-blue-800 font-medium rounded-lg text-xs px-5 py-2.5 transition duration-150 flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
                         @disabled($isLulus)>
                         <span wire:loading.remove wire:target="kirimPengajuan">
-                            Kirim Pengajuan {{ ucfirst($tipePengajuan) }}
+                            Kirim Pengajuan {{ $tipePengajuan === 'absen_pulang' ? 'Absen Pulang' : ucfirst($tipePengajuan) }}
                         </span>
                         <span wire:loading wire:target="kirimPengajuan">Mengirim Data...</span>
                     </button>
@@ -198,14 +186,12 @@
                                     default                             => 'bg-yellow-100 dark:bg-yellow-900/60 text-yellow-700 dark:text-yellow-300 border border-yellow-400 dark:border-yellow-600/50',
                                 };
 
-                                // Keterangan sub-label untuk tipe 'absen'
-                                $absenLabel = null;
-                                if (strtolower($item->jenis) === 'absen') {
-                                    $bagian = [];
-                                    if ($item->absen_masuk) $bagian[] = 'Masuk';
-                                    if ($item->absen_pulang) $bagian[] = 'Pulang';
-                                    $absenLabel = implode(' & ', $bagian);
-                                }
+                                // Label tipe yang jelas untuk ditampilkan
+                                $labelJenis = match(strtolower($item->jenis)) {
+                                    'absen'        => 'Absen',
+                                    'absen pulang' => 'Absen Pulang',
+                                    default        => ucfirst($item->jenis),
+                                };
                             @endphp
                             <tr class="border-t border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors">
                                 <!-- NAMA -->
@@ -217,12 +203,9 @@
                                 <!-- DURASI (JUMLAH HARI) -->
                                 <td class="px-3 py-3 text-gray-800 dark:text-gray-200 font-medium whitespace-nowrap">{{ $item->jumlah_hari ?? 1 }} Hari</td>
 
-                                <!-- TIPE PENGAJUAN (Izin / Sakit / Absen) -->
+                                <!-- TIPE PENGAJUAN (Izin / Sakit / Absen / Absen Pulang) -->
                                 <td class="px-3 py-3 uppercase font-semibold text-blue-600 dark:text-blue-400">
-                                    {{ $item->jenis }}
-                                    @if($absenLabel)
-                                        <div class="text-[9px] normal-case font-normal text-gray-400 dark:text-gray-500">({{ $absenLabel }})</div>
-                                    @endif
+                                    {{ $labelJenis }}
                                 </td>
                                 
                                 <!-- ALASAN & ALAMAT (Jika ada) -->

@@ -14,7 +14,7 @@ return new class extends Migration
             $table->date('tanggal_permohonan');
             $table->date('tanggal_awal')->nullable();;
             $table->date('tanggal_akhir')->nullable();;
-            $table->enum('jenis', ['izin', 'sakit', 'absen']);
+            $table->enum('jenis', ['izin', 'sakit', 'absen', 'absen pulang']);
             $table->text('alasan');
             $table->string('lampiran')->nullable();
             $table->enum('status', ['pending', 'disetujui', 'ditolak'])->default('pending');
