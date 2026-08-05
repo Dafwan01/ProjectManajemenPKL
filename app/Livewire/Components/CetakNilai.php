@@ -5,6 +5,8 @@ namespace App\Livewire\Components;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Nilai;
+use App\Models\Divisi;
+use App\Models\Bidang;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Routing\Controller as RoutingController;
@@ -18,6 +20,23 @@ class CetakNilai extends RoutingController
 
         // Ambil 1 record Nilai berdasarkan user_id
         $nilaiUser = Nilai::where('user_id', $selectedUser->user_id ?? $selectedUser->id)->first();
+
+        // Ambil nama Divisi & Bidang milik user.
+        // Sengaja query langsung by ID (bukan lewat relasi Eloquent $user->divisi->bidang)
+        // supaya tidak tergantung pada guessing foreign key yang pernah bermasalah
+        // di model Divisi/Bidang.
+        $namaDivisi = null;
+        $namaBidang = null;
+
+        if (!empty($selectedUser->divisi_id)) {
+            $divisi = Divisi::find($selectedUser->divisi_id);
+            $namaDivisi = $divisi?->nama_divisi;
+
+            if ($divisi && !empty($divisi->bidang_id)) {
+                $bidang = Bidang::find($divisi->bidang_id);
+                $namaBidang = $bidang?->nama_bidang;
+            }
+        }
 
         // Tentukan predikat untuk setiap aspek penilaian & rata-rata
         $predikat = null;
@@ -46,6 +65,8 @@ class CetakNilai extends RoutingController
             'nilaiUser'         => $nilaiUser,
             'predikat'          => $predikat,
             'predikatPerAspek'  => $predikatPerAspek,
+            'namaDivisi'        => $namaDivisi,
+            'namaBidang'        => $namaBidang,
         ])->setPaper('a4', 'portrait');
 
         return response()->stream(

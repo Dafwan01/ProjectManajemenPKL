@@ -58,61 +58,90 @@
                 </div>
             </div>
 
-            <!-- Baris 2: Role & Divisi -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label for="role" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Role Akses <span class="text-red-500">*</span>
-                    </label>
-                    <select 
-                        id="role" 
-                        wire:model.live="role" 
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('role') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                        @if(count($this->availableRoles) === 1) disabled @endif
-                    >
-                        @if(count($this->availableRoles) > 1)
-                            <option value="">-- Pilih Role --</option>
-                        @endif
+          <!-- Baris 2: Role, Bidang & Divisi -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div>
+        <label for="role" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            Role Akses <span class="text-red-500">*</span>
+        </label>
+        <select
+            id="role"
+            wire:model.live="role"
+            class="bg-gray-50 dark:bg-gray-800/60 border @error('role') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            @if(count($this->availableRoles) === 1) disabled @endif
+        >
+            @if(count($this->availableRoles) > 1)
+                <option value="">-- Pilih Role --</option>
+            @endif
 
-                        @foreach($this->availableRoles as $roleEnum)
-                            <option value="{{ $roleEnum->value }}">{{ $roleEnum->label() }}</option>
-                        @endforeach
-                    </select>
+            @foreach($this->availableRoles as $roleEnum)
+                <option value="{{ $roleEnum->value }}">{{ $roleEnum->label() }}</option>
+            @endforeach
+        </select>
 
-                    @if(count($this->availableRoles) === 1)
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                            * Sebagai Mentor, Anda hanya dapat mendaftarkan Peserta PKL.
-                        </p>
-                    @endif
+        @if(count($this->availableRoles) === 1)
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                * Sebagai Mentor, Anda hanya dapat mendaftarkan Peserta PKL.
+            </p>
+        @endif
 
-                    @error('role') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                </div>
+        @error('role') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+    </div>
 
-                <div>
-                    <label for="divisi" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Divisi <span class="text-red-500">*</span>
-                    </label>
-                    <select 
-                        id="divisi" 
-                        wire:model="divisi" 
-                        @disabled($isMentorUser)
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('divisi') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                        <option value="">-- Pilih Divisi --</option>
-                        @foreach(App\Enums\UserDivisi::cases() as $divisiEnum)
-                            <option value="{{ $divisiEnum->value }}">{{ $divisiEnum->label() }}</option>
-                        @endforeach
-                    </select>
+    <div>
+        <label for="bidang_id" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            Bidang <span class="text-red-500">*</span>
+        </label>
+        <select
+            id="bidang_id"
+            wire:model.live="bidang_id"
+            @disabled($isMentorUser)
+            class="bg-gray-50 dark:bg-gray-800/60 border @error('bidang_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+            <option value="">-- Pilih Bidang --</option>
+            @foreach($this->daftarBidang as $bidang)
+                <option value="{{ $bidang->bidang_id }}">{{ $bidang->nama_bidang }}</option>
+            @endforeach
+        </select>
 
-                    @if($isMentorUser)
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                            * Otomatis disesuaikan dengan divisi Anda sebagai Mentor.
-                        </p>
-                    @endif
+        @if($isMentorUser)
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                * Otomatis disesuaikan dengan bidang Anda sebagai Mentor.
+            </p>
+        @endif
 
-                    @error('divisi') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
-                </div>
-            </div>
+        @error('bidang_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+    </div>
+
+    <div>
+        <label for="divisi_id" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            Divisi <span class="text-red-500">*</span>
+        </label>
+        <select
+            id="divisi_id"
+            wire:model="divisi_id"
+            @disabled($isMentorUser || !$bidang_id)
+            class="bg-gray-50 dark:bg-gray-800/60 border @error('divisi_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+            <option value="">-- Pilih Divisi --</option>
+            @foreach($this->daftarDivisi as $divisiOption)
+                <option value="{{ $divisiOption->divisi_id }}">{{ $divisiOption->nama_divisi }}</option>
+            @endforeach
+        </select>
+
+        @if($isMentorUser)
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                * Otomatis disesuaikan dengan divisi Anda sebagai Mentor.
+            </p>
+        @elseif(!$bidang_id)
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                * Pilih bidang terlebih dahulu.
+            </p>
+        @endif
+
+        @error('divisi_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+    </div>
+</div>
 
           @php
     $isRolePklSelected = $role === App\Enums\UserRole::PKL->value;

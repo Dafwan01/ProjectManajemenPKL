@@ -20,6 +20,10 @@
             </button>
         </div>
 
+        @php
+            $isMentorUser = auth()->user()->role === \App\Enums\UserRole::MENTOR || auth()->user()->role?->value === \App\Enums\UserRole::MENTOR->value;
+        @endphp
+
         <!-- Body Form (Bisa di-scroll jika konten panjang) -->
         <form wire:submit.prevent="save" class="space-y-4 overflow-y-auto pr-1 pt-4 my-2 flex-1 scrollbar-thin">
             
@@ -105,7 +109,50 @@
                 </div>
             </div>
 
-           <!-- Baris 4: Asal Sekolah & Mentor -->
+            <!-- Baris 4: Bidang & Divisi -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="bidang_id" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Bidang</label>
+                    <select 
+                        id="bidang_id" 
+                        wire:model.live="bidang_id" 
+                        @disabled($isMentorUser)
+                        class="bg-gray-50 dark:bg-gray-800/60 border @error('bidang_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        <option value="">-- Pilih Bidang --</option>
+                        @foreach($this->daftarBidang as $bidang)
+                            <option value="{{ $bidang->bidang_id }}">{{ $bidang->nama_bidang }}</option>
+                        @endforeach
+                    </select>
+                    @if($isMentorUser)
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1">*Otomatis disesuaikan dengan bidang Anda sebagai Mentor.</p>
+                    @endif
+                    @error('bidang_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label for="divisi_id" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Divisi</label>
+                    <select 
+                        id="divisi_id" 
+                        wire:model="divisi_id" 
+                        @disabled($isMentorUser || empty($bidang_id))
+                        class="bg-gray-50 dark:bg-gray-800/60 border @error('divisi_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        <option value="">-- Pilih Divisi --</option>
+                        @foreach($this->daftarDivisi as $divisi)
+                            <option value="{{ $divisi->divisi_id }}">{{ $divisi->nama_divisi }}</option>
+                        @endforeach
+                    </select>
+                    @if($isMentorUser)
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1">*Otomatis disesuaikan dengan divisi Anda sebagai Mentor.</p>
+                    @elseif(empty($bidang_id))
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1">*Pilih Bidang terlebih dahulu.</p>
+                    @endif
+                    @error('divisi_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                </div>
+            </div>
+
+           <!-- Baris 5: Asal Sekolah & Mentor -->
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
         <label for="sekolah_id" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Asal Sekolah / Universitas</label>
@@ -156,9 +203,6 @@
     <!-- Dropdown Mentor (Tetap sama) -->
    <div>
     <label for="mentor" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Nama Mentor</label>
-    @php
-        $isMentorUser = auth()->user()->role === \App\Enums\UserRole::MENTOR || auth()->user()->role?->value === \App\Enums\UserRole::MENTOR->value;
-    @endphp
     <select 
         id="mentor" 
         wire:model="mentor" 
@@ -177,7 +221,7 @@
 </div>
 </div>
 
-            <!-- Baris 5: Tanggal Mulai & Tanggal Akhir -->
+            <!-- Baris 6: Tanggal Mulai & Tanggal Akhir -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="tanggal_mulai" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Tanggal Mulai Magang</label>
@@ -202,7 +246,7 @@
                 </div>
             </div>
 
-            <!-- Baris 6: Skill -->
+            <!-- Baris 7: Skill -->
             <div>
                 <label for="skill" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Skill / Keahlian</label>
                 <textarea 

@@ -5,6 +5,8 @@ namespace App\Livewire\Form;
 use App\Models\Nilai as NilaiModel;
 use App\Models\file as FileModel;
 use App\Models\User;
+use App\Models\Divisi;
+use App\Models\Bidang;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -139,39 +141,102 @@ class Nilai extends Component
         $this->dispatch('close-nilai-modal');
     }
 
-   private function generatePdfNilai(NilaiModel $nilai): void
-{
-    $rataRata = collect([
-        $nilai->kedisiplinan,
-        $nilai->kemampuan_teknis,
-        $nilai->problem_solving,
-        $nilai->komunikasi_kerjasama,
-        $nilai->kualitas_ketepatan,
-    ])->avg();
+    private function generatePdfNilai(NilaiModel $nilai): void
+    {
+        $rataRata = collect([
+            $nilai->kedisiplinan,
+            $nilai->kemampuan_teknis,
+            $nilai->problem_solving,
+            $nilai->komunikasi_kerjasama,
+            $nilai->kualitas_ketepatan,
+        ])->avg();
 
-    // Tambahkan rata_rata ke object nilai supaya bisa dipakai di view
-    $nilai->rata_rata = number_format($rataRata, 1);
+        // Tambahkan rata_rata ke object nilai supaya bisa dipakai di view
+        $nilai->rata_rata = number_format($rataRata, 1);
 
-    $pdf = Pdf::loadView('livewire.components.cetak-nilai', [
-        'selectedUser' => $this->user,
-        'nilaiUser' => $nilai,
-    ]);
+        // Hitung predikat per aspek & predikat rata-rata,
+        // supaya konsisten dengan yang dipakai di CetakNilai (Controller cetak manual).
+        $aspek = [
+            'kedisiplinan',
+            'kemampuan_teknis',
+            'problem_solving',
+            'komunikasi_kerjasama',
+            'kualitas_ketepatan',
+        ];
 
-    $namaFilePdf = Str::slug($this->user->nama) . '-nilai.pdf';
-    $path = 'files/' . $namaFilePdf;
+        $predikatPerAspek = [];
+        foreach ($aspek as $key) {
+            $predikatPerAspek[$key] = $this->tentukanPredikat($nilai->{$key} ?? null);
+        }
 
-    Storage::disk('public')->put($path, $pdf->output());
+        $predikat = $this->tentukanPredikat($rataRata);
 
-    FileModel::updateOrCreate(
-        [
-            'user_id' => $this->userId,
-            'nama_file' => $this->namaFilePdfKategori,
-        ],
-        [
-            'file' => $path,
-        ]
-    );
-}
+        // Ambil nama Divisi & Bidang milik user.
+        // Query langsung by ID (bukan lewat relasi Eloquent $user->divisi->bidang)
+        // supaya tidak tergantung pada guessing foreign key yang pernah bermasalah.
+        $namaDivisi = null;
+        $namaBidang = null;
+
+        if (!empty($this->user->divisi_id)) {
+            $divisi = Divisi::find($this->user->divisi_id);
+            $namaDivisi = $divisi?->nama_divisi;
+
+            if ($divisi && !empty($divisi->bidang_id)) {
+                $bidangModel = Bidang::find($divisi->bidang_id);
+                $namaBidang = $bidangModel?->nama_bidang;
+            }
+        }
+
+        $pdf = Pdf::loadView('livewire.components.cetak-nilai', [
+            'selectedUser'      => $this->user,
+            'nilaiUser'         => $nilai,
+            'predikat'          => $predikat,
+            'predikatPerAspek'  => $predikatPerAspek,
+            'namaDivisi'        => $namaDivisi,
+            'namaBidang'        => $namaBidang,
+        ]);
+
+        $namaFilePdf = Str::slug($this->user->nama) . '-nilai.pdf';
+        $path = 'files/' . $namaFilePdf;
+
+        Storage::disk('public')->put($path, $pdf->output());
+
+        FileModel::updateOrCreate(
+            [
+                'user_id' => $this->userId,
+                'nama_file' => $this->namaFilePdfKategori,
+            ],
+            [
+                'file' => $path,
+            ]
+        );
+    }
+
+    /**
+     * Menentukan predikat berdasarkan rentang nilai.
+     * Disamakan persis dengan logic di App\Livewire\Components\CetakNilai
+     * supaya predikat yang tampil konsisten di kedua jalur cetak PDF.
+     */
+    private function tentukanPredikat($nilai): ?string
+    {
+        if ($nilai === null || $nilai === '') {
+            return null;
+        }
+
+        $nilai = (float) $nilai;
+
+        return match (true) {
+            $nilai >= 95 => 'Sangat Baik',
+            $nilai >= 86 => 'Sangat Baik',
+            $nilai >= 80 => 'Baik Sekali',
+            $nilai >= 75 => 'Baik',
+            $nilai >= 70 => 'Baik',
+            $nilai >= 65 => 'Cukup Baik',
+            $nilai >= 60 => 'Cukup',
+            $nilai >= 40 => 'Kurang',
+            default      => 'Sangat Kurang',
+        };
+    }
 
     public function tutup()
     {
