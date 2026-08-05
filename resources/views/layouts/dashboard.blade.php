@@ -7,21 +7,6 @@
 
     <title>{{ $title ?? config('app.name', 'SIMPATI (Sistem Informasi Magang dan Presensi dan Aktivitas)') }}</title>
 
-    <!-- Fonts & Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}">
-
-    <!-- Leaflet GIS Maps -->
-    <link rel="preconnect" href="https://basemaps.cartocdn.com">
-    <link rel="preconnect" href="https://tile.openstreetmap.org">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <!-- MediaPipe Vision (Camera & Face Detection) -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
-
     <!-- Script Anti-Flicker Theme: jalan SEBELUM body dirender, cegah flash saat first load -->
     <script>
         (function () {

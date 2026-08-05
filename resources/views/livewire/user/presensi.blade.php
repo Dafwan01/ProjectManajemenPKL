@@ -1,7 +1,5 @@
 <div>
-    <!-- MediaPipe Face Detection JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
-
+ 
     <!-- Global Instance agar tidak dibungkus Alpine Proxy -->
     <script>
         let faceDetectorInstance = null;
@@ -116,9 +114,9 @@
 
                 this.isModelLoading = true;
                 try {
-                    faceDetectorInstance = new FaceDetection({
-                        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
-                    });
+                  faceDetectorInstance = new FaceDetection({
+    locateFile: (file) => `/vendor/mediapipe/${file}`
+});
 
                     faceDetectorInstance.setOptions({
                         model: 'short',

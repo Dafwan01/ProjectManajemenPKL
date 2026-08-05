@@ -7,7 +7,6 @@
         <title>{{ $title ?? config('app.name') }}</title>
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script src="https://kit.fontawesome.com/37b670cdf2.js" crossorigin="anonymous"></script>
         <script>
     (function() {
         const savedTheme = localStorage.getItem('theme');
