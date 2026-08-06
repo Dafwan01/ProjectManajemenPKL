@@ -16,6 +16,7 @@ return new class extends Migration
     $table->foreignId('forum_id')->constrained('forums', 'forum_id')->onDelete('cascade');
     $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
     $table->text('content');
+    $table->string('gambar')->nullable();
     $table->timestamps();
         });
     }
