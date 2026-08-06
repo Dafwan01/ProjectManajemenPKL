@@ -49,6 +49,6 @@ private function layoutUntukRole(): string
 
     public function render()
     {
-        return view('livewire.forum-detail');
+        return view('livewire.forum-detail')->layout($this->layoutUntukRole());
     }
 }
