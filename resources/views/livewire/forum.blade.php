@@ -10,7 +10,7 @@
     <!-- List Forum -->
     <div class="space-y-3">
         @forelse($forums as $forum)
-            <a href="{{ route('user.forum.show',$forum->forum_id) }}" class="block bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-600 rounded-xl p-4 transition duration-150 group">
+            <a href="{{ route('forum.show',$forum->forum_id) }}" class="block bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-600 rounded-xl p-4 transition duration-150 group">
                 <h3 class="text-base font-bold text-slate-100 group-hover:text-blue-400 transition">
                     {{ $forum->title }}
                 </h3>

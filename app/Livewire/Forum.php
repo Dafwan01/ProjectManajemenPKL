@@ -4,9 +4,9 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\Forum as ForumModel;
-use Livewire\Attributes\Layout;
+use App\Enums\UserRole;
+use Illuminate\Support\Facades\Auth;
 
-#[Layout('layouts.user')]
 class Forum extends Component
 {
     public $showModal = false;
@@ -17,6 +17,23 @@ class Forum extends Component
         'title'   => 'required|min:1|max:255',
         'content' => 'required|min:1',
     ];
+
+    /**
+     * Ambil layout yang sesuai berdasarkan role user yang sedang login.
+     * PKL pakai layout khusus user, selain itu (Admin/Mentor) pakai layout dashboard.
+     */
+    private function layoutUntukRole(): string
+    {
+        $user = Auth::user();
+
+        $role = $user?->role instanceof \UnitEnum
+            ? $user->role->value
+            : $user?->role;
+
+        return $role === UserRole::PKL->value
+            ? 'layouts.user'
+            : 'layouts.dashboard';
+    }
 
     public function openModal()
     {
@@ -52,6 +69,6 @@ class Forum extends Component
                 ->withCount('messages')
                 ->latest()
                 ->get(),
-        ]);
+        ])->layout($this->layoutUntukRole());
     }
 }

@@ -7,7 +7,6 @@
 
     <!-- GRID CARDS METRIK -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-
         <!-- Card 1: Peserta PKL -->
         <div class="p-5 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl flex items-center justify-between transition-all">
             <div>
@@ -85,81 +84,118 @@
                 </svg>
             </div>
         </div>
-
     </div>
 
-    <!-- SECTION GRAFIK PIE -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- SECTION GRAFIK (DUA PIE CHART) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        
+        <!-- Grafik Pie Kehadiran -->
         <div class="p-6 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl" wire:ignore>
             <h2 class="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-wider uppercase mb-1">Grafik Kehadiran Hari Ini</h2>
             <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">Persentase status presensi seluruh peserta PKL.</p>
             
-            <!-- Container Chart dengan Dynamic Color Detection -->
-            <div 
-                class="relative h-72 flex justify-center items-center"
-                x-data="{
-                    chart: null,
-                    initChart() {
-                        this.$nextTick(() => {
-                            const canvas = document.getElementById('kehadiranPieChart');
-                            if (!canvas || typeof Chart === 'undefined') return;
+            <div class="relative h-72 flex justify-center items-center" x-data="{
+                initChart() {
+                    this.$nextTick(() => {
+                        const canvas = document.getElementById('kehadiranPieChart');
+                        if (!canvas || typeof Chart === 'undefined') return;
 
-                            const isDark = document.documentElement.classList.contains('dark');
-                            const textColor = isDark ? '#94a3b8' : '#475569';
-                            const borderColor = isDark ? '#111827' : '#ffffff';
+                        const isDark = document.documentElement.classList.contains('dark');
+                        const textColor = isDark ? '#94a3b8' : '#475569';
+                        const borderColor = isDark ? '#111827' : '#ffffff';
 
-                            const ctx = canvas.getContext('2d');
-                            if (this.chart) {
-                                this.chart.destroy();
-                            }
-
-                            this.chart = new Chart(ctx, {
-                                type: 'pie',
-                                data: {
-                                    labels: ['Hadir', 'Terlambat', 'Izin / Sakit', 'Belum Absen / Alpa'],
-                                    datasets: [{
-                                        data: [
-                                            {{ $hadirHariIni }},
-                                            {{ $terlambatHariIni }},
-                                            {{ $izinSakitHariIni }},
-                                            {{ $alpaHariIni }}
-                                        ],
-                                        backgroundColor: [
-                                            '#10B981',
-                                            '#F59E0B',
-                                            '#0284C7',
-                                            '#EF4444'
-                                        ],
-                                        borderWidth: 2,
-                                        borderColor: borderColor
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    plugins: {
-                                        legend: {
-                                            position: 'bottom',
-                                            labels: {
-                                                boxWidth: 12,
-                                                padding: 20,
-                                                color: textColor,
-                                                font: { 
-                                                    size: 12,
-                                                    weight: '500'
-                                                }
-                                            }
-                                        }
+                        new Chart(canvas.getContext('2d'), {
+                            type: 'pie',
+                            data: {
+                                labels: ['Hadir', 'Terlambat', 'Izin / Sakit', 'Belum Absen / Alpa'],
+                                datasets: [{
+                                    data: [{{ $hadirHariIni }}, {{ $terlambatHariIni }}, {{ $izinSakitHariIni }}, {{ $alpaHariIni }}],
+                                    backgroundColor: ['#10B981', '#F59E0B', '#0284C7', '#EF4444'],
+                                    borderWidth: 2,
+                                    borderColor: borderColor
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: { color: textColor, font: { size: 12 } }
                                     }
                                 }
-                            });
+                            }
                         });
-                    }
-                }"
-                x-init="initChart()"
-            >
+                    });
+                }
+            }" x-init="initChart()">
                 <canvas id="kehadiranPieChart"></canvas>
             </div>
         </div>
+
+        <!-- Grafik Pie Sekolah Aktif -->
+        <div class="p-6 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl" wire:ignore>
+            <h2 class="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-wider uppercase mb-1">Status Anak PKL Aktif per Sekolah</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">Sebaran persentase jumlah siswa PKL aktif berdasarkan asal sekolah.</p>
+            
+            <!-- Menggunakan dataset HTML untuk parsing JSON dengan aman -->
+            <div class="relative h-72 flex justify-center items-center" 
+                 data-labels="{{ json_encode($chartSekolahLabels ?? []) }}"
+                 data-totals="{{ json_encode($chartSekolahTotals ?? []) }}"
+                 x-data="{
+                initChart() {
+                    this.$nextTick(() => {
+                        const canvas = document.getElementById('sekolahAktifChart');
+                        if (!canvas || typeof Chart === 'undefined') return;
+
+                        const isDark = document.documentElement.classList.contains('dark');
+                        const textColor = isDark ? '#94a3b8' : '#475569';
+                        const borderColor = isDark ? '#111827' : '#ffffff';
+
+                        const labels = JSON.parse(this.$el.dataset.labels || '[]');
+                        const data = JSON.parse(this.$el.dataset.totals || '[]');
+
+                        // Palet warna variatif dinamis untuk potongan pie
+                        const colors = [
+                            '#6366F1', '#8B5CF6', '#EC4899', '#3B82F6', '#10B981', 
+                            '#F59E0B', '#06B6D4', '#84CC16', '#E11D48', '#14B8A6'
+                        ];
+
+                        new Chart(canvas.getContext('2d'), {
+                            type: 'pie',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    data: data,
+                                    backgroundColor: colors.slice(0, labels.length),
+                                    borderWidth: 2,
+                                    borderColor: borderColor
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: { color: textColor, font: { size: 12 } }
+                                    },
+                                    tooltip: {
+                                        backgroundColor: isDark ? '#1F2937' : '#ffffff',
+                                        titleColor: isDark ? '#ffffff' : '#111827',
+                                        bodyColor: isDark ? '#94a3b8' : '#475569',
+                                        borderColor: isDark ? '#374151' : '#e5e7eb',
+                                        borderWidth: 1
+                                    }
+                                }
+                            }
+                        });
+                    });
+                }
+            }" x-init="initChart()">
+                <canvas id="sekolahAktifChart"></canvas>
+            </div>
+        </div>
+
     </div>
 </div>

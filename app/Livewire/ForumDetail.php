@@ -2,17 +2,30 @@
 
 namespace App\Livewire;
 
+use App\Enums\UserRole;
 use Livewire\Component;
 use App\Models\Forum;
 use App\Models\ForumMessage;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 
-#[Layout('layouts.user')]
+
 class ForumDetail extends Component
 {
     public Forum $forum;
     public $message = '';
+private function layoutUntukRole(): string
+    {
+        $user = Auth::user();
 
+        $role = $user?->role instanceof \UnitEnum
+            ? $user->role->value
+            : $user?->role;
+
+        return $role === UserRole::PKL->value
+            ? 'layouts.user'
+            : 'layouts.dashboard';
+    }
     public function mount(Forum $forum)
     {
         $this->forum = $forum->load(['user', 'messages.user']);
