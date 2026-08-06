@@ -3,25 +3,27 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Livewire\WithFileUploads; // 1. Trait Upload File
 use App\Models\Forum as ForumModel;
 use App\Enums\UserRole;
 use Illuminate\Support\Facades\Auth;
+use App\Services\BadWord;
 
 class Forum extends Component
 {
+    use WithFileUploads; // 2. Pasang Trait
+
     public $showModal = false;
     public $title = '';
     public $content = '';
+    public $image; // 3. Property Gambar
 
     protected $rules = [
         'title'   => 'required|min:1|max:255',
         'content' => 'required|min:1',
+        'image'   => 'nullable|image|max:2048', // Maksimal 2MB (jpg, png, webp)
     ];
 
-    /**
-     * Ambil layout yang sesuai berdasarkan role user yang sedang login.
-     * PKL pakai layout khusus user, selain itu (Admin/Mentor) pakai layout dashboard.
-     */
     private function layoutUntukRole(): string
     {
         $user = Auth::user();
@@ -37,7 +39,7 @@ class Forum extends Component
 
     public function openModal()
     {
-        $this->reset(['title', 'content']);
+        $this->reset(['title', 'content', 'image']);
         $this->resetErrorBag();
         $this->showModal = true;
     }
@@ -45,7 +47,7 @@ class Forum extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['title', 'content']);
+        $this->reset(['title', 'content', 'image']);
         $this->resetErrorBag();
     }
 
@@ -53,10 +55,27 @@ class Forum extends Component
     {
         $this->validate();
 
+        if (BadWord::cek($this->title)) {
+            $this->addError('title', 'Judul forum mengandung kata-kata yang tidak diperbolehkan.');
+            return;
+        }
+
+        if (BadWord::cek($this->content)) {
+            $this->addError('content', 'Isi forum mengandung kata-kata yang tidak diperbolehkan.');
+            return;
+        }
+
+        // 4. Proses Simpan Gambar jika di-upload
+        $imagePath = null;
+        if ($this->image) {
+            $imagePath = $this->image->store('forums', 'public');
+        }
+
         ForumModel::create([
             'user_id' => auth()->id(),
             'title'   => $this->title,
             'content' => $this->content,
+            'gambar'   => $imagePath,
         ]);
 
         $this->closeModal();
