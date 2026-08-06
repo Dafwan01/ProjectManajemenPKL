@@ -40,6 +40,24 @@
         }
 
         /* ========================================================
+           0. NOMOR SERTIFIKAT (DI ATAS DIBERIKAN KEPADA)
+           ======================================================== */
+        .section-nomor {
+            position: absolute;
+            top: 322px; /* Disesuaikan agar berada persis di bawah kata MAGANG */
+            left: 0;
+            width: 100%;
+            text-align: center;
+        }
+
+        .nomor-sertifikat {
+            font-size: 12px;
+            color: #1e3a8a;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        /* ========================================================
            1. NAMA PESERTA
            ======================================================== */
         .section-nama {
@@ -66,14 +84,6 @@
             left: 0;
             width: 100%;
             text-align: center;
-        }
-
-        .nomor-sertifikat {
-            font-size: 18px;
-            color: #1e3a8a;
-            font-weight: bold;
-            margin-bottom: 10px;
-            letter-spacing: 0.5px;
         }
 
         .keterangan {
@@ -111,7 +121,7 @@
         .section-mentor {
             position: absolute;
             top: 708px; 
-            right: 198px; /* Pas persis di tengah-tengah garis & kata Mentor */
+            right: 198px;
             width: 320px;
             text-align: center;
             font-size: 15px;
@@ -131,6 +141,13 @@
 
     <img src="{{ $imagePath }}" class="bg-template">
 
+    <!-- BLOCK 0: NOMOR SERTIFIKAT -->
+    <div class="section-nomor">
+        <div class="nomor-sertifikat">
+            No. {{ $nomorSertifikat ?? 'SERT/2026/0001' }}
+        </div>
+    </div>
+
     <!-- BLOCK 1: NAMA PESERTA -->
     <div class="section-nama">
         <div class="nama-peserta">
@@ -140,42 +157,40 @@
 
     <!-- BLOCK 2: TULISAN & KETERANGAN -->
     <div class="section-keterangan">
-        <div class="nomor-sertifikat">
-            No. {{ $nomorSertifikat ?? 'SERT/2026/0001' }}
+        <div class="keterangan">
+            Telah menyelesaikan Program Magang / PKL di <br>
+            <strong>Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor</strong>
+            
+            <div style="margin-top: 10px; font-size: 18px;">
+                dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong>
+                Dengan Mentor: <strong>{{ $user->mentor ?? '-' }}</strong>
+            </div>
         </div>
-
-       <div class="keterangan">
-    Telah menyelesaikan Program Magang / PKL di <br>
-    <strong>Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor</strong>
-    
-    <div style="margin-top: 10px; font-size: 18px;">
-        dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong>
-     Dengan Mentor: <strong>{{ $user->mentor ?? '-' }}</strong>
-    </div>
-</div>
 
         <div class="tanggal">
             Diterbitkan pada: {{ \Carbon\Carbon::parse($tanggalTerbit ?? now())->isoFormat('D MMMM Y') }}
         </div>
     </div>
 
-   <div class="section-ttd">
-    <!-- 1. Panggil Jabatan Penandatangan -->
-    <div class="jabatan">{{ $jabatanPenandatangan }}</div>
+    <!-- BLOCK 3: TANDA TANGAN -->
+    <div class="section-ttd">
+        <!-- 1. Panggil Jabatan Penandatangan -->
+        <div class="jabatan">{{ $jabatanPenandatangan }}</div>
 
-    <div class="box-ttd">
-        <!-- 2. Pengecekan Jenis TTD Elektronik / Non-Elektronik -->
-        @if($jenisTtd === 'elektronik')
-            <div class="badge-ttd-elektronik">
-                Ditandatangani secara elektronik oleh<br>
-                <strong>{{ $namaPenandatangan }}</strong>
-            </div>
-        @endif
-        <!-- Jika 'non_elektronik', area ini dibiarkan kosong untuk TTD basah -->
+        <div class="box-ttd">
+            <!-- 2. Pengecekan Jenis TTD Elektronik / Non-Elektronik -->
+            @if($jenisTtd === 'elektronik')
+                <div class="badge-ttd-elektronik">
+                    Ditandatangani secara elektronik oleh<br>
+                    <strong>{{ $namaPenandatangan }}</strong>
+                </div>
+            @endif
+            <!-- Jika 'non_elektronik', area ini dibiarkan kosong untuk TTD basah -->
+        </div>
+
+        <!-- 3. Panggil Nama Penandatangan -->
+        <div class="nama-penandatangan">{{ $namaPenandatangan }}</div>
     </div>
-
-    <!-- 3. Panggil Nama Penandatangan -->
-    <div class="nama-penandatangan">{{ $namaPenandatangan }}</div>
 
 </body>
 </html>
