@@ -101,7 +101,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700/60">
                         @forelse ($dataRiwayat as $item)
-                            <tr class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750/50 transition-colors duration-150">
+                          <tr class="bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors duration-150">
                                 <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ $item['tanggal'] }}</td>
 
                                 <!-- Kolom Jam Masuk & Jam Pulang -->

@@ -21,6 +21,7 @@
             locationError: '',
             locationAccuracy: null,
             watchId: null,
+            _visibilityHandler: null,
 
             // Konfigurasi Geofencing Kantor
             targetLat: -6.595181,
@@ -50,6 +51,7 @@
 
             // Pengambilan Lokasi Akurat Menggunakan watchPosition
             getLocation() {
+                console.log('[DEBUG] getLocation() dipanggil');
                 this.locationError = '';
                 
                 if (!navigator.geolocation) {
@@ -59,10 +61,12 @@
 
                 if (this.watchId) {
                     navigator.geolocation.clearWatch(this.watchId);
+                    this.watchId = null;
                 }
 
                 this.watchId = navigator.geolocation.watchPosition(
                     (position) => {
+                        console.log('[DEBUG] Posisi GPS diterima:', position.coords.latitude, position.coords.longitude);
                         const lat = position.coords.latitude;
                         const lng = position.coords.longitude;
                         this.locationAccuracy = Math.round(position.coords.accuracy);
@@ -86,6 +90,7 @@
                         }
                     },
                     (error) => {
+                        console.log('[DEBUG] Error GPS:', error.code, error.message);
                         switch(error.code) {
                             case error.PERMISSION_DENIED:
                                 this.locationError = 'Izin lokasi ditolak. Harap izinkan akses lokasi pada browser.';
@@ -107,6 +112,52 @@
                         maximumAge: 0
                     }
                 );
+            },
+
+            /**
+             * Pasang listener visibilitychange: saat tab disembunyikan, watch GPS lama dihentikan
+             * (browser sering membekukan watchPosition di background sehingga jadi zombie).
+             * Saat tab kembali terlihat, watch GPS di-restart dari nol supaya tidak macet
+             * dan tidak perlu refresh manual.
+             */
+            initVisibilityListener() {
+                this._visibilityHandler = () => this.handleVisibilityChange();
+                document.addEventListener('visibilitychange', this._visibilityHandler);
+            },
+
+            /**
+             * Bersihkan watch GPS & kamera SEBELUM Livewire berpindah halaman (wire:navigate).
+             * PENTING: karena wire:navigate tidak melakukan full page reload, JS context browser
+             * tetap hidup dan watchPosition() lama TIDAK otomatis berhenti kalau tidak dibersihkan
+             * secara eksplisit. Event 'unmount' BUKAN event bawaan window, jadi tidak pernah terpicu -
+             * itu sebabnya watch lama menumpuk terus setiap kali pindah menu lalu balik lagi,
+             * sampai browser akhirnya mengabaikan watch yang baru.
+             */
+            cleanupSebelumNavigasi() {
+                console.log('[DEBUG] Cleanup sebelum navigasi, watchId:', this.watchId);
+                this.stopCamera();
+                if (this.watchId) {
+                    navigator.geolocation.clearWatch(this.watchId);
+                    this.watchId = null;
+                }
+                if (this._visibilityHandler) {
+                    document.removeEventListener('visibilitychange', this._visibilityHandler);
+                    this._visibilityHandler = null;
+                }
+            },
+
+            handleVisibilityChange() {
+                console.log('[DEBUG] visibilitychange terpicu, state:', document.visibilityState, 'watchId lama:', this.watchId);
+                if (document.visibilityState === 'visible') {
+                    console.log('[DEBUG] Tab aktif kembali, restart getLocation()');
+                    this.getLocation();
+                } else {
+                    console.log('[DEBUG] Tab disembunyikan, clearWatch dulu');
+                    if (this.watchId) {
+                        navigator.geolocation.clearWatch(this.watchId);
+                        this.watchId = null;
+                    }
+                }
             },
 
             async loadFaceModel() {
@@ -223,8 +274,11 @@
                 this.photoPreview = null;
             }
          }"
-         x-init="getLocation()"
-         x-on:unmount.window="stopCamera(); if(watchId) navigator.geolocation.clearWatch(watchId);">
+         x-init="
+            getLocation();
+            initVisibilityListener();
+            window.addEventListener('livewire:navigating', () => cleanupSebelumNavigasi(), { once: true });
+         ">
          
         <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white tracking-wide">FORM PRESENSI HARI INI</h1>
 
