@@ -1,5 +1,4 @@
 <div>
- 
     <!-- Global Instance agar tidak dibungkus Alpine Proxy -->
     <script>
         let faceDetectorInstance = null;
@@ -281,6 +280,32 @@
          ">
          
         <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white tracking-wide">FORM PRESENSI HARI INI</h1>
+
+        <!-- KATA-KATA HARI INI (MINIMALIST & TYPOGRAPHY FOCUS) -->
+        @if(isset($kataKataHariIni) && $kataKataHariIni)
+        <div class="mb-8 flex items-start gap-3 md:gap-4 opacity-90 hover:opacity-100 transition-opacity duration-300">
+            <!-- Ikon Quote Elegan & Halus -->
+            <div class="shrink-0 text-gray-300 dark:text-gray-600 pt-1">
+                <svg class="w-6 h-6 md:w-8 md:h-8" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9.983 3v7.391C9.983 16.095 6.252 19.961 1 21l-.995-2.151C2.437 17.932 4 15.211 4 13.001H0V3h9.983zM24 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4V3H24z"/>
+                </svg>
+            </div>
+            
+            <!-- Tipografi Cantik -->
+            <div class="flex-1">
+                <p class="text-base md:text-lg text-gray-600 dark:text-gray-300 font-medium italic leading-relaxed tracking-wide">
+                    "{{ $kataKataHariIni }}"
+                </p>
+                <div class="flex items-center gap-2 mt-2.5">
+                    <div class="w-5 h-[1.5px] bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                    <span class="text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase text-gray-400 dark:text-gray-500">
+                        Inspirasi Hari Ini
+                    </span>
+                </div>
+            </div>
+        </div>
+        @endif
+        <!-- AKHIR KATA-KATA HARI INI -->
 
         <!-- Notifikasi Success -->
         @if (session()->has('message'))
