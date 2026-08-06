@@ -41,6 +41,9 @@ class Presensi extends Component
     public $targetLng = 106.793836;
 
     public bool $waktuFallbackServer = false;
+    
+    // TAMBAHAN: Variabel untuk Kata-kata Hari Ini
+    public $kataKataHariIni = '';
 
     protected $messages = [
         'latitude.required'     => 'Koordinat lokasi belum terdeteksi. Izinkan akses lokasi di browser!',
@@ -56,6 +59,62 @@ class Presensi extends Component
         $this->cekHariLibur();
         $this->cekStatusPresensi();
         $this->cekJadwalDanRadius();
+        
+        // TAMBAHAN: Memanggil fungsi kata-kata hari ini saat halaman dimuat
+        $this->setKataKataHariIni();
+    }
+
+    // TAMBAHAN: Fungsi untuk set kata-kata hari ini (Berganti Setiap Hari)
+    private function setKataKataHariIni()
+    {
+        $quotes = [
+            'Disiplin adalah jembatan antara tujuan dan pencapaian.',
+            'Kesuksesan dimulai dari hal-hal kecil yang dilakukan secara konsisten.',
+            'Hari ini adalah kesempatan baru untuk menjadi lebih baik dari kemarin.',
+            'Semangat bekerja! Lakukan yang terbaik hari ini dan pantang menyerah.',
+            'Kerja keras tidak akan pernah mengkhianati hasil.',
+            'Tantangan adalah hal yang membuat hidup menarik. Mengatasinya adalah hal yang membuat hidup bermakna.',
+            'Fokus pada tujuan, bukan pada hambatan.',
+            'Setiap hari adalah kesempatan untuk belajar dan berkembang.',
+            'Jangan menunggu motivasi datang, ciptakanlah sendiri.',
+            'Proses tidak pernah membohongi hasil; nikmati setiap tahap belajarmu hari ini.',
+            'Kesempatan besar sering kali datang dari pekerjaan kecil yang dikerjakan dengan luar biasa.',
+            'Keahlian dibentuk dari latihan berulang, bukan sekadar teori.',
+            'Jangan takut bertanya, rasa ingin tahu adalah awal dari semua pengetahuan.',
+            'Sikap yang baik di tempat kerja adalah kunci utama membuka pintu kesuksesan.',
+            'Setiap tantangan hari ini adalah batu pijakan untuk menjadi profesional masa depan.',
+            'Konsistensi adalah apa yang mengubah hal biasa menjadi luar biasa.',
+            'Bekerja keraslah dalam diam, biarkan kesuksesanmu yang bersuara.',
+            'Kesalahan bukan tanda kegagalan, melainkan kesempatan untuk belajar lebih baik.',
+            'Jadikan setiap hari sebagai kesempatan untuk menambah keterampilan baru.',
+            'Waktu yang kamu investasikan hari ini adalah fondasi kariermu besok.',
+            'Kualitas kerja mencerminkan integritas dan dedikasi dirimu.',
+            'Kemauan untuk belajar jauh lebih berharga daripada sekadar bakat alami.',
+            'Masa depan milik mereka yang mempersiapkan diri sejak hari ini.',
+            'Jadilah solusi di mana pun kamu ditempatkan.',
+            'Kedisiplinan adalah bentuk rasa hormat pada dirimu sendiri dan masa depanmu.',
+            'Jangan menunggu inspirasi, mulailah bekerja dan inspirasi akan mengikuti.',
+            'Kerja sama tim yang baik dimulai dari tanggung jawab individu yang tinggi.',
+            'Pengalaman adalah guru terbaik, dan tempat kerja adalah wadah untuk menemukannya.',
+            'Kecepatan itu penting, tetapi ketelitian jauh lebih utama.',
+            'Jangan bandingkan prosesmu dengan orang lain, fokuslah pada pertumbuhan dirimu.',
+            'Inovasi dimulai dari keberanian untuk mencoba hal-hal baru.',
+            'Kerjakan setiap tugas dengan sepenuh hati seolah itu adalah karya terbaikmu.',
+            'Belajar tidak pernah selesai, bahkan setelah kamu mencapai impianmu.',
+            'Sikap pantang menyerah adalah pembeda antara yang berhasil dan yang berhenti.',
+            'Percayalah pada potensimu, kamu jauh lebih mampu dari yang kamu bayangkan.',
+            'Tetaplah rendah hati saat dipuji, dan tetaplah tangguh saat dikritik.',
+            'Hasil terbaik lahir dari fokus yang tidak mudah tergoyahkan.',
+            'Mulailah hari dengan energi positif, dan tularkan pada lingkungan sekitarmu.',
+            'Langkah terpenting dari perjalanan panjang adalah langkah yang kamu ambil hari ini.',  
+        ];
+
+        // Hitung indeks berdasarkan tanggal hari ini agar berganti hanya saat ganti hari
+        $today = now()->toDateString();
+        $index = abs(crc32($today)) % count($quotes);
+
+        // ISI NILAINYA KE PROPERTI KLAS
+        $this->kataKataHariIni = $quotes[$index];
     }
 
     private function cekUserStatus()

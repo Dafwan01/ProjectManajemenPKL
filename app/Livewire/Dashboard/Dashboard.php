@@ -15,6 +15,59 @@ use Livewire\Component;
 #[Layout('layouts.dashboard')]
 class Dashboard extends Component
 {
+    // TAMBAHAN: Fungsi untuk set kata-kata hari ini (Berganti Setiap Hari)
+    private function setKataKataHariIni()
+    {
+        $quotes = [
+            'Disiplin adalah jembatan antara tujuan dan pencapaian.',
+            'Kesuksesan dimulai dari hal-hal kecil yang dilakukan secara konsisten.',
+            'Hari ini adalah kesempatan baru untuk menjadi lebih baik dari kemarin.',
+            'Semangat bekerja! Lakukan yang terbaik hari ini dan pantang menyerah.',
+            'Kerja keras tidak akan pernah mengkhianati hasil.',
+            'Tantangan adalah hal yang membuat hidup menarik. Mengatasinya adalah hal yang membuat hidup bermakna.',
+            'Fokus pada tujuan, bukan pada hambatan.',
+            'Setiap hari adalah kesempatan untuk belajar dan berkembang.',
+            'Jangan menunggu motivasi datang, ciptakanlah sendiri.',
+            'Proses tidak pernah membohongi hasil; nikmati setiap tahap belajarmu hari ini.',
+            'Kesempatan besar sering kali datang dari pekerjaan kecil yang dikerjakan dengan luar biasa.',
+            'Keahlian dibentuk dari latihan berulang, bukan sekadar teori.',
+            'Jangan takut bertanya, rasa ingin tahu adalah awal dari semua pengetahuan.',
+            'Sikap yang baik di tempat kerja adalah kunci utama membuka pintu kesuksesan.',
+            'Setiap tantangan hari ini adalah batu pijakan untuk menjadi profesional masa depan.',
+            'Konsistensi adalah apa yang mengubah hal biasa menjadi luar biasa.',
+            'Bekerja keraslah dalam diam, biarkan kesuksesanmu yang bersuara.',
+            'Kesalahan bukan tanda kegagalan, melainkan kesempatan untuk belajar lebih baik.',
+            'Jadikan setiap hari sebagai kesempatan untuk menambah keterampilan baru.',
+            'Waktu yang kamu investasikan hari ini adalah fondasi kariermu besok.',
+            'Kualitas kerja mencerminkan integritas dan dedikasi dirimu.',
+            'Kemauan untuk belajar jauh lebih berharga daripada sekadar bakat alami.',
+            'Masa depan milik mereka yang mempersiapkan diri sejak hari ini.',
+            'Jadilah solusi di mana pun kamu ditempatkan.',
+            'Kedisiplinan adalah bentuk rasa hormat pada dirimu sendiri dan masa depanmu.',
+            'Jangan menunggu inspirasi, mulailah bekerja dan inspirasi akan mengikuti.',
+            'Kerja sama tim yang baik dimulai dari tanggung jawab individu yang tinggi.',
+            'Pengalaman adalah guru terbaik, dan tempat kerja adalah wadah untuk menemukannya.',
+            'Kecepatan itu penting, tetapi ketelitian jauh lebih utama.',
+            'Jangan bandingkan prosesmu dengan orang lain, fokuslah pada pertumbuhan dirimu.',
+            'Inovasi dimulai dari keberanian untuk mencoba hal-hal baru.',
+            'Kerjakan setiap tugas dengan sepenuh hati seolah itu adalah karya terbaikmu.',
+            'Belajar tidak pernah selesai, bahkan setelah kamu mencapai impianmu.',
+            'Sikap pantang menyerah adalah pembeda antara yang berhasil dan yang berhenti.',
+            'Percayalah pada potensimu, kamu jauh lebih mampu dari yang kamu bayangkan.',
+            'Tetaplah rendah hati saat dipuji, dan tetaplah tangguh saat dikritik.',
+            'Hasil terbaik lahir dari fokus yang tidak mudah tergoyahkan.',
+            'Mulailah hari dengan energi positif, dan tularkan pada lingkungan sekitarmu.',
+            'Langkah terpenting dari perjalanan panjang adalah langkah yang kamu ambil hari ini.',  
+        ];
+
+        // Hitung indeks berdasarkan tanggal hari ini agar berganti hanya saat ganti hari
+        $today = now()->toDateString();
+        $index = abs(crc32($today)) % count($quotes);
+
+        // ISI NILAINYA KE PROPERTI KLAS
+        $this->kataKataHariIni = $quotes[$index];
+    }
+
     public function render()
     {
         $currentUser = Auth::user();
@@ -98,18 +151,12 @@ class Dashboard extends Component
         $chartSekolahTotals = $sekolahAktifData->map(fn($item) => $item->total)->toArray();
 
         // Top 5 Sekolah dengan Peserta PKL Aktif Terbanyak.
-        // Reuse dari $sekolahAktifData yang sudah difilter status aktif di atas,
-        // tinggal diurutkan descending berdasarkan total peserta.
         $topSekolahAktif = $sekolahAktifData
             ->sortByDesc('total')
             ->take(5)
             ->values();
 
         // 3. Tren Kehadiran 30 Hari Terakhir (Line Chart)
-        // Diambil per tanggal: jumlah Hadir, Terlambat, dan Izin/Sakit.
-        // Alpa tidak dihitung per hari di sini karena totalPeserta bisa berubah
-        // dari waktu ke waktu (peserta baru masuk / lulus), jadi fokus ke 3 status
-        // yang datanya memang tercatat langsung di tabel presensi.
         $tanggalMulaiTren = now()->subDays(29)->startOfDay();
         $tanggalAkhirTren = now()->endOfDay();
 
@@ -156,8 +203,6 @@ class Dashboard extends Component
             ->get();
 
         // 5. Rata-rata Jam Masuk Hari Ini
-        // Dihitung dari kolom jam_masuk pada tabel presensi (format waktu H:i:s / H:i).
-        // Detik dikonversi ke angka lewat TIME_TO_SEC lalu dirata-rata, baru diformat balik ke jam:menit.
         $rataRataJamMasukHariIni = null;
 
         $avgDetikJamMasuk = presensi::whereIn('user_id', $userIdsPkl)
@@ -172,6 +217,9 @@ class Dashboard extends Component
                 ->addSeconds((int) round($avgDetikJamMasuk))
                 ->format('H:i');
         }
+
+        // TAMBAHAN: Memanggil Quotes
+        $kataKataHariIni = $this->getKataKataHariIni();
 
         return view('livewire.dashboard.dashboard', [
             'totalPeserta' => $totalPeserta,
@@ -192,6 +240,7 @@ class Dashboard extends Component
             'trenIzinSakit' => $trenIzinSakit,
             'leaderboardTerlambat' => $leaderboardTerlambat,
             'rataRataJamMasukHariIni' => $rataRataJamMasukHariIni,
+            'kataKataHariIni' => $kataKataHariIni,
         ]);
     }
 
