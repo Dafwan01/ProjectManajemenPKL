@@ -7,7 +7,7 @@
 
     <title>{{ $title ?? config('app.name', 'SIMPATI (Sistem Informasi Magang dan Presensi dan Aktivitas)') }}</title>
 
-    <!-- Script Anti-Flicker Theme: jalan SEBELUM body dirender, cegah flash saat first load -->
+    <!-- Script Anti-Flicker Mode Gelap/Terang -->
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme');
@@ -20,7 +20,7 @@
         })();
     </script>
 
-    <!-- Scripts & Styles -->
+    <!-- Skrip & Gaya -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 
@@ -35,12 +35,6 @@
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen transition-colors duration-200">
 
-    {{--
-        PENTING: x-data dark mode ada di LAYOUT ini (bukan di dalam komponen Livewire).
-        Karena bagian ini TIDAK pernah di-morph oleh wire:navigate (yang di-morph cuma
-        {{ $slot }} di dalam <main>), Alpine state darkMode tidak akan pernah ke-reset
-        atau flicker saat navigasi antar halaman, walaupun di-spam klik.
-    --}}
     <div x-data="{
             darkMode: localStorage.getItem('theme') === 'dark'
                 || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
@@ -53,17 +47,17 @@
          x-init="document.documentElement.classList.toggle('dark', darkMode)"
          class="min-h-screen">
 
-        <!-- SIDEBAR (HTML biasa, BUKAN <livewire:...>) -->
-        <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0 bg-white dark:bg-slate-900 border-e border-slate-200 dark:border-slate-800/80" aria-label="Sidebar">
+        <!-- NAVIGASI SAMPING / SIDEBAR -->
+        <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0 bg-white dark:bg-slate-900 border-e border-slate-200 dark:border-slate-800/80" aria-label="Navigasi Samping">
             <div class="h-full px-3 py-4 overflow-y-auto bg-white dark:bg-slate-900 flex flex-col justify-between">
                 <div>
-                    <!-- Brand / Logo -->
+                    <!-- Logo / Identitas -->
                     <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center ps-2.5 mb-5 gap-3">
                         <img src="{{ asset('images/logoEpresensiPKL.png') }}" alt="Logo SIMPATI" class="w-16 h-16 rounded-2xl object-cover">
                         <span class="self-center brand-name whitespace-nowrap">SIMPATI</span>
                     </a>
 
-                    <!-- Navigation Links -->
+                    <!-- Tautan Navigasi -->
                     <ul class="space-y-1.5 font-medium">
                         <li>
                             <a href="{{ route('dashboard') }}" wire:navigate
@@ -93,7 +87,7 @@
                             <a href="{{ route('monitoring-absensi') }}" wire:navigate
                                class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('monitoring-absensi') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
                                 <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('monitoring-absensi') ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white' }}" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5H4v10h12V7H6zm2 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/>
+                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 022 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5H4v10h12V7H6zm2 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/>
                                 </svg>
                                 <span class="flex-1 ms-3 text-sm whitespace-nowrap">Melihat Absensi</span>
                                 @if($totalTerlambatHariIni > 0)
@@ -114,14 +108,14 @@
                             </a>
                         </li>
 
-                        <!-- Upload File Dropdown -->
+                        <!-- Menu Unggah Berkas -->
                         <li x-data="{ open: {{ request()->routeIs('sertifikat', 'nilai', 'surat-penerimaan-magang') ? 'true' : 'false' }} }">
                             <button type="button" @click="open = !open"
                                     class="flex items-center w-full p-2.5 text-slate-600 dark:text-slate-400 transition duration-75 rounded-xl group hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white {{ request()->routeIs('sertifikat', 'nilai', 'surat-penerimaan-magang') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800/50' : '' }}">
                                 <svg class="w-5 h-5 shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white {{ request()->routeIs('sertifikat', 'nilai', 'surat-penerimaan-magang') ? 'text-slate-900 dark:text-white' : '' }}" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm8 3.5a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0v-2.5zm2.22.72a.75.75 0 10-1.06-1.06L9.5 10.81 7.84 9.16a.75.75 0 00-1.06 1.06l2.2 2.2a.75.75 0 001.06 0l2.2-2.2z"/>
                                 </svg>
-                                <span class="flex-1 ms-3 text-sm text-left rtl:text-right whitespace-nowrap">Upload File</span>
+                                <span class="flex-1 ms-3 text-sm text-left rtl:text-right whitespace-nowrap">Unggah Berkas</span>
                                 <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 10 6">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
                                 </svg>
@@ -192,7 +186,7 @@
                     </ul>
                 </div>
 
-                <!-- Log Out Button -->
+                <!-- Tombol Keluar -->
                 <div class="pt-4 border-t border-slate-200 dark:border-slate-800/80">
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -200,28 +194,27 @@
                             <svg class="w-5 h-5 shrink-0 group-hover:translate-x-0.5 transition" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h7a1 1 0 100-2H4V5h6a1 1 0 100-2H3zm8.707 3.293a1 1 0 00-1.414 1.414L12.586 10l-2.293 2.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414l-3-3z" clip-rule="evenodd"/>
                             </svg>
-                            <span class="flex-1 ms-3 text-left whitespace-nowrap text-sm font-medium">Log Out</span>
+                            <span class="flex-1 ms-3 text-left whitespace-nowrap text-sm font-medium">Keluar</span>
                         </button>
                     </form>
                 </div>
             </div>
         </aside>
 
-        <!-- AREA KONTEN UTAMA -->
+        <!-- KONTEN UTAMA -->
         <div class="sm:ml-64 min-h-screen transition-colors duration-200">
 
-            <!-- HEADER / NAVBAR (HTML biasa, ikut layout, bukan livewire component) -->
+            <!-- HEADER ATAS -->
             <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex justify-between items-center w-full h-16 px-6 border-b border-slate-200 dark:border-slate-800/80 sticky top-0 z-30 transition-colors duration-200">
                 <div>
                     <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button"
                             class="inline-flex items-center p-2 text-sm text-slate-500 dark:text-slate-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 sm:hidden">
-                        <span class="sr-only">Toggle sidebar</span>
+                        <span class="sr-only">Buka/Tutup Navigasi Samping</span>
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <!-- Toggle tema: pakai toggleTheme() dari x-data layout, bukan dari komponen livewire -->
                     <button @click="toggleTheme()" type="button"
                             class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
                             title="Ubah Mode Tampilan">
@@ -234,7 +227,7 @@
                     </button>
 
                     <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                        {{ auth()->user()->nama ?? auth()->user()->name ?? 'Guest' }}
+                        {{ auth()->user()->nama ?? auth()->user()->name ?? 'Tamu' }}
                     </span>
 
                     @if(auth()->user()?->foto)
@@ -242,17 +235,12 @@
                              class="w-9 h-9 rounded-full object-cover ring-2 ring-blue-500/30">
                     @else
                         <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center tracking-wider shadow-md shadow-blue-600/30 ring-2 ring-blue-500/30">
-                            {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'RU', 0, 2)) }}
+                            {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'TM', 0, 2)) }}
                         </div>
                     @endif
                 </div>
             </header>
 
-            {{--
-                Cuma bagian INI yang di-manage Livewire / kena morph saat wire:navigate.
-                Sidebar, header, dan x-data darkMode di atas semuanya di luar jangkauan
-                morph, jadi tidak pernah ke-reset -> tidak ada celah flicker.
-            --}}
             <main class="p-6 min-h-[calc(100vh-4rem)]">
                 {{ $slot }}
             </main>
@@ -261,7 +249,6 @@
 
     @livewireScripts
 
-    <!-- Re-init Flowbite (dropdown dsb) setelah navigasi Livewire -->
     <script>
         document.addEventListener('livewire:navigated', () => {
             if (typeof initFlowbite === 'function') {
