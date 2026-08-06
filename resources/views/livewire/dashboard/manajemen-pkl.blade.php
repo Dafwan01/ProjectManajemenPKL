@@ -51,7 +51,7 @@
                                 <span class="block line-clamp-2 break-words">{{ $user->nama }}</span>
                             </th>
                             <td class="px-4 py-4 text-gray-500 dark:text-gray-400 text-center">
-                                <span class="block line-clamp-2 break-words">{{ $user->asal_sekolah }}</span>
+                                <span class="block line-clamp-2 break-words">{{ $user->sekolah?->nama_sekolah ?? '-' }}</span>
                             </td>
                             <td class="px-4 py-4 text-center">
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase border whitespace-nowrap

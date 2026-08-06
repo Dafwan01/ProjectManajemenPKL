@@ -13,6 +13,14 @@
             <span class="font-medium">{{ session('message') }}</span>
         </div>
     @endif
+    <div class="mb-6 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 text-xs rounded-xl flex items-start gap-2 shadow-sm">
+    <svg class="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <span>
+        <strong>Catatan:</strong> Jadwal kerja yang diatur di sini akan <strong>berlaku sepanjang masa magang</strong>  Perubahan jadwal akan otomatis diterapkan untuk seluruh periode PKL.
+    </span>
+</div>
 
     <form wire:submit.prevent="save" class="space-y-6">
         

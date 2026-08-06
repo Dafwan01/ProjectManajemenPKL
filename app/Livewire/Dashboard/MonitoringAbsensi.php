@@ -150,7 +150,7 @@ public string $selectedLogbookUser = '';
 
             return [
                 'nama' => $user->nama ?? $user->name ?? 'Tanpa Nama',
-                'sekolah' => $user->asal_sekolah ?? '-',
+               'sekolah' => $user->sekolah?->nama_sekolah ?? '-', 
                 'jam_masuk' => $item->absen_masuk ? substr($item->absen_masuk, 0, 5) : '-',
                 'jam_keluar' => $item->absen_keluar ? substr($item->absen_keluar, 0, 5) : '-',
                 'lat' => (float) $item->latitude,

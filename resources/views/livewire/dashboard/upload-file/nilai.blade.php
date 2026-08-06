@@ -58,7 +58,7 @@
                             <th scope="row" class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                                 {{ $user->nama }}
                             </th>
-                            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->asal_sekolah }}</td>
+                            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->sekolah?->nama_sekolah ?? '-' }}</td>
                             <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->mentor }}</td>
                             <td class="px-6 py-4 align-middle">
                                 @php

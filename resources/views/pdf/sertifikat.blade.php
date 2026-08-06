@@ -147,15 +147,10 @@
        <div class="keterangan">
     Telah menyelesaikan Program Magang / PKL di <br>
     <strong>Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor</strong>
-    @if(!empty($user->sekolah?->nama_sekolah))
-        <br>dari <span class="sekolah">{{ $user->sekolah->nama_sekolah }}</span>
-    @elseif(!empty($user->asal_sekolah))
-        <br>dari <span class="sekolah">{{ $user->asal_sekolah }}</span>
-    @endif
     
     <div style="margin-top: 10px; font-size: 18px;">
-        dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong><br>
-        di bawah bimbingan <strong>{{ $user->mentor ?? '-' }}</strong>
+        dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong>
+     Dengan Mentor: <strong>{{ $user->mentor ?? '-' }}</strong>
     </div>
 </div>
 
