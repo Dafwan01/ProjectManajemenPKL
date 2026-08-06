@@ -62,7 +62,7 @@
            ======================================================== */
         .section-nama {
             position: absolute;
-            top: 375px;
+            top: 360px;
             left: 0;
             width: 100%;
             text-align: center;
@@ -70,7 +70,7 @@
 
         .nama-peserta {
             font-family: 'Great Vibes', cursive;
-            font-size: 58px;
+            font-size: 56px;
             color: #1e3a8a;
             line-height: 1.1;
         }
@@ -80,42 +80,48 @@
            ======================================================== */
         .section-keterangan {
             position: absolute;
-            top: 505px;
+            top: 485px;
             left: 0;
             width: 100%;
             text-align: center;
         }
 
         .keterangan {
-            font-size: 22px;
+            font-size: 18px;
             color: #1b263b;
-            line-height: 1.4;
+            line-height: 1.5;
             margin-bottom: 12px;
         }
 
-        .sekolah {
-            font-weight: bold;
-            color: #0d1b2a;
+        .proyek-container {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #334155;
         }
 
         .tanggal {
-            font-size: 16px;
-            color: #334155;
+            font-size: 14px;
+            color: #475569;
             font-weight: 500;
+            margin-top: 15px;
         }
 
         /* ========================================================
-           3. NAMA PEMBIMBING & MENTOR (PRESISI DI TENGAH GARIS)
+           3. AREA TANDA TANGAN / PENANDATANGAN
            ======================================================== */
-        .section-pembimbing {
+        .section-ttd {
             position: absolute;
-            top: 708px; 
-            left: 145px;
-            width: 320px;
+            bottom: 40px;
+            left: 0;
+            width: 100%;
             text-align: center;
-            font-size: 15px;
+        }
+
+        .jabatan {
+            font-size: 16px;
             font-weight: bold;
             color: #0d1b2a;
+            margin-bottom: 10px;
         }
 
         .section-mentor {
@@ -127,6 +133,8 @@
             font-size: 15px;
             font-weight: bold;
             color: #0d1b2a;
+            text-decoration: underline;
+            margin-top: 5px;
         }
     </style>
 </head>

@@ -77,5 +77,41 @@ class UserSeeder extends Seeder
             'skill' => 'Java, Spring Boot, MongoDB',
             'divisi_id' => 3,
         ]);
+
+        $newUsers = [
+            ['nama' => 'Hanan Nuranisa Umar Jawas', 'email' => 'hananuj11@gmail.com'],
+            ['nama' => 'Ratu Ritz Calton Kalendara', 'email' => 'raturizclton@gmail.com'],
+            ['nama' => 'Erlangga Pharadiva Putra', 'email' => 'pharadivaputra13@gmail.com'],
+            ['nama' => 'Muhammad Khilal Al Fazri', 'email' => 'khilalalfazri26@gmail.com'],
+            ['nama' => 'M. Rifa Fauzan', 'email' => 'muhamadrifafauzan585@gmail.com'],
+            ['nama' => 'Putra Nirbana Sabilillah', 'email' => 'putrasabilillah04@gmail.com'],
+            ['nama' => 'Rangga Firmansyah', 'email' => 'Ranggagaep@gmail.com'],
+            ['nama' => 'Arton Sena', 'email' => 'artonsena07@gmail.com'],
+            ['nama' => 'Dicky Ramadhan', 'email' => 'dickyramadhan.tech@gmail.com'],
+            ['nama' => 'Fauzi Romadhoni', 'email' => 'fauziromadhoni21@gmail.com'],
+            ['nama' => 'Daffa Rizqi Wandika', 'email' => 'major8849@gmail.com'],
+            ['nama' => 'Hanin Putri Sholiha', 'email' => 'haninn.putri@gmail.com'],
+            ['nama' => 'Azka Mortaza', 'email' => 'azkamortaza5@gmail.com'],
+            ['nama' => 'Luna Falya Iskandar', 'email' => 'lunafalyais@gmail.com'],
+            ['nama' => 'Zafira A\'idah Gunawan', 'email' => 'zafiraag127@gmail.com'],
+            ['nama' => 'Syahna Aulia Putri', 'email' => 'syahnaauliap@gmail.com'],
+            ['nama' => 'Fariz Rizky Fadillah', 'email' => 'farizrizkyfadillah91@gmail.com'],
+            ['nama' => 'Muhammad Fauzi Syabana', 'email' => 'fauzimmhd6@gmail.com'],
+            ['nama' => 'Tiurma Taqiyyahafizh', 'email' => 'tiurma.taqiyy@gmail.com'],
+            ['nama' => 'Adrian Maulana Yusuf', 'email' => 'adrianmaul1356@gmail.com'],
+        ];
+
+        foreach ($newUsers as $user) {
+            User::create([
+                'nama' => $user['nama'],
+                'email' => $user['email'],
+                'password' => Hash::make('12345678'),
+                'role' => UserRole::PKL,
+                'status' => UserStatus::AKTIF,
+                'sekolah_id' => $sekolah1->sekolah_id,
+                'mentor' => '',
+                'divisi_id' => 1,
+            ]);
+        }
     }
 }
