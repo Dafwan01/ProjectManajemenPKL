@@ -7,7 +7,6 @@ use App\Models\presensi as PresensiModel;
 use App\Models\User;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
-use App\Notifications\PresensiTerlambatNotification;
 use App\Services\WorldTimeService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -277,9 +276,6 @@ class Presensi extends Component
                     'longitude'        => $this->longitude,
                 ]);
 
-                if ($statusKehadiran === 'terlambat') {
-                    $this->notifikasiTerlambat($presensiBaru, $user);
-                }
 
                 $pesan = $statusKehadiran === 'terlambat'
                     ? 'Presensi MASUK berhasil dikirim (Terlambat)!'
@@ -330,19 +326,7 @@ class Presensi extends Component
         }
     }
 
-    private function notifikasiTerlambat(PresensiModel $presensiBaru, User $siswa): void
-    {
-        $penerima = User::where('role', UserRole::ADMIN)->get();
-
-        $mentor = $this->resolveMentor($siswa);
-        if ($mentor) {
-            $penerima->push($mentor);
-        }
-
-        foreach ($penerima->unique('user_id') as $tujuan) {
-            $tujuan->notify(new PresensiTerlambatNotification($presensiBaru));
-        }
-    }
+  
 
     private function resolveMentor(User $siswa): ?User
     {

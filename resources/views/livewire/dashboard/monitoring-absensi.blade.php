@@ -112,7 +112,7 @@
                             <th scope="row" class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                                 {{ $user->nama ?? $user->name ?? '-' }}
                             </th>
-                            <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ $user->asal_sekolah ?? '-' }}</td>
+                           <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ $user->sekolah?->nama_sekolah ?? '-' }}</td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-col gap-2">
                                     <!-- Status Kehadiran -->

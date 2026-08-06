@@ -273,19 +273,78 @@
                         <h3 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Akademik & Magang</h3>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">Asal Sekolah / Kampus</label>
-                            <select 
-                                wire:model.live="sekolah_id" 
-                                class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white text-sm px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition"
-                            >
-                                <option value="">-- Pilih Sekolah / Kampus --</option>
-                                @foreach($this->daftarSekolah as $sekolah)
-                                    <option value="{{ $sekolah->sekolah_id }}">{{ $sekolah->nama_sekolah }}</option>
-                                @endforeach
-                            </select>
-                            @error('sekolah_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
-                        </div>
+                          <div
+    x-data="{
+        query: '{{ $this->daftarSekolah->firstWhere('sekolah_id', $sekolah_id)?->nama_sekolah ?? '' }}',
+        open: false,
+        sekolahList: {{ $this->daftarSekolah->map(fn($s) => ['id' => $s->sekolah_id, 'nama' => $s->nama_sekolah])->values()->toJson() }},
+        get filtered() {
+            if (!this.query) return this.sekolahList;
+            return this.sekolahList.filter(s => s.nama.toLowerCase().includes(this.query.toLowerCase()));
+        },
+        select(s) {
+            this.query = s.nama;
+            $wire.set('sekolah_id', s.id);
+            this.open = false;
+        },
+        validateOnBlur() {
+            // beri jeda supaya event klik pada opsi sempat tereksekusi dulu
+            setTimeout(() => {
+                const match = this.sekolahList.find(
+                    s => s.nama.toLowerCase() === this.query.trim().toLowerCase()
+                );
+                if (match) {
+                    this.query = match.nama;
+                    $wire.set('sekolah_id', match.id);
+                } else {
+                    // tidak cocok dengan list -> reset, jangan simpan teks bebas
+                    this.query = '';
+                    $wire.set('sekolah_id', null);
+                }
+                this.open = false;
+            }, 150);
+        }
+    }"
+    class="relative"
+>
+    <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">Asal Sekolah / Kampus</label>
+
+    <input
+        type="text"
+        x-model="query"
+        @focus="open = true"
+        @input="open = true"
+        @blur="validateOnBlur()"
+        placeholder="Ketik nama sekolah / kampus..."
+        autocomplete="off"
+        class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white text-sm px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition"
+    >
+
+    <div
+        x-show="open && filtered.length > 0"
+        x-cloak
+        @click.outside="open = false"
+        class="absolute z-30 mt-1 w-full max-h-52 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl"
+    >
+        <template x-for="s in filtered" :key="s.id">
+            <div
+                @mousedown.prevent="select(s)"
+                class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-800 cursor-pointer"
+                x-text="s.nama"
+            ></div>
+        </template>
+    </div>
+
+    <div
+        x-show="open && filtered.length === 0"
+        x-cloak
+        class="absolute z-30 mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl px-4 py-2.5 text-sm text-gray-400 dark:text-gray-500"
+    >
+        Sekolah tidak ditemukan
+    </div>
+
+    @error('sekolah_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block">{{ $message }}</span> @enderror
+</div>
                             <div>
                                 <label class="block mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">Jurusan</label>
                                 <input type="text" wire:model="jurusan" class="w-full rounded-xl border border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white text-sm px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition">

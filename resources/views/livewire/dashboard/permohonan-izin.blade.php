@@ -201,7 +201,7 @@
                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
     {{ $permohonan->user->nama ?? $permohonan->user->name ?? 'Pemohon' }} 
     &bull; 
-    {{ $permohonan->user->sekolah->nama_sekolah ?? $permohonan->user->asal_sekolah ?? '-' }}
+    {{ $permohonan->user->sekolah->nama_sekolah ?? $permohonan->user->sekolah?->nama_sekolah ?? '-' }}
 </p>
                     </div>
 

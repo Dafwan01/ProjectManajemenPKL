@@ -2,16 +2,21 @@
 
 namespace App\Livewire\Dashboard;
 
+use App\Enums\JadwalStatusKerja;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
-use App\Models\Sekolah;
-use App\Models\Divisi;
 use App\Models\Bidang;
+use App\Models\DetailJadwal;
+use App\Models\Divisi;
+use App\Models\Jadwal;
+use App\Models\Sekolah;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -28,38 +33,43 @@ class ManajemenPkl extends Component
     public $role = UserRole::PKL->value;
     public $status = UserStatus::AKTIF->value;
 
-    // Perubahan: asal_sekolah dihapus, diganti sekolah_id
+    // Field Autentikasi
+    public $password = '';
+    public $confirm_password = '';
+
+    // Relasi Sekolah, Mentor, Periode & Skill
     public $sekolah_id = null;
     public $mentor = '';
     public $tanggal_mulai = null;
     public $tanggal_akhir = null;
     public $skill = '';
 
-    // Bidang & Divisi
-    // bidang_id bersifat transient (hanya untuk memfilter pilihan Divisi di dropdown,
-    // tidak disimpan ke tabel users). Yang disimpan ke database hanya divisi_id.
+    // Bidang & Divisi (bidang_id bersifat transient)
     public $bidang_id = null;
     public $divisi_id = null;
 
-    // Field Tambahan Profil
+    // Profil Pelengkap
     public $tempat_lahir = '';
     public $tanggal_lahir = null;
     public $jenis_kelamin = '';
     public $jurusan = '';
 
-    // State Sekolah Baru
+    // State Input Sekolah Baru
     public bool $tambahSekolahBaru = false;
     public string $namaSekolahBaru = '';
 
+    // Modal Control & Filter
     public bool $showEditProfileModal = false;
     public bool $isEditMode = false;
     public string $search = '';
+
+    // Modal Ekstra (Jadwal & Project)
     public bool $showJadwalModal = false;
     public bool $showProjectModal = false;
     public $selectedUserId = null;
 
     /**
-     * Cek apakah user yang sedang login adalah Mentor.
+     * Memeriksa apakah pengguna yang sedang login ber-role Mentor.
      */
     private function isMentorUser(): bool
     {
@@ -69,27 +79,16 @@ class ManajemenPkl extends Component
             || $currentUser->role?->value === UserRole::MENTOR->value;
     }
 
-    /**
-     * Mengambil daftar sekolah untuk Dropdown
-     */
     public function getDaftarSekolahProperty()
     {
         return Sekolah::orderBy('nama_sekolah')->get();
     }
 
-    /**
-     * Mengambil daftar bidang untuk Dropdown.
-     */
     public function getDaftarBidangProperty()
     {
         return Bidang::orderBy('nama_bidang')->get();
     }
 
-    /**
-     * Mengambil daftar divisi untuk Dropdown, difilter sesuai bidang_id yang dipilih.
-     * Query langsung ke kolom bidang_id (bukan lewat relasi Eloquent) supaya tidak
-     * tergantung pada guessing foreign key yang pernah bermasalah.
-     */
     public function getDaftarDivisiProperty()
     {
         if (empty($this->bidang_id)) {
@@ -100,9 +99,27 @@ class ManajemenPkl extends Component
             ->orderBy('nama_divisi')
             ->get();
     }
+    public function getAvailableRolesProperty()
+{
+    if ($this->isMentorUser()) {
+        return collect([UserRole::PKL]);
+    }
+
+    return collect(UserRole::cases());
+}
+
+public function getDaftarStatusProperty()
+{
+    return collect(UserStatus::cases());
+}
 
     protected function rules()
     {
+        $passwordRule = Password::min(8)
+            ->mixedCase()
+            ->numbers()
+            ->symbols();
+
         $rules = [
             'nama' => 'required|min:3',
             'email' => 'required|email|unique:users,email,' . $this->userId . ',user_id',
@@ -112,18 +129,24 @@ class ManajemenPkl extends Component
             'tanggal_lahir' => 'nullable|date',
             'jenis_kelamin' => ['nullable', 'string', 'in:Laki-laki,Perempuan,laki-laki,perempuan'],
             'jurusan' => 'nullable|string|max:255',
-            'divisi_id' => 'nullable|integer|exists:divisis,divisi_id',
-            'mentor' => 'nullable|string|max:255',
+            'bidang_id' => 'required|exists:bidangs,bidang_id',
+            'divisi_id' => 'required|exists:divisis,divisi_id',
+            'mentor' => 'required|string|max:255',
             'tanggal_mulai' => 'nullable|date',
             'tanggal_akhir' => 'nullable|date|after_or_equal:tanggal_mulai',
             'skill' => 'nullable|string',
+            'password' => $this->isEditMode
+                ? ['nullable', $passwordRule, 'same:confirm_password']
+                : ['required', $passwordRule, 'same:confirm_password'],
         ];
 
-        // Validasi Dinamis untuk Sekolah
+        // Dynamic Validation Rule untuk Asal Sekolah
         if ($this->tambahSekolahBaru) {
             $rules['namaSekolahBaru'] = 'required|string|min:3|unique:sekolahs,nama_sekolah';
+            $rules['sekolah_id'] = 'nullable';
         } else {
-            $rules['sekolah_id'] = 'nullable|exists:sekolahs,sekolah_id';
+            $rules['sekolah_id'] = 'required|exists:sekolahs,sekolah_id';
+            $rules['namaSekolahBaru'] = 'nullable';
         }
 
         return $rules;
@@ -138,30 +161,32 @@ class ManajemenPkl extends Component
         'role.required' => 'Silakan pilih role pengguna.',
         'status.required' => 'Silakan pilih status akun.',
         'jenis_kelamin.in' => 'Pilihan jenis kelamin tidak valid.',
+        'bidang_id.required' => 'Silakan pilih bidang.',
+        'bidang_id.exists' => 'Bidang tidak valid.',
+        'divisi_id.required' => 'Silakan pilih divisi.',
         'divisi_id.exists' => 'Divisi tidak valid.',
+        'mentor.required' => 'Mentor wajib dipilih atau diisi.',
         'tanggal_akhir.after_or_equal' => 'Tanggal akhir harus sama atau setelah tanggal mulai.',
         'namaSekolahBaru.required' => 'Nama sekolah baru wajib diisi.',
         'namaSekolahBaru.min' => 'Nama sekolah minimal 3 karakter.',
-        'namaSekolahBaru.unique' => 'Sekolah ini sudah terdaftar, silakan pilih dari daftar dropdown.',
-        'sekolah_id.exists' => 'Asal sekolah tidak valid.',
+        'namaSekolahBaru.unique' => 'Sekolah ini sudah terdaftar di sistem.',
+        'sekolah_id.required' => 'Asal sekolah wajib dipilih.',
+        'sekolah_id.exists' => 'Pilihan sekolah tidak valid.',
+        'password.required' => 'Password wajib diisi.',
+        'password.same' => 'Konfirmasi password tidak cocok.',
     ];
 
-    /**
-     * Trigger ketika dropdown sekolah dipilih
-     */
     public function updatedSekolahId($value)
     {
         if ($value === '__tambah_baru__') {
             $this->tambahSekolahBaru = true;
             $this->sekolah_id = null;
+        } else if (!empty($value)) {
+            $this->tambahSekolahBaru = false;
+            $this->namaSekolahBaru = '';
         }
     }
 
-    /**
-     * Trigger ketika dropdown Bidang berubah.
-     * Reset Divisi supaya tidak "nyangkut" ke divisi lama dari bidang sebelumnya.
-     * Tidak berlaku untuk Mentor karena field-nya terkunci.
-     */
     public function updatedBidangId($value)
     {
         if ($this->isMentorUser()) {
@@ -171,9 +196,6 @@ class ManajemenPkl extends Component
         $this->divisi_id = null;
     }
 
-    /**
-     * Batal menambahkan sekolah baru
-     */
     public function batalTambahSekolah()
     {
         $this->tambahSekolahBaru = false;
@@ -188,6 +210,8 @@ class ManajemenPkl extends Component
         $this->email = '';
         $this->role = UserRole::PKL->value;
         $this->status = UserStatus::AKTIF->value;
+        $this->password = '';
+        $this->confirm_password = '';
         $this->tempat_lahir = '';
         $this->tanggal_lahir = null;
         $this->jenis_kelamin = '';
@@ -211,10 +235,6 @@ class ManajemenPkl extends Component
         $this->resetPage();
     }
 
-    /**
-     * Kunci Bidang & Divisi ke milik Mentor yang sedang login.
-     * bidang_id diturunkan dari divisi_id milik mentor (bukan kolom di tabel users).
-     */
     private function lockDivisiToMentor(User $currentUser): void
     {
         $this->divisi_id = $currentUser->divisi_id;
@@ -237,9 +257,9 @@ class ManajemenPkl extends Component
 
         $this->validate();
 
-        // Jika mode tambah sekolah baru aktif, simpan datanya ke tabel Sekolah terlebih dulu
+        // Apabila pengguna menyetel opsi penambahan sekolah baru
         if ($this->tambahSekolahBaru && !empty($this->namaSekolahBaru)) {
-            $sekolahBaru = Sekolah::create(['nama_sekolah' => $this->namaSekolahBaru]);
+            $sekolahBaru = Sekolah::create(['nama_sekolah' => trim($this->namaSekolahBaru)]);
             $this->sekolah_id = $sekolahBaru->sekolah_id;
         }
 
@@ -252,7 +272,7 @@ class ManajemenPkl extends Component
             'tanggal_lahir' => $this->tanggal_lahir ?: null,
             'jenis_kelamin' => $this->jenis_kelamin ?: null,
             'jurusan' => $this->jurusan ?: null,
-            'sekolah_id' => $this->sekolah_id ?: null, // Simpan sekolah_id
+            'sekolah_id' => $this->sekolah_id ?: null,
             'divisi_id' => $this->divisi_id ?: null,
             'mentor' => $this->mentor ?: null,
             'tanggal_mulai' => $this->tanggal_mulai ?: null,
@@ -265,17 +285,24 @@ class ManajemenPkl extends Component
 
         if ($this->isEditMode) {
             $user = User::findOrFail($this->userId);
+
+            if (!empty($this->password)) {
+                $data['password'] = bcrypt($this->password);
+            }
+
             $user->update($data);
-            session()->flash('message', 'Akun berhasil diperbarui!');
+            $this->ensureDefaultScheduleForPkl($user);
+            session()->flash('message', 'Akun pengguna berhasil diperbarui!');
         } else {
-            $data['password'] = bcrypt('password123');
+            $data['password'] = bcrypt($this->password);
 
             if (empty($data['tanggal_mulai'])) {
                 $data['tanggal_mulai'] = now()->format('Y-m-d');
             }
 
-            User::create($data);
-            session()->flash('message', 'Akun berhasil dibuat! Password default: password123');
+            $user = User::create($data);
+            $this->ensureDefaultScheduleForPkl($user);
+            session()->flash('message', 'Akun pengguna berhasil ditambahkan!');
         }
 
         $this->closeModal();
@@ -285,6 +312,7 @@ class ManajemenPkl extends Component
     {
         $this->resetFields();
         $this->isEditMode = false;
+            $this->selectedUserId = null; 
 
         $currentUser = Auth::user();
         if ($this->isMentorUser()) {
@@ -297,7 +325,9 @@ class ManajemenPkl extends Component
 
     public function openEditProfile($id)
     {
+        $this->resetFields();
         $this->userId = $id;
+           $this->selectedUserId = $id;   
         $user = User::findOrFail($id);
 
         $this->nama = $user->nama;
@@ -308,7 +338,7 @@ class ManajemenPkl extends Component
         $this->tanggal_lahir = $this->formatDateForInput($user->tanggal_lahir);
         $this->jenis_kelamin = strtolower($user->jenis_kelamin ?? '');
         $this->jurusan = $user->jurusan;
-        $this->sekolah_id = $user->sekolah_id; // Tarik sekolah_id saat edit
+        $this->sekolah_id = $user->sekolah_id;
 
         $currentUser = Auth::user();
         if ($this->isMentorUser()) {
@@ -357,6 +387,7 @@ class ManajemenPkl extends Component
         $this->resetFields();
         $this->showEditProfileModal = false;
         $this->isEditMode = false;
+         $this->selectedUserId = null;
     }
 
     #[On('close-edit-profile')]
@@ -391,12 +422,53 @@ class ManajemenPkl extends Component
         $this->selectedUserId = null;
     }
 
+    /**
+     * Membuat jadwal kerja default (Senin–Jumat) untuk pengguna PKL.
+     */
+    protected function ensureDefaultScheduleForPkl(User $user): void
+    {
+        $userRoleValue = $user->role instanceof \UnitEnum ? $user->role->value : $user->role;
+
+        if ($userRoleValue !== UserRole::PKL->value) {
+            return;
+        }
+
+        $jadwalConfig = [
+            'Senin' => ['07:30', '16:00'],
+            'Selasa' => ['07:30', '16:00'],
+            'Rabu' => ['07:30', '16:00'],
+            'Kamis' => ['07:30', '16:00'],
+            'Jumat' => ['07:30', '16:30'],
+        ];
+
+        DB::transaction(function () use ($user, $jadwalConfig): void {
+            foreach ($jadwalConfig as $hari => [$jamMasuk, $jamKeluar]) {
+                $jadwal = Jadwal::firstOrCreate([
+                    'jam_masuk' => $jamMasuk,
+                    'jam_keluar' => $jamKeluar,
+                    'status_kerja' => JadwalStatusKerja::WFO->value,
+                ]);
+
+                DetailJadwal::updateOrCreate(
+                    [
+                        'user_id' => $user->user_id,
+                        'hari' => $hari,
+                    ],
+                    [
+                        'jadwal_id' => $jadwal->jadwal_id,
+                    ]
+                );
+            }
+        });
+    }
+
     public function render()
     {
         $currentUser = Auth::user();
 
         $mentors = User::query()
             ->where('role', UserRole::MENTOR->value)
+            ->where('status', UserStatus::AKTIF->value)
             ->orderBy('nama', 'asc')
             ->get();
 
@@ -410,8 +482,7 @@ class ManajemenPkl extends Component
                     $q->where('nama', 'like', '%' . $this->search . '%')
                         ->orWhere('email', 'like', '%' . $this->search . '%')
                         ->orWhere('jurusan', 'like', '%' . $this->search . '%')
-                        // Pencarian ke tabel relasi sekolah jika kolom asal_sekolah dihapus
-                        ->orWhereHas('sekolah', function($subQuery) {
+                        ->orWhereHas('sekolah', function ($subQuery) {
                             $subQuery->where('nama_sekolah', 'like', '%' . $this->search . '%');
                         });
                 });

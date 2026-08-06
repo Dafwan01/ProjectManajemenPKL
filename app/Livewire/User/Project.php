@@ -97,16 +97,21 @@ class Project extends Component
         if (!$user) return collect();
 
         return User::where('role', UserRole::PKL)
+        ->where('status', UserStatus::AKTIF)
             ->where('user_id', '!=', $user->user_id)
+            ->with('sekolah') // Memuat relasi sekolah
             ->when($this->searchAnggota, function ($query) {
                 $query->where(function ($q) {
                     $q->where('nama', 'like', '%' . $this->searchAnggota . '%')
-                      ->orWhere('asal_sekolah', 'like', '%' . $this->searchAnggota . '%');
+                      // Menggantikan pencarian kolom asal_sekolah dengan relasi sekolah -> nama_sekolah
+                      ->orWhereHas('sekolah', function ($subQuery) {
+                          $subQuery->where('nama_sekolah', 'like', '%' . $this->searchAnggota . '%');
+                      });
                 });
             })
             ->orderBy('nama')
             ->limit(30)
-            ->get(['user_id', 'nama', 'asal_sekolah', 'foto']);
+            ->get(['user_id', 'nama', 'sekolah_id', 'foto']);
     }
 
     /**

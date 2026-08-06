@@ -164,15 +164,15 @@
             NO. {{ $nomorSertifikat ?? 'SERT/2026/0001' }}
         </div>
 
-        <div class="keterangan">
-            Telah menyelesaikan Program Magang / PKL di <br>
-            <strong>Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor</strong>
-            
-            <div class="proyek-container">
-                dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong><br>
-                di bawah bimbingan <strong>{{ $user->mentor ?? '-' }}</strong>
-            </div>
-        </div>
+       <div class="keterangan">
+    Telah menyelesaikan Program Magang / PKL di <br>
+    <strong>Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor</strong>
+    
+    <div style="margin-top: 10px; font-size: 18px;">
+        dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong>
+     Dengan Mentor: <strong>{{ $user->mentor ?? '-' }}</strong>
+    </div>
+</div>
 
         <div class="tanggal">
             Diterbitkan pada: {{ \Carbon\Carbon::parse($tanggalTerbit ?? now())->isoFormat('D MMMM Y') }}

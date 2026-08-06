@@ -96,7 +96,7 @@ class Profile extends Component
             'tempat_lahir' => ['nullable', 'string', 'max:255'],
             'tanggal_lahir' => ['nullable', 'date'],
             'jenis_kelamin' => ['nullable', 'string', 'in:Laki-laki,Perempuan'],
-            'sekolah_id' => ['nullable', 'integer'],
+           'sekolah_id' => ['nullable', 'integer', Rule::exists('sekolahs', 'sekolah_id')],
             'jurusan' => ['nullable', 'string', 'max:255'],
             'skill' => ['nullable', 'string', 'max:500'],
             'tanggal_mulai' => ['nullable', 'date'],
@@ -105,6 +105,7 @@ class Profile extends Component
             'confirm_password' => ['nullable', 'string'],
             'fotoUpload' => ['nullable', 'image', 'max:2048'],
             'fotoCaptured' => ['nullable', 'string', 'max:5000000'],
+            
         ];
     }
 

@@ -62,7 +62,7 @@
                             <th scope="row" class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                                 {{ $user->nama }}
                             </th>
-                            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->asal_sekolah }}</td>
+                            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->sekolah?->nama_sekolah }}</td>
                             <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->mentor ?? '-' }}</td>
                             <td class="px-6 py-4 align-middle">
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border
@@ -160,7 +160,7 @@
                     <div class="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl space-y-1 border border-gray-100 dark:border-gray-700/50">
                         <p class="text-xs text-gray-500 dark:text-gray-400">Peserta Magang:</p>
                         <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ $targetUser?->nama }}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $targetUser?->asal_sekolah }} (Mentor: {{ $targetUser?->mentor ?? '-' }})</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $targetUser?->sekolah?->nama_sekolah ?? '-' }} (Mentor: {{ $targetUser?->mentor ?? '-' }})</p>
                     </div>
 
                     <!-- Input Nomor Sertifikat -->

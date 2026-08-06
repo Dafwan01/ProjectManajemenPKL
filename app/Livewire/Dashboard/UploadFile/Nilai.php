@@ -74,30 +74,32 @@ class Nilai extends Component
         $this->pdfUserId = null;
     }
 
-    #[Layout('layouts.dashboard')]
-    public function render()
-    {
-        $currentUser = Auth::user();
-        $isMentor = $this->isMentorUser();
+   #[Layout('layouts.dashboard')]
+public function render()
+{
+    $currentUser = Auth::user();
+    $isMentor = $this->isMentorUser();
 
-        $users = User::query()
-            ->where('role', UserRole::PKL->value)
-            // Filter Pencarian
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('nama', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%')
-                      ->orWhere('asal_sekolah', 'like', '%' . $this->search . '%');
-                });
-            })
-            // Filter hanya anak bimbingan jika yang login adalah Mentor
-            ->when($isMentor, function ($query) use ($currentUser) {
-                $query->where('mentor', $currentUser->nama);
-            })
-            ->with(['nilai', 'nilais'])
-            ->latest('tanggal_mulai')
-            ->paginate(10);
+    $users = User::query()
+        ->where('role', UserRole::PKL->value)
+        // Filter Pencarian
+        ->when($this->search, function ($query) {
+            $query->where(function ($q) {
+                $q->where('nama', 'like', '%' . $this->search . '%')
+                  ->orWhere('email', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('sekolah', function ($subQuery) {
+                      $subQuery->where('nama_sekolah', 'like', '%' . $this->search . '%');
+                  });
+            });
+        })
+        // Filter hanya anak bimbingan jika yang login adalah Mentor
+        ->when($isMentor, function ($query) use ($currentUser) {
+            $query->where('mentor', $currentUser->nama);
+        })
+        ->with(['nilai', 'nilais', 'sekolah'])
+        ->latest('tanggal_mulai')
+        ->paginate(10);
 
-        return view('livewire.dashboard.upload-file.nilai', compact('users'));
-    }
+    return view('livewire.dashboard.upload-file.nilai', compact('users'));
+}
 }
