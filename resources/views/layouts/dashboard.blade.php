@@ -76,33 +76,33 @@
                             </a>
                         </li>
 
-                       <li>
-    @php
-        $totalTerlambatHariIni = \App\Models\presensi::whereDate('tanggal', now()->toDateString())
-            ->where('status_kehadiran', 'terlambat')
-            ->when(
-                auth()->user()->role === \App\Enums\UserRole::MENTOR || auth()->user()->role?->value === \App\Enums\UserRole::MENTOR->value,
-                function ($query) {
-                    $query->whereHas('user', function ($q) {
-                        $q->where('mentor', auth()->user()->nama);
-                    });
-                }
-            )
-            ->count();
-    @endphp
-    <a href="{{ route('monitoring-absensi') }}" wire:navigate
-       class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('monitoring-absensi') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
-        <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('monitoring-absensi') ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white' }}" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5H4v10h12V7H6zm2 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/>
-        </svg>
-        <span class="flex-1 ms-3 text-sm whitespace-nowrap">Melihat Absensi</span>
-        @if($totalTerlambatHariIni > 0)
-            <span class="ms-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full {{ request()->routeIs('monitoring-absensi') ? 'bg-white text-blue-600' : 'bg-amber-500 text-white' }}">
-                {{ $totalTerlambatHariIni > 99 ? '99+' : $totalTerlambatHariIni }}
-            </span>
-        @endif
-    </a>
-</li>
+                        <li>
+                            @php
+                                $totalTerlambatHariIni = \App\Models\presensi::whereDate('tanggal', now()->toDateString())
+                                    ->where('status_kehadiran', 'terlambat')
+                                    ->when(
+                                        auth()->user()->role === \App\Enums\UserRole::MENTOR || auth()->user()->role?->value === \App\Enums\UserRole::MENTOR->value,
+                                        function ($query) {
+                                            $query->whereHas('user', function ($q) {
+                                                $q->where('mentor', auth()->user()->nama);
+                                            });
+                                        }
+                                    )
+                                    ->count();
+                            @endphp
+                            <a href="{{ route('monitoring-absensi') }}" wire:navigate
+                               class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('monitoring-absensi') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
+                                <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('monitoring-absensi') ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white' }}" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5H4v10h12V7H6zm2 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                <span class="flex-1 ms-3 text-sm whitespace-nowrap">Melihat Absensi</span>
+                                @if($totalTerlambatHariIni > 0)
+                                    <span class="ms-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full {{ request()->routeIs('monitoring-absensi') ? 'bg-white text-blue-600' : 'bg-amber-500 text-white' }}">
+                                        {{ $totalTerlambatHariIni > 99 ? '99+' : $totalTerlambatHariIni }}
+                                    </span>
+                                @endif
+                            </a>
+                        </li>
 
                         <li>
                             <a href="{{ route('manajemen-pkl') }}" wire:navigate
@@ -127,9 +127,9 @@
                                 </svg>
                             </button>
                             <ul x-show="open" x-cloak class="py-2 space-y-1">
-                                <li><a href="{{ route('sertifikat') }}" wire:navigate class="flex items-center w-full p-2 text-sm rounded-lg pl-11 group {{ request()->routeIs('sertifikat') ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}">Sertifikat</a></li>
-                                <li><a href="{{ route('nilai') }}" wire:navigate class="flex items-center w-full p-2 text-sm rounded-lg pl-11 group {{ request()->routeIs('nilai') ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}">Nilai</a></li>
                                 <li><a href="{{ route('surat-penerimaan-magang') }}" wire:navigate class="flex items-center w-full p-2 text-sm rounded-lg pl-11 group {{ request()->routeIs('surat-penerimaan-magang') ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}">Surat Penerimaan Magang</a></li>
+                                <li><a href="{{ route('nilai') }}" wire:navigate class="flex items-center w-full p-2 text-sm rounded-lg pl-11 group {{ request()->routeIs('nilai') ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}">Nilai</a></li>
+                                <li><a href="{{ route('sertifikat') }}" wire:navigate class="flex items-center w-full p-2 text-sm rounded-lg pl-11 group {{ request()->routeIs('sertifikat') ? 'bg-blue-600 text-white font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}">Sertifikat</a></li>
                             </ul>
                         </li>
 
@@ -153,31 +153,42 @@
                             </a>
                         </li>
 
-                       <li>
-   @php
-       $totalPendingIzin = \App\Models\PermohonanIzin::where('status', 'pending')
-           ->when(
-               auth()->user()->role === \App\Enums\UserRole::MENTOR || auth()->user()->role?->value === \App\Enums\UserRole::MENTOR->value,
-               function ($query) {
-                   $query->whereHas('user', function ($q) {
-                       $q->where('mentor', auth()->user()->nama);
-                   });
-               }
-           )
-           ->count();
-   @endphp
-   <a href="{{ route('permohonan-izin') }}" wire:navigate class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('permohonan-izin') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
-       <svg class="w-5 h-5 transition duration-75 {{ request()->routeIs('permohonan-izin') ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-           <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-       </svg>
-       <span class="flex-1 ms-3 text-sm whitespace-nowrap">Permohonan Izin/Sakit</span>
-       @if($totalPendingIzin > 0)
-           <span class="ms-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full {{ request()->routeIs('permohonan-izin') ? 'bg-white text-blue-600' : 'bg-rose-500 text-white' }}">
-               {{ $totalPendingIzin > 99 ? '99+' : $totalPendingIzin }}
-           </span>
-       @endif
-   </a>
-</li>
+                        <li>
+                            @php
+                                $totalPendingIzin = \App\Models\PermohonanIzin::where('status', 'pending')
+                                    ->when(
+                                        auth()->user()->role === \App\Enums\UserRole::MENTOR || auth()->user()->role?->value === \App\Enums\UserRole::MENTOR->value,
+                                        function ($query) {
+                                            $query->whereHas('user', function ($q) {
+                                                $q->where('mentor', auth()->user()->nama);
+                                            });
+                                        }
+                                    )
+                                    ->count();
+                            @endphp
+                            <a href="{{ route('permohonan-izin') }}" wire:navigate class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('permohonan-izin') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
+                                <svg class="w-5 h-5 transition duration-75 {{ request()->routeIs('permohonan-izin') ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                </svg>
+                                <span class="flex-1 ms-3 text-sm whitespace-nowrap">Permohonan Izin/Sakit</span>
+                                @if($totalPendingIzin > 0)
+                                    <span class="ms-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full {{ request()->routeIs('permohonan-izin') ? 'bg-white text-blue-600' : 'bg-rose-500 text-white' }}">
+                                        {{ $totalPendingIzin > 99 ? '99+' : $totalPendingIzin }}
+                                    </span>
+                                @endif
+                            </a>
+                        </li>
+
+                        <!-- Menu Forum Diskusi -->
+                        <li>
+                            <a href="{{ route('forum') }}" wire:navigate
+                               class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('forum*') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
+                                <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('forum*') ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white' }}" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9a1 1 0 100-2 1 1 0 000 2zm3 0a1 1 0 100-2 1 1 0 000 2zm3 0a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                                </svg>
+                                <span class="flex-1 ms-3 text-sm whitespace-nowrap">Forum Diskusi</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
 

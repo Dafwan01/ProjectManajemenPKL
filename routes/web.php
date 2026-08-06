@@ -97,6 +97,6 @@ Route::middleware(['auth', 'role:PKL'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/user/forum', Forum::class)->name('user.forum');
-    Route::get('/user/forum/{forum}', ForumDetail::class)->name('user.forum.show');
+    Route::get('/forum', Forum::class)->name('forum');
+    Route::get('/forum/{forum}', ForumDetail::class)->name('forum.show');
 });
