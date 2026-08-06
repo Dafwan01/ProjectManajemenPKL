@@ -44,7 +44,7 @@
            ======================================================== */
         .section-nama {
             position: absolute;
-            top: 375px;
+            top: 360px;
             left: 0;
             width: 100%;
             text-align: center;
@@ -52,7 +52,7 @@
 
         .nama-peserta {
             font-family: 'Great Vibes', cursive;
-            font-size: 58px;
+            font-size: 56px;
             color: #1e3a8a;
             line-height: 1.1;
         }
@@ -62,61 +62,81 @@
            ======================================================== */
         .section-keterangan {
             position: absolute;
-            top: 505px;
+            top: 485px;
             left: 0;
             width: 100%;
             text-align: center;
         }
 
         .nomor-sertifikat {
-            font-size: 18px;
+            font-size: 16px;
             color: #1e3a8a;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             letter-spacing: 0.5px;
         }
 
         .keterangan {
-            font-size: 22px;
+            font-size: 18px;
             color: #1b263b;
-            line-height: 1.4;
+            line-height: 1.5;
             margin-bottom: 12px;
         }
 
-        .sekolah {
-            font-weight: bold;
-            color: #0d1b2a;
+        .proyek-container {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #334155;
         }
 
         .tanggal {
-            font-size: 16px;
-            color: #334155;
+            font-size: 14px;
+            color: #475569;
             font-weight: 500;
+            margin-top: 15px;
         }
 
         /* ========================================================
-           3. NAMA PEMBIMBING & MENTOR (PRESISI DI TENGAH GARIS)
+           3. AREA TANDA TANGAN / PENANDATANGAN
            ======================================================== */
-        .section-pembimbing {
+        .section-ttd {
             position: absolute;
-            top: 708px; 
-            left: 145px;
-            width: 320px;
+            bottom: 40px;
+            left: 0;
+            width: 100%;
             text-align: center;
-            font-size: 15px;
-            font-weight: bold;
-            color: #0d1b2a;
         }
 
-        .section-mentor {
-            position: absolute;
-            top: 708px; 
-            right: 198px; /* Pas persis di tengah-tengah garis & kata Mentor */
-            width: 320px;
-            text-align: center;
-            font-size: 15px;
+        .jabatan {
+            font-size: 16px;
             font-weight: bold;
             color: #0d1b2a;
+            margin-bottom: 10px;
+        }
+
+        .box-ttd {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .badge-ttd-elektronik {
+            font-size: 12px;
+            color: #1e3a8a;
+            border: 1px dashed #1e3a8a;
+            padding: 6px 12px;
+            border-radius: 4px;
+            display: inline-block;
+            background-color: rgba(30, 58, 138, 0.03);
+        }
+
+        .nama-penandatangan {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0d1b2a;
+            text-decoration: underline;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -141,46 +161,39 @@
     <!-- BLOCK 2: TULISAN & KETERANGAN -->
     <div class="section-keterangan">
         <div class="nomor-sertifikat">
-            No. {{ $nomorSertifikat ?? 'SERT/2026/0001' }}
+            NO. {{ $nomorSertifikat ?? 'SERT/2026/0001' }}
         </div>
 
-       <div class="keterangan">
-    Telah menyelesaikan Program Magang / PKL di <br>
-    <strong>Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor</strong>
-    @if(!empty($user->sekolah?->nama_sekolah))
-        <br>dari <span class="sekolah">{{ $user->sekolah->nama_sekolah }}</span>
-    @elseif(!empty($user->asal_sekolah))
-        <br>dari <span class="sekolah">{{ $user->asal_sekolah }}</span>
-    @endif
-    
-    <div style="margin-top: 10px; font-size: 18px;">
-        dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong><br>
-        di bawah bimbingan <strong>{{ $user->mentor ?? '-' }}</strong>
-    </div>
-</div>
+        <div class="keterangan">
+            Telah menyelesaikan Program Magang / PKL di <br>
+            <strong>Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor</strong>
+            
+            <div class="proyek-container">
+                dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong><br>
+                di bawah bimbingan <strong>{{ $user->mentor ?? '-' }}</strong>
+            </div>
+        </div>
 
         <div class="tanggal">
             Diterbitkan pada: {{ \Carbon\Carbon::parse($tanggalTerbit ?? now())->isoFormat('D MMMM Y') }}
         </div>
     </div>
 
-   <div class="section-ttd">
-    <!-- 1. Panggil Jabatan Penandatangan -->
-    <div class="jabatan">{{ $jabatanPenandatangan }}</div>
+    <!-- BLOCK 3: PENANDATANGAN -->
+    <div class="section-ttd">
+        <div class="jabatan">{{ $jabatanPenandatangan ?? 'Pembimbing' }}</div>
 
-    <div class="box-ttd">
-        <!-- 2. Pengecekan Jenis TTD Elektronik / Non-Elektronik -->
-        @if($jenisTtd === 'elektronik')
-            <div class="badge-ttd-elektronik">
-                Ditandatangani secara elektronik oleh<br>
-                <strong>{{ $namaPenandatangan }}</strong>
-            </div>
-        @endif
-        <!-- Jika 'non_elektronik', area ini dibiarkan kosong untuk TTD basah -->
+        <div class="box-ttd">
+            @if(($jenisTtd ?? '') === 'elektronik')
+                <div class="badge-ttd-elektronik">
+                    Ditandatangani secara elektronik oleh<br>
+                    <strong>{{ $namaPenandatangan }}</strong>
+                </div>
+            @endif
+        </div>
+
+        <div class="nama-penandatangan">{{ $namaPenandatangan ?? 'Bambang Sutrisno' }}</div>
     </div>
-
-    <!-- 3. Panggil Nama Penandatangan -->
-    <div class="nama-penandatangan">{{ $namaPenandatangan }}</div>
 
 </body>
 </html>
