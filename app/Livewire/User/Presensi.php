@@ -35,6 +35,7 @@ class Presensi extends Component
     public $isWfa = false;
     public $statusKerja = 'wfo';
     public $jamMasukJadwal = null;
+    public $jamKeluarJadwal = null; // TAMBAHAN
     public $maxRadiusMeters = 150;
     public $targetLat = -6.595181;
     public $targetLng = 106.793836;
@@ -148,38 +149,39 @@ class Presensi extends Component
         }
     }
 
-    private function cekJadwalDanRadius()
-    {
-        $userId = $this->currentUserId();
+   private function cekJadwalDanRadius()
+{
+    $userId = $this->currentUserId();
 
-        if (!$userId) {
-            return;
-        }
+    if (!$userId) {
+        return;
+    }
 
-        Carbon::setLocale('id');
-        $hariIni = WorldTimeService::now()->translatedFormat('l');
+    Carbon::setLocale('id');
+    $hariIni = WorldTimeService::now()->translatedFormat('l');
 
-        $jadwalHariIni = DB::table('detail_jadwals')
-            ->join('jadwals', 'detail_jadwals.jadwal_id', '=', 'jadwals.jadwal_id')
-            ->where('detail_jadwals.user_id', $userId)
-            ->where(DB::raw('LOWER(detail_jadwals.hari)'), strtolower($hariIni))
-            ->select('jadwals.status_kerja', 'jadwals.jam_masuk')
-            ->first();
+    $jadwalHariIni = DB::table('detail_jadwals')
+        ->join('jadwals', 'detail_jadwals.jadwal_id', '=', 'jadwals.jadwal_id')
+        ->where('detail_jadwals.user_id', $userId)
+        ->where(DB::raw('LOWER(detail_jadwals.hari)'), strtolower($hariIni))
+        ->select('jadwals.status_kerja', 'jadwals.jam_masuk', 'jadwals.jam_keluar') // tambah jam_keluar
+        ->first();
 
-        if ($jadwalHariIni) {
-            $this->jamMasukJadwal = $jadwalHariIni->jam_masuk;
+    if ($jadwalHariIni) {
+        $this->jamMasukJadwal = $jadwalHariIni->jam_masuk;
+        $this->jamKeluarJadwal = $jadwalHariIni->jam_keluar; // TAMBAHAN
 
-            if (strtolower($jadwalHariIni->status_kerja) === 'wfh') {
-                $this->isWfa = true;
-                $this->statusKerja = 'wfh';
-                $this->maxRadiusMeters = 50000000;
-            } else {
-                $this->isWfa = false;
-                $this->statusKerja = 'wfo';
-                $this->maxRadiusMeters = 150;
-            }
+        if (strtolower($jadwalHariIni->status_kerja) === 'wfh') {
+            $this->isWfa = true;
+            $this->statusKerja = 'wfh';
+            $this->maxRadiusMeters = 50000000;
+        } else {
+            $this->isWfa = false;
+            $this->statusKerja = 'wfo';
+            $this->maxRadiusMeters = 150;
         }
     }
+}
 
     private function hitungJarakMeters($lat1, $lon1, $lat2, $lon2)
     {
@@ -267,6 +269,15 @@ class Presensi extends Component
                 session()->flash('warning', 'Anda sudah melakukan presensi PULANG hari ini!');
                 return;
             }
+
+             if ($this->jamKeluarJadwal) {
+        $jamSekarangStr = $waktuSekarang->format('H:i:s');
+
+        if ($jamSekarangStr < $this->jamKeluarJadwal) {
+            session()->flash('warning', 'Belum waktunya presensi PULANG! Jadwal pulang Anda pukul ' . substr($this->jamKeluarJadwal, 0, 5) . ' WIB.');
+            return;
+        }
+    }
         }
 
         $rules = [

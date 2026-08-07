@@ -13,28 +13,43 @@
         </button>
     </div>
 
-    <!-- Pesan Flash Notifikasi -->
-    @if (session()->has('message'))
-        <div class="p-4 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl">
-            {{ session('message') }}
-        </div>
-    @endif
-    @if (session()->has('error'))
-        <div class="p-4 text-xs font-medium text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-2xl">
-            {{ session('error') }}
-        </div>
-    @endif
+    <!-- Search Bar -->
+    <div class="relative">
+        <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" wire:model.live.debounce.400ms="search"
+               placeholder="Cari judul, isi, atau nama penulis forum..."
+               class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition">
 
-    <!-- Daftar Forum -->
+        <!-- Indikator loading saat searching -->
+        <div wire:loading wire:target="search" class="absolute right-3.5 top-1/2 -translate-y-1/2">
+            <svg class="w-4 h-4 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+        </div>
+
+        <!-- Tombol clear search -->
+        @if($search)
+            <button type="button" wire:click="$set('search', '')" wire:loading.remove wire:target="search"
+                    class="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        @endif
+    </div>
+
+   <!-- List Forum -->
     <div class="space-y-3">
         @forelse($forums as $forum)
-            @php
-                $authUser = auth()->user();
-                $authId = auth()->id();
-                
-                $roleValue = $authUser?->role instanceof \UnitEnum 
-                    ? $authUser->role->value 
-                    : (string) $authUser?->role;
+            <a href="{{ route('forum.show', $forum->forum_id) }}" class="block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 rounded-2xl p-5 shadow-sm transition duration-150 group">
+                <div class="flex gap-4 items-start">
+
+                    @if($forum->image)
+                        <img src="{{ asset('storage/' . $forum->image) }}" alt="Forum Image" class="w-20 h-20 object-cover rounded-xl border border-gray-200 dark:border-gray-800 shrink-0">
+                    @endif
 
                 // Pembuat forum ATAU Admin/Mentor/Non-PKL
                 $isOwner = (string) $forum->user_id === (string) $authId;
@@ -104,7 +119,14 @@
         @endforelse
     </div>
 
-    <!-- Modal Buat / Edit Forum -->
+    <!-- Pagination Links -->
+    @if($forums->hasPages())
+        <div class="pt-2">
+            {{ $forums->links() }}
+        </div>
+    @endif
+
+    <!-- Modal Buat Forum -->
     @if($showModal)
         <div class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" wire:click.self="closeModal">
             <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl">

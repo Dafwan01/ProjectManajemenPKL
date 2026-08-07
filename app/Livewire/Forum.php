@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination; // 1. Trait Pagination
 use App\Models\Forum as ForumModel;
 use App\Enums\UserRole;
 use Illuminate\Support\Facades\Auth;
@@ -12,14 +13,15 @@ use App\Services\BadWord;
 
 class Forum extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, WithPagination; // 2. Pasang Trait
 
-    public bool $showModal = false;
-    public ?int $editingId = null;
-    public string $title = '';
-    public string $content = '';
+    public $showModal = false;
+    public $title = '';
+    public $content = '';
     public $image;
-    public ?string $existingGambar = null;
+
+    // 3. Property Search
+    public $search = '';
 
     protected array $rules = [
         'title'   => 'required|min:1|max:255',
@@ -34,6 +36,12 @@ class Forum extends Component
         'image.image'      => 'Berkas harus berupa gambar (JPG, PNG, WEBP)!',
         'image.max'        => 'Ukuran gambar maksimal 2 MB!',
     ];
+
+    // 4. Reset ke halaman 1 setiap kali search berubah
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
 
     private function layoutUntukRole(): string
     {
@@ -204,10 +212,20 @@ class Forum extends Component
     public function render()
     {
         return view('livewire.forum', [
+            // 5. Filter + Paginate
             'forums' => ForumModel::with('user')
                 ->withCount('messages')
+                ->when($this->search, function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('title', 'like', '%' . $this->search . '%')
+                          ->orWhere('content', 'like', '%' . $this->search . '%')
+                          ->orWhereHas('user', function ($uq) {
+                              $uq->where('nama', 'like', '%' . $this->search . '%');
+                          });
+                    });
+                })
                 ->latest()
-                ->get(),
+                ->paginate(10),
         ])->layout($this->layoutUntukRole());
     }
 }
