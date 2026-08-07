@@ -186,6 +186,17 @@
                             </a>
                         </li>
 
+                        <!-- Menu Profil Saya -->
+                        <li>
+                            <a href="{{ route('profile') }}" wire:navigate
+                               class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('profile') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
+                                <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('profile') ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white' }}" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                                </svg>
+                                <span class="flex-1 ms-3 text-sm whitespace-nowrap">Profil Saya</span>
+                            </a>
+                        </li>
+
                         <!-- Menu Log Aktivitas (Khusus Admin) -->
                         @if(auth()->check() && (auth()->user()->role === \App\Enums\UserRole::ADMIN || auth()->user()->role?->value === \App\Enums\UserRole::ADMIN->value))
                         <li>
@@ -241,18 +252,20 @@
                         </svg>
                     </button>
 
-                    <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                        {{ auth()->user()->nama ?? auth()->user()->name ?? 'Tamu' }}
-                    </span>
+                    <a href="{{ route('profile') }}" wire:navigate class="flex items-center gap-3 hover:opacity-80 transition">
+                        <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                            {{ auth()->user()->nama ?? auth()->user()->name ?? 'Tamu' }}
+                        </span>
 
-                    @if(auth()->user()?->foto)
-                        <img src="{{ asset('storage/' . auth()->user()->foto) }}" alt="Foto Profil"
-                             class="w-9 h-9 rounded-full object-cover ring-2 ring-blue-500/30">
-                    @else
-                        <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center tracking-wider shadow-md shadow-blue-600/30 ring-2 ring-blue-500/30">
-                            {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'TM', 0, 2)) }}
-                        </div>
-                    @endif
+                        @if(auth()->user()?->foto)
+                            <img src="{{ asset('storage/' . auth()->user()->foto) }}" alt="Foto Profil"
+                                 class="w-9 h-9 rounded-full object-cover ring-2 ring-blue-500/30">
+                        @else
+                            <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center tracking-wider shadow-md shadow-blue-600/30 ring-2 ring-blue-500/30">
+                                {{ strtoupper(substr(auth()->user()->nama ?? auth()->user()->name ?? 'TM', 0, 2)) }}
+                            </div>
+                        @endif
+                    </a>
                 </div>
             </header>
 

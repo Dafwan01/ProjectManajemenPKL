@@ -203,7 +203,7 @@ class User extends Authenticatable
 
     public function divisi()
     {
-        return $this->belongsTo(Divisi::class);
+            return $this->belongsTo(Divisi::class, 'divisi_id', 'divisi_id');
     }
 
     public function forums()
