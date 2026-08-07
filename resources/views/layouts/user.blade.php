@@ -56,14 +56,15 @@
                 || $updateTerakhirJadwal->gt($userLogin->jadwal_dilihat_at);
         }
 
-        // Cek Notifikasi Berkas & Nilai Unread
+        // Cek Notifikasi Berkas, Nilai & Sertifikat Unread
         $adaNotifBerkas = $userLogin->unreadNotifications()
             ->whereIn('data->title', [
                 'Berkas Baru Diunggah', 
                 'Surat Penerimaan Magang', 
                 'Nilai', 
                 'Nilai Baru', 
-                'Pembaruan Nilai'
+                'Pembaruan Nilai',
+                'Sertifikat' // <-- Tambahkan ini
             ])
             ->exists();
     }

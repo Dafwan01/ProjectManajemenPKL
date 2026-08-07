@@ -1,8 +1,20 @@
 <div>
-    <div class="w-full mx-auto max-w-7xl">
+    <div class="w-full mx-auto max-w-7xl space-y-6">
+
+        <!-- Banner Alert Jika User Sudah Lulus -->
+        @if (strtolower(auth()->user()->status->value ?? auth()->user()->status ?? '') === 'lulus')
+            <div class="flex items-center gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+                <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div class="text-sm font-medium">
+                    <span class="font-bold">Status Anda: Lulus!</span> Riwayat presensi dan logbook telah dikunci dan tidak dapat diubah kembali.
+                </div>
+            </div>
+        @endif
 
         <!-- Header Judul -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-200 dark:border-gray-700 gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">RIWAYAT PRESENSI</h1>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Daftar lengkap catatan kehadiran, logbook, dan status pengajuan izin/sakit/absen Anda.</p>
@@ -27,64 +39,63 @@
 
         <!-- Flash Message Notification -->
         @if (session()->has('message'))
-            <div x-data="{ show: true }" x-show="show" class="mb-4 p-3 bg-green-100 dark:bg-green-900/50 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 text-xs rounded-lg flex items-center justify-between">
+            <div x-data="{ show: true }" x-show="show" class="p-3 bg-green-100 dark:bg-green-900/50 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 text-xs rounded-lg flex items-center justify-between">
                 <span>{{ session('message') }}</span>
                 <button type="button" class="text-green-600 dark:text-green-400 hover:text-gray-900 dark:hover:text-white" @click="show = false">✕</button>
             </div>
         @endif
 
         @if (session()->has('error'))
-            <div x-data="{ show: true }" x-show="show" class="mb-4 p-3 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 text-xs rounded-lg flex items-center justify-between">
+            <div x-data="{ show: true }" x-show="show" class="p-3 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 text-xs rounded-lg flex items-center justify-between">
                 <span>{{ session('error') }}</span>
                 <button type="button" class="text-red-600 dark:text-red-400 hover:text-gray-900 dark:hover:text-white" @click="show = false">✕</button>
             </div>
         @endif
 
-       <!-- Section Filter -->
-<div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-lg mb-6 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between transition-all duration-300">
-    
-    <!-- Filter Range Tanggal -->
-    <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-        <svg class="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-        
-        <input 
-            type="date" 
-            wire:model.live="tanggalMulai"
-            class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-inner w-full sm:w-auto min-w-0 flex-1 sm:flex-initial"
-        >
-        <span class="text-gray-400 dark:text-gray-500 text-xs shrink-0">s/d</span>
-        <input 
-            type="date" 
-            wire:model.live="tanggalSelesai"
-            class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-inner w-full sm:w-auto min-w-0 flex-1 sm:flex-initial"
-        >
+        <!-- Section Filter -->
+        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-lg flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between transition-all duration-300">
+            <!-- Filter Range Tanggal -->
+            <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                <svg class="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                
+                <input 
+                    type="date" 
+                    wire:model.live="tanggalMulai"
+                    class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-inner w-full sm:w-auto min-w-0 flex-1 sm:flex-initial"
+                >
+                <span class="text-gray-400 dark:text-gray-500 text-xs shrink-0">s/d</span>
+                <input 
+                    type="date" 
+                    wire:model.live="tanggalSelesai"
+                    class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 shadow-inner w-full sm:w-auto min-w-0 flex-1 sm:flex-initial"
+                >
 
-        @if($tanggalMulai || $tanggalSelesai)
-            <button 
-                type="button"
-                wire:click="resetFilterTanggal"
-                class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 whitespace-nowrap shrink-0"
-            >
-                Reset
-            </button>
-        @endif
-    </div>
+                @if($tanggalMulai || $tanggalSelesai)
+                    <button 
+                        type="button"
+                        wire:click="resetFilterTanggal"
+                        class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 whitespace-nowrap shrink-0"
+                    >
+                        Reset
+                    </button>
+                @endif
+            </div>
 
-    <!-- Filter Status -->
-    <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
-        <label class="text-xs text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap shrink-0">Filter Status:</label>
-        <select wire:model.live="filterStatus" class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-inner transition cursor-pointer w-full lg:w-auto">
-            <option value="semua">Semua Status</option>
-            <option value="hadir">Status: HADIR</option>
-            <option value="terlambat">Status: TERLAMBAT</option>
-            <option value="izin">Status: IZIN</option>
-            <option value="sakit">Status: SAKIT</option>
-            <option value="menunggu">Absen: Menunggu Persetujuan</option>
-            <option value="ditolak">Absen: Ditolak</option>
-            <option value="disetujui">Absen: Disetujui (Riwayat Pengajuan)</option>
-        </select>
-    </div>
-</div>
+            <!-- Filter Status -->
+            <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+                <label class="text-xs text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap shrink-0">Filter Status:</label>
+                <select wire:model.live="filterStatus" class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-inner transition cursor-pointer w-full lg:w-auto">
+                    <option value="semua">Semua Status</option>
+                    <option value="hadir">Status: HADIR</option>
+                    <option value="terlambat">Status: TERLAMBAT</option>
+                    <option value="izin">Status: IZIN</option>
+                    <option value="sakit">Status: SAKIT</option>
+                    <option value="menunggu">Absen: Menunggu Persetujuan</option>
+                    <option value="ditolak">Absen: Ditolak</option>
+                    <option value="disetujui">Absen: Disetujui (Riwayat Pengajuan)</option>
+                </select>
+            </div>
+        </div>
 
         <!-- Section Tabel Riwayat -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-xl w-full mb-8 min-h-[400px]">
@@ -169,7 +180,16 @@
 
                                 <!-- Kolom Aksi Edit -->
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
-                                    @if($item['bisa_edit'] ?? true)
+                                    @if(strtolower(auth()->user()->status->value ?? auth()->user()->status ?? '') === 'lulus')
+                                        <button 
+                                            type="button" 
+                                            disabled
+                                            class="opacity-50 cursor-not-allowed text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 p-2 rounded-lg inline-flex items-center gap-1 text-xs"
+                                            title="Telah Lulus">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                            <span>Terkunci</span>
+                                        </button>
+                                    @elseif($item['bisa_edit'] ?? true)
                                         <button 
                                             type="button" 
                                             wire:click="editLogbook({{ $item['presensi_id'] }})"

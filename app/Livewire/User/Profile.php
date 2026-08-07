@@ -48,15 +48,32 @@ class Profile extends Component
     public $fotoCaptured = null; // hasil jepretan kamera (base64)
     public bool $showPhotoOptions = false;
 
+    /**
+     * Helper untuk mengecek apakah user sudah lulus
+     */
+  /**
+     * Helper untuk mengecek apakah user sudah lulus
+     */
+    private function isLulus(): bool
+    {
+        if (!$this->user || !$this->user->status) {
+            return false;
+        }
+
+        // Ambil nilai string dari Backed Enum atau variabel string biasa
+        $statusValue = $this->user->status instanceof \BackedEnum 
+            ? $this->user->status->value 
+            : $this->user->status;
+
+        return strtolower((string) $statusValue) === 'lulus';
+    }
+
     #[Computed]
     public function daftarSekolah()
     {
         return Sekolah::orderBy('nama_sekolah', 'asc')->get();
     }
 
-    // Dipakai untuk menampilkan nama Divisi & Bidang milik user (read-only).
-    // Sengaja ambil kolom bidang_id langsung (bukan lewat relasi $divisi->bidang)
-    // supaya tidak tergantung pada guessing foreign key Eloquent yang pernah bermasalah.
     #[Computed]
     public function divisiSaatIni()
     {
@@ -96,7 +113,7 @@ class Profile extends Component
             'tempat_lahir' => ['nullable', 'string', 'max:255'],
             'tanggal_lahir' => ['nullable', 'date'],
             'jenis_kelamin' => ['nullable', 'string', 'in:Laki-laki,Perempuan'],
-           'sekolah_id' => ['nullable', 'integer', Rule::exists('sekolahs', 'sekolah_id')],
+            'sekolah_id' => ['nullable', 'integer', Rule::exists('sekolahs', 'sekolah_id')],
             'jurusan' => ['nullable', 'string', 'max:255'],
             'skill' => ['nullable', 'string', 'max:500'],
             'tanggal_mulai' => ['nullable', 'date'],
@@ -105,7 +122,6 @@ class Profile extends Component
             'confirm_password' => ['nullable', 'string'],
             'fotoUpload' => ['nullable', 'image', 'max:2048'],
             'fotoCaptured' => ['nullable', 'string', 'max:5000000'],
-            
         ];
     }
 
@@ -181,6 +197,10 @@ class Profile extends Component
 
     public function updated($propertyName)
     {
+        if ($this->isLulus()) {
+            return;
+        }
+
         if ($propertyName === 'fotoUpload' || $propertyName === 'fotoCaptured') {
             return;
         }
@@ -190,6 +210,12 @@ class Profile extends Component
 
     public function startEditing()
     {
+        // Cegah eksekusi mode edit jika sudah lulus
+        if ($this->isLulus()) {
+            session()->flash('error', 'Profil tidak dapat diubah karena Anda sudah dinyatakan LULUS.');
+            return;
+        }
+
         $this->editing = true;
     }
 
@@ -206,11 +232,21 @@ class Profile extends Component
 
     public function togglePhotoOptions()
     {
+        if ($this->isLulus()) {
+            return;
+        }
+
         $this->showPhotoOptions = ! $this->showPhotoOptions;
     }
 
     public function saveProfile()
     {
+        // Proteksi tingkat akhir backend jika user mencoba memanggil method via Livewire request
+        if ($this->isLulus()) {
+            session()->flash('error', 'Profil tidak dapat diubah karena Anda sudah dinyatakan LULUS.');
+            return redirect()->route('user.profile');
+        }
+
         $validated = $this->validate();
 
         $updateData = [

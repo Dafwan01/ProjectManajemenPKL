@@ -75,31 +75,37 @@ class Nilai extends Component
     }
 
    #[Layout('layouts.dashboard')]
-public function render()
-{
-    $currentUser = Auth::user();
-    $isMentor = $this->isMentorUser();
+    public function render()
+    {
+        $currentUser = Auth::user();
+        $isMentor = $this->isMentorUser();
 
-    $users = User::query()
-        ->where('role', UserRole::PKL->value)
-        // Filter Pencarian
-        ->when($this->search, function ($query) {
-            $query->where(function ($q) {
-                $q->where('nama', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%')
-                  ->orWhereHas('sekolah', function ($subQuery) {
-                      $subQuery->where('nama_sekolah', 'like', '%' . $this->search . '%');
-                  });
-            });
-        })
-        // Filter hanya anak bimbingan jika yang login adalah Mentor
-        ->when($isMentor, function ($query) use ($currentUser) {
-            $query->where('mentor', $currentUser->nama);
-        })
-        ->with(['nilai', 'nilais', 'sekolah'])
-        ->latest('tanggal_mulai')
-        ->paginate(10);
+        $users = User::query()
+            ->where('role', UserRole::PKL->value)
+            // Filter Pencarian
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('nama', 'like', '%' . $this->search . '%')
+                      ->orWhere('email', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('sekolah', function ($subQuery) {
+                          $subQuery->where('nama_sekolah', 'like', '%' . $this->search . '%');
+                      });
+                });
+            })
+            // Filter hanya anak bimbingan jika yang login adalah Mentor
+            ->when($isMentor, function ($query) use ($currentUser) {
+                $query->where('mentor', $currentUser->nama);
+            })
+            // Priority Sort: Status 'aktif' (1) di atas, 'lulus' (2) di bawah, status lain (3)
+            ->orderByRaw("CASE 
+                WHEN status = 'aktif' THEN 1 
+                WHEN status = 'lulus' THEN 2 
+                ELSE 3 
+            END ASC")
+            ->latest('tanggal_mulai')
+            ->with(['nilai', 'nilais', 'sekolah'])
+            ->paginate(10);
 
-    return view('livewire.dashboard.upload-file.nilai', compact('users'));
-}
+        return view('livewire.dashboard.upload-file.nilai', compact('users'));
+    }
 }

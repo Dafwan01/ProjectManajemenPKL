@@ -120,7 +120,7 @@ class SuratPenerimaanMagang extends Component
     session()->flash('message', 'Surat penerimaan magang (PDF) untuk ' . $user->nama . ' berhasil diupload!');
 }
 
-    public function render()
+   public function render()
     {
         $currentUser = Auth::user();
         $isMentor = $this->isMentorUser();
@@ -138,6 +138,12 @@ class SuratPenerimaanMagang extends Component
                 $query->where('nama', 'like', '%' . $this->search . '%')
                       ->orWhere('email', 'like', '%' . $this->search . '%');
             })
+            // Priority Sort: Status 'aktif' (1) di atas, 'lulus' (2) di bawah, status lain (3)
+            ->orderByRaw("CASE 
+                WHEN status = 'aktif' THEN 1 
+                WHEN status = 'lulus' THEN 2 
+                ELSE 3 
+            END ASC")
             ->latest('tanggal_mulai')
             ->paginate(10);
 

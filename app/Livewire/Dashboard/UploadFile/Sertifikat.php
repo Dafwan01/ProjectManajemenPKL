@@ -5,6 +5,7 @@ namespace App\Livewire\Dashboard\UploadFile;
 use App\Enums\UserRole;
 use App\Models\file as FileModel;
 use App\Models\User;
+use App\Notifications\NilaiUpdatedNotification; // Atau buat class notification khusus seperti SertifikatPublishedNotification
 use App\Services\CertificateService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -115,6 +116,9 @@ class Sertifikat extends Component
     /**
      * Eksekusi Generate PDF & Simpan File
      */
+   /**
+     * Eksekusi Generate PDF & Simpan File
+     */
     public function generate(): void
     {
         $this->validate([
@@ -148,7 +152,16 @@ class Sertifikat extends Component
                 ]
             );
 
-            session()->flash('message', 'Sertifikat untuk ' . $user->nama . ' berhasil diterbitkan!');
+            // Update Status User Menjadi Lulus
+            $user->update([
+                'status' => 'Lulus', // Sesuaikan dengan nama kolom & value di database Anda
+            ]);
+
+            // Trigger Notifikasi ke Anak PKL
+            $currentUser = Auth::user();
+            $user->notify(new NilaiUpdatedNotification($currentUser->nama ?? 'Admin/Mentor'));
+
+            session()->flash('message', 'Sertifikat untuk ' . $user->nama . ' berhasil diterbitkan dan status diubah menjadi Lulus!');
             $this->closeForm();
         } catch (\Exception $e) {
             session()->flash('error', 'Gagal membuat sertifikat: ' . $e->getMessage());
@@ -156,31 +169,37 @@ class Sertifikat extends Component
     }
 
   #[Layout('layouts.dashboard')]
-public function render()
-{
-    $currentUser = Auth::user();
-    $isMentor = $this->isMentorUser();
+    public function render()
+    {
+        $currentUser = Auth::user();
+        $isMentor = $this->isMentorUser();
 
-    $users = User::query()
-        ->where('role', UserRole::PKL->value)
-        // Filter Pencarian
-        ->when($this->search, function ($query) {
-            $query->where(function ($q) {
-                $q->where('nama', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%')
-                  ->orWhereHas('sekolah', function ($subQuery) {
-                      $subQuery->where('nama_sekolah', 'like', '%' . $this->search . '%');
-                  });
-            });
-        })
-        // Filter hanya anak bimbingan jika yang login adalah Mentor
-        ->when($isMentor, function ($query) use ($currentUser) {
-            $query->where('mentor', $currentUser->nama);
-        })
-        ->with(['files', 'sekolah'])
-        ->latest('tanggal_mulai')
-        ->paginate(10);
+        $users = User::query()
+            ->where('role', UserRole::PKL->value)
+            // Filter Pencarian
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('nama', 'like', '%' . $this->search . '%')
+                      ->orWhere('email', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('sekolah', function ($subQuery) {
+                          $subQuery->where('nama_sekolah', 'like', '%' . $this->search . '%');
+                      });
+                });
+            })
+            // Filter hanya anak bimbingan jika yang login adalah Mentor
+            ->when($isMentor, function ($query) use ($currentUser) {
+                $query->where('mentor', $currentUser->nama);
+            })
+            // Priority Sort: Status 'aktif' (1) di atas, 'lulus' (2) di bawah, status lain (3)
+            ->orderByRaw("CASE 
+                WHEN status = 'aktif' THEN 1 
+                WHEN status = 'lulus' THEN 2 
+                ELSE 3 
+            END ASC")
+            ->latest('tanggal_mulai')
+            ->with(['files', 'sekolah'])
+            ->paginate(10);
 
-    return view('livewire.dashboard.upload-file.sertifikat', compact('users'));
-}
+        return view('livewire.dashboard.upload-file.sertifikat', compact('users'));
+    }
 }

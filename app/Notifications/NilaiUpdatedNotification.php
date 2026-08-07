@@ -10,10 +10,14 @@ class NilaiUpdatedNotification extends Notification
     use Queueable;
 
     public string $uploaderNama;
+    public string $title;
+    public string $message;
 
-    public function __construct(string $uploaderNama)
+    public function __construct(string $uploaderNama, string $title = 'Pembaruan Nilai', ?string $message = null)
     {
         $this->uploaderNama = $uploaderNama;
+        $this->title = $title;
+        $this->message = $message ?? "{$this->uploaderNama} telah memperbarui/mengunggah dokumen magang Anda.";
     }
 
     public function via(object $notifiable): array
@@ -24,10 +28,10 @@ class NilaiUpdatedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title'   => 'Nilai',
-            'message' => "{$this->uploaderNama} telah memperbarui/mengunggah Nilai magang Anda.",
+            'title'   => $this->title,
+            'message' => $this->message,
             'icon'    => 'academic-cap',
-            'url'     => route('nilai'),
+            'url'     => route('user.dokumen'),
         ];
     }
 }
