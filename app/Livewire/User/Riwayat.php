@@ -82,7 +82,6 @@ class Riwayat extends Component
 
     public function editLogbook($presensiId)
     {
-        // Cegah jika user sudah lulus
         if ($this->isLulus()) {
             session()->flash('error', 'Logbook tidak dapat diubah karena Anda sudah dinyatakan LULUS.');
             return;
@@ -101,7 +100,6 @@ class Riwayat extends Component
 
     public function updateLogbook()
     {
-        // Proteksi tingkat backend jika user memanggil method via Livewire
         if ($this->isLulus()) {
             session()->flash('error', 'Logbook tidak dapat diubah karena Anda sudah dinyatakan LULUS.');
             $this->closeModal();
@@ -113,7 +111,7 @@ class Riwayat extends Component
         $presensi = PresensiModel::findOrFail($this->editingPresensiId);
 
         if ($presensi->user_id !== auth()->id()) {
-            session()->flash('error', 'Anda tidak memiliki akses untuk mengedit logbook ini.');
+            session()->flash('error', 'Anda tidak memiliki akses untuk mengubah logbook ini.');
             $this->closeModal();
             return;
         }
@@ -140,24 +138,24 @@ class Riwayat extends Component
         $this->resetValidation();
     }
 
-    /**
-     * Label jenis + bagian (Masuk/Pulang) untuk pengajuan absen susulan.
-     */
     private function labelAbsenSusulan(PermohonanIzinModel $p): string
     {
         $bagian = [];
         if ($p->absen_masuk) $bagian[] = 'Masuk';
-        if ($p->absen_pulang) $bagian[] = 'Pulang';
+        if ($p->absen_pulang) $bagian[] = 'Keluar';
 
         return 'ABSEN (' . implode(' & ', $bagian) . ')';
     }
 
     public function render()
     {
+        // Set locale Carbon ke Indonesia untuk nama hari & bulan
+        Carbon::setLocale('id');
+
         $userId = auth()->id();
         $userIsLulus = $this->isLulus();
 
-        // 1) Data presensi asli (realisasi kehadiran harian)
+        // 1) Data presensi asli
         $presensiList = PresensiModel::with(['logBooks'])
             ->where('user_id', $userId)
             ->when($this->tanggalMulai, function ($query) {
@@ -173,19 +171,32 @@ class Riwayat extends Component
         foreach ($presensiList as $presensi) {
             $statusValue = $presensi->status_kehadiran?->value ?? $presensi->status_kehadiran;
 
+            // Format tanggal & jam ke standar Indonesia
+            $tanggalFormatIndo = $presensi->tanggal 
+                ? Carbon::parse($presensi->tanggal)->translatedFormat('l, d F Y') 
+                : '-';
+
+            $jamMasukFormatIndo = $presensi->absen_masuk 
+                ? Carbon::parse($presensi->absen_masuk)->format('H.i') . ' WIB' 
+                : '-';
+
+            $jamPulangFormatIndo = $presensi->absen_keluar 
+                ? Carbon::parse($presensi->absen_keluar)->format('H.i') . ' WIB' 
+                : '-';
+
             $baris->push([
                 'tanggal_sort' => $presensi->tanggal,
-                'tanggal'      => $presensi->tanggal ? $presensi->tanggal->translatedFormat('l, d/m/Y') : '-',
-                'jam_masuk'    => $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) . ' WIB' : '-',
-                'jam_pulang'   => $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) . ' WIB' : '-',
+                'tanggal'      => $tanggalFormatIndo,
+                'jam_masuk'    => $jamMasukFormatIndo,
+                'jam_pulang'   => $jamPulangFormatIndo,
                 'status'       => strtoupper($statusValue ?? '-'),
                 'logbook'      => $presensi->logBooks->first()?->kegiatan,
                 'presensi_id'  => $presensi->presensi_id,
-                'bisa_edit'    => !$userIsLulus, // Jika sudah lulus, otomatis set false
+                'bisa_edit'    => !$userIsLulus,
             ]);
         }
 
-        // 2) Semua pengajuan ABSEN SUSULAN (pending / ditolak / disetujui)
+        // 2) Pengajuan Absen Susulan
         $pengajuanAbsen = PermohonanIzinModel::where('user_id', $userId)
             ->where('jenis', 'absen')
             ->get();
@@ -209,7 +220,7 @@ class Riwayat extends Component
 
                 $baris->push([
                     'tanggal_sort' => $tgl->copy(),
-                    'tanggal'      => $tgl->translatedFormat('l, d/m/Y'),
+                    'tanggal'      => $tgl->translatedFormat('l, d F Y'),
                     'jam_masuk'    => '-',
                     'jam_pulang'   => '-',
                     'status'       => $prefix . $this->labelAbsenSusulan($p),
@@ -229,7 +240,7 @@ class Riwayat extends Component
 
         $baris = $baris->sortByDesc('tanggal_sort')->values();
 
-        // Pagination manual atas hasil gabungan
+        // Pagination
         $page = LengthAwarePaginator::resolveCurrentPage() ?: 1;
         $perPage = 10;
         $items = $baris->slice(($page - 1) * $perPage, $perPage)->values();

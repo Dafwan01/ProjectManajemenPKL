@@ -21,10 +21,10 @@ class Dokumen extends Component
     public $filterExtension = '';
     public $filterUploadAt = '';
 
-    // Flag status kelulusan user
+    // Flag status kelulusan pengguna
     public bool $isLulus = false;
 
-    // State Modal & Preview
+    // State Modal & Pratinjau
     public $showModal = false;
     public $selectedFile = null;
     public $previewUrl = '';
@@ -37,36 +37,36 @@ class Dokumen extends Component
     ];
 
     protected $messages = [
-        'fileProject.mimes'    => 'Format file yang diperbolehkan: ZIP, RAR, PDF, PNG, JPG.',
-        'fileProject.max'      => 'File maksimal 50MB.',
-        'fileProject.required' => 'Silakan unggah file.',
-        'nama.required'        => 'Nama file wajib diisi.',
-        'nama.max'             => 'Nama file maksimal 255 karakter.',
+        'fileProject.mimes'    => 'Format berkas yang diperbolehkan: ZIP, RAR, PDF, PNG, JPG, JPEG.',
+        'fileProject.max'      => 'Ukuran berkas maksimal 50MB.',
+        'fileProject.required' => 'Silakan pilih berkas yang ingin diunggah.',
+        'nama.required'        => 'Nama berkas wajib diisi.',
+        'nama.max'             => 'Nama berkas maksimal 255 karakter.',
     ];
 
     public function mount()
     {
-     if (auth()->check()) {
-        // Gabungkan seluruh keyword notifikasi berkas & nilai dalam satu query
-        auth()->user()->unreadNotifications()
-            ->whereIn('data->title', [
-               'Berkas Baru Diunggah', 
-        'Surat Penerimaan Magang', 
-        'Nilai', 
-        'Nilai Baru', 
-        'Pembaruan Nilai',
-        'Sertifikat'
-            ])
-            ->get()
-            ->each(fn ($notification) => $notification->markAsRead());
-    }
+        if (auth()->check()) {
+            // Gabungkan seluruh kata kunci notifikasi berkas & nilai dalam satu query
+            auth()->user()->unreadNotifications()
+                ->whereIn('data->title', [
+                    'Berkas Baru Diunggah', 
+                    'Surat Penerimaan Magang', 
+                    'Nilai', 
+                    'Nilai Baru', 
+                    'Pembaruan Nilai',
+                    'Sertifikat'
+                ])
+                ->get()
+                ->each(fn ($notification) => $notification->markAsRead());
+        }
     
         $this->loadUploadedFiles();
         $this->cekUserStatus();
     }
 
     /**
-     * Pengecekan apakah status user saat ini adalah LULUS
+     * Pengecekan apakah status pengguna saat ini adalah LULUS
      */
     private function cekUserStatus()
     {
@@ -77,7 +77,7 @@ class Dokumen extends Component
 
         if (strtolower((string) $userStatus) === 'lulus' || $userStatus === UserStatus::LULUS->value) {
             $this->isLulus = true;
-            session()->flash('warning', 'Status akun Anda adalah LULUS. Anda tidak dapat mengunggah dokumen baru lagi.');
+            session()->flash('warning', 'Status akun Anda adalah LULUS. Anda tidak dapat mengunggah berkas baru lagi.');
         }
     }
 
@@ -112,13 +112,13 @@ class Dokumen extends Component
         $user = Auth::user();
 
         if (!$user) {
-            session()->flash('error', 'Silakan login terlebih dahulu sebelum mengunggah file.');
+            session()->flash('error', 'Silakan masuk terlebih dahulu sebelum mengunggah berkas.');
             return;
         }
 
         $extension = $this->fileProject->getClientOriginalExtension();
 
-        $userNameSanitized = Str::slug($user->nama ?? $user->name ?? 'user', '-');
+        $userNameSanitized = Str::slug($user->nama ?? $user->name ?? 'pengguna', '-');
         $fileNameSanitized = Str::slug($this->nama, '-');
 
         $customFileName = $userNameSanitized . '-' . $fileNameSanitized . '-' . time() . '.' . $extension;
@@ -133,11 +133,11 @@ class Dokumen extends Component
 
         $this->reset(['fileProject', 'nama']);
         $this->loadUploadedFiles();
-        session()->flash('message', 'File berhasil disimpan di storage pribadi Anda.');
+        session()->flash('message', 'Berkas berhasil disimpan di penyimpanan pribadi Anda.');
     }
 
     /**
-     * Membuka Modal Preview untuk Gambar & PDF
+     * Membuka Modal Pratinjau untuk Gambar & PDF
      */
     public function openPreviewModal($fileId)
     {
@@ -151,17 +151,16 @@ class Dokumen extends Component
         if (Storage::disk('public')->exists($this->selectedFile->file)) {
             $extension = strtolower(pathinfo($this->selectedFile->file, PATHINFO_EXTENSION));
 
-            // Use a relative storage path to preserve the current host and port
             $this->previewUrl = '/storage/' . ltrim($this->selectedFile->file, '/');
             $this->fileExtension = $extension;
             $this->showModal = true;
         } else {
-            session()->flash('error', 'File tidak ditemukan di server.');
+            session()->flash('error', 'Berkas tidak ditemukan di server.');
         }
     }
 
     /**
-     * Tutup Modal Preview
+     * Tutup Modal Pratinjau
      */
     public function closePreviewModal()
     {
@@ -184,7 +183,7 @@ class Dokumen extends Component
             return Storage::disk('public')->download($fileRecord->file);
         }
 
-        session()->flash('error', 'File tidak ditemukan di server.');
+        session()->flash('error', 'Berkas tidak ditemukan di server.');
     }
 
     public function confirmDelete($fileId)
@@ -222,7 +221,7 @@ class Dokumen extends Component
             $this->closePreviewModal();
         }
 
-        session()->flash('message', 'File berhasil dihapus.');
+        session()->flash('message', 'Berkas berhasil dihapus.');
     }
 
     public function loadUploadedFiles()

@@ -5,8 +5,9 @@ namespace App\Livewire\Dashboard\UploadFile;
 use App\Enums\UserRole;
 use App\Models\file as FileModel;
 use App\Models\User;
-use App\Notifications\NilaiUpdatedNotification; // Atau buat class notification khusus seperti SertifikatPublishedNotification
+use App\Notifications\NilaiUpdatedNotification;
 use App\Services\CertificateService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -17,25 +18,33 @@ class Sertifikat extends Component
 {
     use WithPagination;
 
-    // Property Search
+    // Properti Pencarian
     public string $search = '';
 
-    // Property Modal Form Input/Generate Sertifikat
+    // Properti Modal Formulir Input/Terbitkan Sertifikat
     public bool $showModal = false; 
     public $selectedUserId = null;
 
-    // Property Modal PDF Preview (Tanpa Buka Tab Baru)
+    // Properti Modal Pratinjau PDF (Tanpa Membuka Tab Baru)
     public bool $showPdfModal = false;
     public $pdfUserId = null;
     public ?string $previewUrl = null;
     public ?string $previewUserName = null;
 
-    // Form Fields
+    // Field Formulir
     public string $nomorSertifikat = '';
     public string $tanggalTerbit = '';
     public string $namaPenandatangan = '';
     public string $jabatanPenandatangan = '';
     public string $jenisTtd = 'elektronik'; // Default: 'elektronik' atau 'non_elektronik'
+
+    /**
+     * Memastikan locale Carbon diatur ke Bahasa Indonesia.
+     */
+    public function boot(): void
+    {
+        Carbon::setLocale('id');
+    }
 
     public function mount(): void
     {
@@ -48,7 +57,7 @@ class Sertifikat extends Component
     }
 
     /**
-     * Helper untuk mengecek apakah user yang login adalah Mentor secara aman
+     * Helper untuk mengecek apakah pengguna yang login adalah Mentor secara aman
      */
     private function isMentorUser(): bool
     {
@@ -64,7 +73,7 @@ class Sertifikat extends Component
         return $userRole === UserRole::MENTOR->value;
     }
 
-    // Modal Form Sertifikat
+    // Modal Formulir Sertifikat
     public function openForm($userId): void
     {
         $this->selectedUserId = $userId;
@@ -82,7 +91,7 @@ class Sertifikat extends Component
         $this->selectedUserId = null;
     }
 
-    // Modal PDF Preview
+    // Modal Pratinjau PDF
     public function openPdfModal($userId): void
     {
         $user = User::where('user_id', $userId)->first();
@@ -101,7 +110,7 @@ class Sertifikat extends Component
             $this->pdfUserId = $userId;
             $this->showPdfModal = true;
         } else {
-            session()->flash('error', 'File sertifikat belum tersedia.');
+            session()->flash('error', 'Berkas sertifikat belum tersedia.');
         }
     }
 
@@ -114,10 +123,7 @@ class Sertifikat extends Component
     }
 
     /**
-     * Eksekusi Generate PDF & Simpan File
-     */
-   /**
-     * Eksekusi Generate PDF & Simpan File
+     * Eksekusi Buat PDF & Simpan Berkas
      */
     public function generate(): void
     {
@@ -127,6 +133,12 @@ class Sertifikat extends Component
             'namaPenandatangan'    => 'required|string|max:255',
             'jabatanPenandatangan' => 'required|string|max:255',
             'jenisTtd'             => 'required|in:elektronik,non_elektronik',
+        ], [
+            'nomorSertifikat.required'      => 'Nomor sertifikat wajib diisi.',
+            'tanggalTerbit.required'        => 'Tanggal terbit wajib diisi.',
+            'namaPenandatangan.required'    => 'Nama penandatangan wajib diisi.',
+            'jabatanPenandatangan.required' => 'Jabatan penandatangan wajib diisi.',
+            'jenisTtd.required'             => 'Pilih jenis tanda tangan.',
         ]);
 
         try {
@@ -152,23 +164,23 @@ class Sertifikat extends Component
                 ]
             );
 
-            // Update Status User Menjadi Lulus
+            // Perbarui Status Peserta Menjadi Lulus
             $user->update([
-                'status' => 'Lulus', // Sesuaikan dengan nama kolom & value di database Anda
+                'status' => 'Lulus',
             ]);
 
-            // Trigger Notifikasi ke Anak PKL
+            // Pemicu Notifikasi ke Peserta Magang
             $currentUser = Auth::user();
             $user->notify(new NilaiUpdatedNotification($currentUser->nama ?? 'Admin/Mentor'));
 
-            session()->flash('message', 'Sertifikat untuk ' . $user->nama . ' berhasil diterbitkan dan status diubah menjadi Lulus!');
+            session()->flash('message', 'Sertifikat untuk ' . $user->nama . ' berhasil diterbitkan dan status diperbarui menjadi Lulus!');
             $this->closeForm();
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal membuat sertifikat: ' . $e->getMessage());
+            session()->flash('error', 'Gagal menerbitkan sertifikat: ' . $e->getMessage());
         }
     }
 
-  #[Layout('layouts.dashboard')]
+    #[Layout('layouts.dashboard')]
     public function render()
     {
         $currentUser = Auth::user();
@@ -186,11 +198,11 @@ class Sertifikat extends Component
                       });
                 });
             })
-            // Filter hanya anak bimbingan jika yang login adalah Mentor
+            // Filter hanya peserta bimbingan jika yang login adalah Mentor
             ->when($isMentor, function ($query) use ($currentUser) {
                 $query->where('mentor', $currentUser->nama);
             })
-            // Priority Sort: Status 'aktif' (1) di atas, 'lulus' (2) di bawah, status lain (3)
+            // Pengurutan Prioritas: Status 'aktif' (1) di atas, 'lulus' (2) di bawah, status lain (3)
             ->orderByRaw("CASE 
                 WHEN status = 'aktif' THEN 1 
                 WHEN status = 'lulus' THEN 2 

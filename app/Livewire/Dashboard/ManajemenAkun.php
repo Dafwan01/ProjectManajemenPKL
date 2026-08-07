@@ -11,6 +11,7 @@ use App\Models\Divisi;
 use App\Models\Jadwal;
 use App\Models\Sekolah;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -49,12 +50,20 @@ class ManajemenAkun extends Component
     public bool $isEditMode = false;
     public string $search = '';
 
-    // ── DEKLARASI PROPERTY SORTING (TAMBAHKAN DI SINI) ───────────────
+    // Properti Pengurutan Data (Sorting)
     public string $sortField = 'tanggal_mulai';
     public string $sortDirection = 'desc';
 
     /**
-     * Method untuk handle klik header tabel (opsional jika digunakan di Blade)
+     * Memastikan lokal waktu Carbon diatur ke Bahasa Indonesia secara baku.
+     */
+    public function boot(): void
+    {
+        Carbon::setLocale('id');
+    }
+
+    /**
+     * Metode untuk menangani pengurutan kolom pada tabel data.
      */
     public function sortBy(string $field): void
     {
@@ -194,20 +203,20 @@ class ManajemenAkun extends Component
         'email.required' => 'Alamat email wajib diisi.',
         'email.email' => 'Format email tidak valid.',
         'email.unique' => 'Email ini sudah terdaftar.',
-        'role.required' => 'Silakan pilih role pengguna.',
-        'role.in' => 'Anda tidak memiliki hak akses untuk memilih role tersebut.',
+        'role.required' => 'Silakan pilih peran (role) pengguna.',
+        'role.in' => 'Anda tidak memiliki hak akses untuk memilih peran tersebut.',
         'bidang_id.required' => 'Silakan pilih bidang.',
-        'bidang_id.exists' => 'Bidang tidak valid.',
+        'bidang_id.exists' => 'Pilihan bidang tidak valid.',
         'divisi_id.required' => 'Silakan pilih divisi.',
-        'divisi_id.exists' => 'Divisi tidak valid.',
-        'mentor.required' => 'Mentor wajib dipilih atau diisi.',
-        'sekolah_id.required' => 'Asal sekolah wajib dipilih dari daftar.',
+        'divisi_id.exists' => 'Pilihan divisi tidak valid.',
+        'mentor.required' => 'Mentor pembimbing wajib dipilih atau diisi.',
+        'sekolah_id.required' => 'Asal sekolah/instansi wajib dipilih dari daftar.',
         'sekolah_id.exists' => 'Pilihan sekolah tidak valid.',
         'namaSekolahBaru.required' => 'Nama sekolah baru wajib diisi.',
         'namaSekolahBaru.min' => 'Nama sekolah minimal 3 karakter.',
-        'namaSekolahBaru.unique' => 'Sekolah ini sudah ada di sistem, silakan pilih dari daftar.',
-        'password.required' => 'Password wajib diisi.',
-        'password.same' => 'Konfirmasi password tidak cocok.',
+        'namaSekolahBaru.unique' => 'Sekolah ini sudah ada di dalam sistem, silakan pilih dari daftar.',
+        'password.required' => 'Kata sandi wajib diisi.',
+        'password.same' => 'Konfirmasi kata sandi tidak cocok.',
         'status.required' => 'Status akun wajib dipilih.',
     ];
 
@@ -343,7 +352,7 @@ class ManajemenAkun extends Component
 
             $user->update($data);
             $this->ensureDefaultScheduleForPkl($user);
-            session()->flash('message', 'Akun berhasil diperbarui!');
+            session()->flash('message', 'Akun pengguna berhasil diperbarui!');
         } else {
             $user = User::create([
                 'nama' => $this->nama,
@@ -357,7 +366,7 @@ class ManajemenAkun extends Component
                 'tanggal_mulai' => now(),
             ]);
             $this->ensureDefaultScheduleForPkl($user);
-            session()->flash('message', 'Akun berhasil dibuat!');
+            session()->flash('message', 'Akun pengguna baru berhasil dibuat!');
         }
 
         $this->closeModal();
@@ -366,7 +375,7 @@ class ManajemenAkun extends Component
     public function delete($id)
     {
         User::findOrFail($id)->delete();
-        session()->flash('message', 'Akun berhasil dihapus!');
+        session()->flash('message', 'Akun pengguna berhasil dihapus!');
     }
 
     #[On('close-jadwal-modal')]
@@ -393,13 +402,13 @@ class ManajemenAkun extends Component
                       });
                 });
             })
-            // Priority 1: Status 'aktif' selalu di atas, 'lulus' di belakang
+            // Prioritas 1: Status 'aktif' selalu di atas, 'lulus' di bawah
             ->orderByRaw("CASE 
                 WHEN status = 'aktif' THEN 1 
                 WHEN status = 'lulus' THEN 2 
                 ELSE 3 
             END ASC")
-            // Priority 2: Pengurutan sekunder berdasarkan kolom yang dipilih
+            // Prioritas 2: Pengurutan sekunder berdasarkan kolom yang dipilih
             ->when($this->sortField === 'sekolah', function ($query) {
                 $query->leftJoin('sekolahs', 'users.sekolah_id', '=', 'sekolahs.sekolah_id')
                       ->orderBy('sekolahs.nama_sekolah', $this->sortDirection)

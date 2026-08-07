@@ -33,10 +33,10 @@ class Project extends Component
     public string $searchAnggota = '';
 
     protected $messages = [
-        'nama_project.required' => 'Nama project/laporan wajib diisi!',
-        'link_github.url'       => 'Format URL GitHub tidak valid (contoh: https://github.com/username/repo)!',
-        'file_project.max'      => 'Ukuran file project maksimal 20 MB!',
-        'file_project.mimes'    => 'Format file project harus ZIP, RAR, PDF, atau DOCX!',
+        'nama_project.required' => 'Nama proyek/laporan wajib diisi!',
+        'link_github.url'       => 'Format tautan GitHub tidak valid (contoh: https://github.com/pengguna/repo)!',
+        'file_project.max'      => 'Ukuran berkas proyek maksimal 20 MB!',
+        'file_project.mimes'    => 'Format berkas proyek harus ZIP, RAR, PDF, atau DOCX!',
     ];
 
     public function mount()
@@ -59,7 +59,7 @@ class Project extends Component
 
         if (strtolower((string) $userStatus) === 'lulus' || $userStatus === UserStatus::LULUS->value) {
             $this->isLulus = true;
-            session()->flash('warning', 'Status akun Anda adalah LULUS. Anda tidak dapat mengunggah atau mengubah project lagi.');
+            session()->flash('warning', 'Status akun Anda adalah LULUS. Anda tidak dapat mengunggah atau mengubah proyek lagi.');
         }
     }
 
@@ -89,7 +89,7 @@ class Project extends Component
     }
 
     /**
-     * Daftar user PKL lain yang cocok dengan pencarian, untuk ditampilkan di modal.
+     * Daftar pengguna PKL lain yang cocok dengan pencarian, untuk ditampilkan di modal.
      */
     public function getHasilPencarianAnggotaProperty()
     {
@@ -97,13 +97,12 @@ class Project extends Component
         if (!$user) return collect();
 
         return User::where('role', UserRole::PKL)
-        ->where('status', UserStatus::AKTIF)
+            ->where('status', UserStatus::AKTIF)
             ->where('user_id', '!=', $user->user_id)
             ->with('sekolah') // Memuat relasi sekolah
             ->when($this->searchAnggota, function ($query) {
                 $query->where(function ($q) {
                     $q->where('nama', 'like', '%' . $this->searchAnggota . '%')
-                      // Menggantikan pencarian kolom asal_sekolah dengan relasi sekolah -> nama_sekolah
                       ->orWhereHas('sekolah', function ($subQuery) {
                           $subQuery->where('nama_sekolah', 'like', '%' . $this->searchAnggota . '%');
                       });
@@ -115,7 +114,7 @@ class Project extends Component
     }
 
     /**
-     * Daftar lengkap user yang sudah terpilih (untuk ditampilkan sebagai chip di luar modal).
+     * Daftar lengkap pengguna yang sudah terpilih (untuk ditampilkan sebagai chip di luar modal).
      */
     public function getAnggotaTerpilihDetailProperty()
     {
@@ -158,7 +157,7 @@ class Project extends Component
 
         $user = $this->currentUser();
         if (!$user) {
-            session()->flash('warning', 'User tidak ditemukan.');
+            session()->flash('warning', 'Pengguna tidak ditemukan.');
             return;
         }
 
@@ -230,10 +229,10 @@ class Project extends Component
 
             $jumlahAnggota = count($this->anggotaLain);
             $pesanTambahan = $jumlahAnggota > 0
-                ? " Project juga otomatis ditambahkan untuk {$jumlahAnggota} anggota tim yang dipilih."
+                ? " Proyek juga otomatis ditambahkan untuk {$jumlahAnggota} anggota tim yang dipilih."
                 : '';
 
-            session()->flash('message', 'Project Akhir berhasil disimpan!' . $pesanTambahan);
+            session()->flash('message', 'Proyek Akhir berhasil disimpan!' . $pesanTambahan);
 
         } catch (\Exception $e) {
             session()->flash('warning', 'Gagal menyimpan: ' . $e->getMessage());

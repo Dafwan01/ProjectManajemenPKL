@@ -1,11 +1,11 @@
 <div>
-    <!-- HEADER TITLE & SUBTITLE -->
+    <!-- JUDUL HEADER & SUBJUDUL -->
     <div class="mb-6">
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">Nilai Magang</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola dan input penilaian untuk peserta magang.</p>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">Penilaian Magang</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola dan masukkan penilaian evaluasi untuk peserta magang.</p>
     </div>
 
-    <!-- Flash Message Notifikasi -->
+    <!-- Pesan Notifikasi Flash -->
     @if (session()->has('message'))
         <div class="p-4 mb-6 text-sm text-emerald-700 dark:text-emerald-400 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-between" role="alert">
             <span class="font-medium">{{ session('message') }}</span>
@@ -18,10 +18,10 @@
         </div>
     @endif
 
-    <!-- Container Utama -->
+    <!-- Kontainer Utama -->
     <div class="relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/80 rounded-2xl shadow-xl">
         
-        <!-- Top Bar / Search Bar -->
+        <!-- Bar Atas / Kolom Pencarian -->
         <div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700/80 gap-4 overflow-x-auto no-scrollbar">
             <div class="flex items-center flex-nowrap shrink-0 gap-3">
                 <div class="relative shrink-0">
@@ -40,15 +40,16 @@
             </div>
         </div>
         
-        <!-- Tabel Data -->
+        <!-- Tabel Data Peserta -->
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left text-gray-700 dark:text-gray-300">
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-900/60 text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700/80">
                     <tr>
                         <th scope="col" class="px-6 py-4">Nama</th>
                         <th scope="col" class="px-6 py-4">Asal Sekolah</th>
-                        <th scope="col" class="px-6 py-4">Mentor</th>
-                        <th scope="col" class="px-6 py-4">Status</th>
+                        <th scope="col" class="px-6 py-4">Mentor Pembimbing</th>
+                        <th scope="col" class="px-6 py-4 text-center">Tanggal Mulai</th>
+                        <th scope="col" class="px-6 py-4 text-center">Status Penilaian</th>
                         <th scope="col" class="px-6 py-4 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -59,8 +60,14 @@
                                 {{ $user->nama }}
                             </th>
                             <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->sekolah?->nama_sekolah ?? '-' }}</td>
-                            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->mentor }}</td>
-                            <td class="px-6 py-4 align-middle">
+                            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->mentor ?? '-' }}</td>
+                            
+                            <!-- Format Tanggal Indonesia (Contoh: "07 Agustus 2026") -->
+                            <td class="px-6 py-4 text-center whitespace-nowrap text-gray-600 dark:text-gray-400">
+                                {{ $user->tanggal_mulai ? \Illuminate\Support\Carbon::parse($user->tanggal_mulai)->translatedFormat('d F Y') : '-' }}
+                            </td>
+
+                            <td class="px-6 py-4 text-center align-middle">
                                 @php
                                     $nilaiUser = $user->nilai ?? $user->nilais?->first();
                                     $nilaiLengkap = $nilaiUser 
@@ -81,7 +88,7 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center justify-center gap-2">
-                                    <!-- Tombol Input / Edit Form Nilai -->
+                                    <!-- Tombol Input / Edit Formulir Nilai -->
                                     <button 
                                         type="button" 
                                         wire:click="openForm({{ $user->user_id }})"
@@ -90,10 +97,10 @@
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
-                                        Form Nilai
+                                        Formulir Nilai
                                     </button>
 
-                                    <!-- Tombol Preview PDF Nilai (Di Modal, Bukan Tab Baru) -->
+                                    <!-- Tombol Pratinjau PDF Nilai -->
                                     @if($nilaiLengkap)
                                         <button 
                                             type="button" 
@@ -112,7 +119,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
                                 <div class="inline-flex p-3 bg-gray-100 dark:bg-gray-900/50 rounded-full mb-3 text-gray-400">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                                 </div>
@@ -124,14 +131,14 @@
             </table>
         </div>
 
-        <!-- Pagination -->
+        <!-- Navigasi Halaman / Paginasi -->
         <div class="p-4 border-t border-gray-200 dark:border-gray-700/80 bg-white dark:bg-gray-800">
             {{ $users->links() }}
         </div>
     </div>
 
     <!-- ========================================== -->
-    <!-- 1. MODAL FORM INPUT NILAI                  -->
+    <!-- 1. MODAL FORMULIR INPUT NILAI              -->
     <!-- ========================================== -->
     @if ($showModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-md px-4 py-6" 
@@ -144,13 +151,13 @@
     @endif
 
     <!-- ========================================== -->
-    <!-- 2. MODAL PDF PREVIEW (IFRAME BROWSER)      -->
+    <!-- 2. MODAL PRATINJAU PDF TRANSKRIP           -->
     <!-- ========================================== -->
     @if ($showPdfModal && $pdfUserId)
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm transition-opacity">
             <div class="relative w-full max-w-6xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col h-[90vh]">
                 
-                <!-- Modal Header Bar -->
+                <!-- Bar Header Modal -->
                 <div class="flex items-center justify-between px-6 py-3.5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
                     <h3 class="text-base font-bold text-gray-900 dark:text-white uppercase tracking-wide">
                         Laporan Transkrip Nilai Magang
@@ -165,7 +172,7 @@
                     </button>
                 </div>
 
-                <!-- Modal Body (Embed PDF Viewer) -->
+                <!-- Bodi Modal (Tampilan PDF Frame) -->
                 <div class="flex-1 w-full bg-gray-100 dark:bg-gray-950">
                     <iframe 
                         src="{{ route('cetak.nilai', ['userId' => $pdfUserId]) }}" 

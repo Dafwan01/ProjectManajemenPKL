@@ -1,13 +1,16 @@
 <div>
     <!-- HEADER TITLE & SUBTITLE -->
     <div class="mb-6">
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">Manajemen Anak PKL</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola data peserta PKL, atur jadwal masuk, serta pantau alokasi project.</p>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">Manajemen Peserta PKL</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola data peserta PKL, atur jadwal presensi harian, serta pantau alokasi proyek.</p>
     </div>
 
     <!-- Flash Message Notifikasi -->
     @if (session()->has('message'))
-        <div class="p-4 mb-6 text-sm text-emerald-700 dark:text-emerald-400 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-between" role="alert">
+        <div class="p-4 mb-6 text-sm text-emerald-700 dark:text-emerald-400 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center gap-2 shadow-sm" role="alert">
+            <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
             <span class="font-medium">{{ session('message') }}</span>
         </div>
     @endif
@@ -20,9 +23,11 @@
             <div class="flex items-center flex-nowrap shrink-0 gap-3">
                 <div class="relative shrink-0">
                     <div class="absolute inset-y-0 left-0 flex items-center ps-3.5 pointer-events-none">
-                        <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
+                        <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                        </svg>
                     </div>
-                    <input type="text" wire:model.live.debounce.300ms="search" class="block p-2.5 ps-10 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl w-64 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Cari nama atau email...">
+                    <input type="text" wire:model.live.debounce.300ms="search" class="block p-2.5 ps-10 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl w-64 md:w-80 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Cari nama, email, atau asal sekolah...">
                 </div>
             </div>           
         </div>
@@ -32,19 +37,20 @@
             <table class="w-full table-fixed text-sm text-gray-600 dark:text-gray-300">
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                     <tr>
-                        <th scope="col" class="px-4 py-4 w-[15%] text-center font-bold">Nama</th>
-                        <th scope="col" class="px-4 py-4 w-[17%] text-center font-bold">Asal Sekolah</th>
-                        <th scope="col" class="px-4 py-4 w-[9%] text-center font-bold">Status</th>
-                        <th scope="col" class="px-4 py-4 w-[11%] text-center font-bold">Tanggal Masuk</th>
-                        <th scope="col" class="px-4 py-4 w-[11%] text-center font-bold">Tanggal Keluar</th>
-                        <th scope="col" class="px-4 py-4 w-[15%] text-center font-bold">Mentor</th>
-                        <th scope="col" class="px-4 py-4 w-[22%] text-center font-bold">Aksi</th>
+                        <th scope="col" class="px-4 py-4 w-[16%] text-center font-bold">Nama Lengkap</th>
+                        <th scope="col" class="px-4 py-4 w-[16%] text-center font-bold">Asal Sekolah</th>
+                        <th scope="col" class="px-4 py-4 w-[10%] text-center font-bold">Status</th>
+                        <th scope="col" class="px-4 py-4 w-[12%] text-center font-bold">Tanggal Masuk</th>
+                        <th scope="col" class="px-4 py-4 w-[12%] text-center font-bold">Tanggal Keluar</th>
+                        <th scope="col" class="px-4 py-4 w-[14%] text-center font-bold">Mentor</th>
+                        <th scope="col" class="px-4 py-4 w-[20%] text-center font-bold">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-800/60">
                     @forelse($users as $user)
                         @php
-                            $isAktif = strtolower($user->status?->value ?? $user->status ?? '') === 'aktif';
+                            $userStatusVal = strtolower($user->status?->value ?? $user->status ?? '');
+                            $isAktif = $userStatusVal === 'aktif';
                         @endphp
                         <tr class="bg-white dark:bg-gray-900 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition align-middle">
                             <th scope="row" class="px-4 py-4 font-semibold text-gray-900 dark:text-white text-center">
@@ -60,21 +66,32 @@
                                         : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20' 
                                     }}">
                                     <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ $isAktif ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-rose-500 dark:bg-rose-400' }}"></span>
-                                    {{ $user->status }}
+                                    {{ ucfirst($userStatusVal) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-4 text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">{{ optional($user->tanggal_mulai)->format('d M Y') }}</td>
-                            <td class="px-4 py-4 text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">{{ optional($user->tanggal_Akhir)->format('d M Y') ?? '-' }}</td>
-                            <td class="px-4 py-4 text-gray-700 dark:text-gray-300 text-center">
-                                <span class="block line-clamp-2 break-words">{{ $user->mentor }}</span>
+
+                            <!-- Tanggal Masuk (Format Bahasa Indonesia: Contoh "01 Juli 2026") -->
+                            <td class="px-4 py-4 text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
+                                {{ optional($user->tanggal_mulai)->translatedFormat('d F Y') ?? '-' }}
                             </td>
+
+                            <!-- Tanggal Keluar (Format Bahasa Indonesia: Contoh "30 September 2026") -->
+                            <td class="px-4 py-4 text-gray-700 dark:text-gray-300 text-center whitespace-nowrap">
+                                {{ optional($user->tanggal_akhir)->translatedFormat('d F Y') ?? '-' }}
+                            </td>
+
+                            <td class="px-4 py-4 text-gray-700 dark:text-gray-300 text-center">
+                                <span class="block line-clamp-2 break-words">{{ $user->mentor ?? '-' }}</span>
+                            </td>
+
+                            <!-- Aksi -->
                             <td class="px-4 py-4">
-                                <div class="flex items-center justify-center gap-1">
-                                    <!-- Edit -->
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <!-- Edit Profil -->
                                     <button 
                                         type="button" 
                                         wire:click="openEditProfile({{ $user->user_id }})" 
-                                        title="Edit Profil"
+                                        title="Ubah Profil"
                                         class="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 border border-transparent hover:border-amber-200 dark:hover:border-amber-500/20 transition"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,11 +99,11 @@
                                         </svg>
                                     </button>
 
-                                    <!-- Jadwal -->
+                                    <!-- Jadwal Masuk -->
                                     <button 
                                         type="button" 
                                         wire:click="openJadwalModal({{ $user->user_id }})" 
-                                        title="Jadwal Masuk"
+                                        title="Kelola Jadwal Masuk"
                                         class="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 border border-transparent hover:border-blue-200 dark:hover:border-blue-500/20 transition"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,11 +111,11 @@
                                         </svg>
                                     </button>
 
-                                    <!-- Project -->
+                                    <!-- Detail Proyek -->
                                     <button 
                                         type="button" 
                                         wire:click="openProjectModal({{ $user->user_id }})" 
-                                        title="Detail Project"
+                                        title="Rincian Proyek"
                                         class="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/10 border border-transparent hover:border-purple-200 dark:hover:border-purple-500/20 transition"
                                     >
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +127,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-gray-400 dark:text-gray-500">Tidak ada data ditemukan.</td>
+                            <td colspan="7" class="px-6 py-10 text-center text-gray-400 dark:text-gray-500">Tidak ada data peserta PKL yang ditemukan.</td>
                         </tr>
                     @endforelse
                 </tbody>

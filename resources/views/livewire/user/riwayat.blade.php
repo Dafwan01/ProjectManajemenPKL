@@ -8,7 +8,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <div class="text-sm font-medium">
-                    <span class="font-bold">Status Anda: Lulus!</span> Riwayat presensi dan logbook telah dikunci dan tidak dapat diubah kembali.
+                    <span class="font-bold">Status Anda: Lulus!</span> Riwayat presensi dan Jurnal telah dikunci dan tidak dapat diubah kembali.
                 </div>
             </div>
         @endif
@@ -17,7 +17,7 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-gray-200 dark:border-gray-700 gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">RIWAYAT PRESENSI</h1>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Daftar lengkap catatan kehadiran, logbook, dan status pengajuan izin/sakit/absen Anda.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Daftar lengkap catatan kehadiran, Jurnal, dan status pengajuan izin/sakit/absen Anda.</p>
             </div>
 
             <!-- Ringkasan Statistik Singkat -->
@@ -37,7 +37,7 @@
             </div>
         </div>
 
-        <!-- Flash Message Notification -->
+        <!-- Notifikasi Pesan Sistem -->
         @if (session()->has('message'))
             <div x-data="{ show: true }" x-show="show" class="p-3 bg-green-100 dark:bg-green-900/50 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 text-xs rounded-lg flex items-center justify-between">
                 <span>{{ session('message') }}</span>
@@ -52,9 +52,9 @@
             </div>
         @endif
 
-        <!-- Section Filter -->
+        <!-- Section Penyaringan (Filter) -->
         <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-lg flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between transition-all duration-300">
-            <!-- Filter Range Tanggal -->
+            <!-- Saring Rentang Tanggal -->
             <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                 <svg class="w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 
@@ -76,14 +76,14 @@
                         wire:click="resetFilterTanggal"
                         class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 whitespace-nowrap shrink-0"
                     >
-                        Reset
+                        Atur Ulang
                     </button>
                 @endif
             </div>
 
-            <!-- Filter Status -->
+            <!-- Saring Status -->
             <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
-                <label class="text-xs text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap shrink-0">Filter Status:</label>
+                <label class="text-xs text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap shrink-0">Saring Status:</label>
                 <select wire:model.live="filterStatus" class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-inner transition cursor-pointer w-full lg:w-auto">
                     <option value="semua">Semua Status</option>
                     <option value="hadir">Status: HADIR</option>
@@ -104,9 +104,9 @@
                     <thead class="text-xs text-gray-700 dark:text-gray-200 uppercase bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                         <tr>
                             <th scope="col" class="px-6 py-4 whitespace-nowrap">HARI / TANGGAL</th>
-                            <th scope="col" class="px-6 py-4">JAM MASUK / PULANG</th>
+                            <th scope="col" class="px-6 py-4">JAM MASUK / KELUAR</th>
                             <th scope="col" class="px-6 py-4">KEHADIRAN / PENGAJUAN</th>
-                            <th scope="col" class="px-6 py-4">LOGBOOK / ALASAN</th>
+                            <th scope="col" class="px-6 py-4">JURNAL / ALASAN</th>
                             <th scope="col" class="px-6 py-4 text-center">AKSI</th>
                         </tr>
                     </thead>
@@ -115,15 +115,15 @@
                           <tr class="bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors duration-150">
                                 <td class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ $item['tanggal'] }}</td>
 
-                                <!-- Kolom Jam Masuk & Jam Pulang -->
+                                <!-- Kolom Jam Masuk & Jam Keluar -->
                                 <td class="px-6 py-4 text-xs font-mono whitespace-nowrap">
                                     <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400 mb-1">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                                        <span>In: {{ $item['jam_masuk'] ?? '-' }}</span>
+                                        <span>Masuk: {{ $item['jam_masuk'] ?? '-' }}</span>
                                     </div>
                                     <div class="flex items-center gap-1.5 text-orange-600 dark:text-orange-400">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                                        <span>Out: {{ $item['jam_pulang'] ?? '-' }}</span>
+                                        <span>Keluar: {{ $item['jam_pulang'] ?? '-' }}</span>
                                     </div>
                                 </td>
 
@@ -178,7 +178,7 @@
                                     {{ $item['logbook'] ?? '-' }}
                                 </td>
 
-                                <!-- Kolom Aksi Edit -->
+                                <!-- Kolom Aksi Ubah -->
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
                                     @if(strtolower(auth()->user()->status->value ?? auth()->user()->status ?? '') === 'lulus')
                                         <button 
@@ -194,9 +194,9 @@
                                             type="button" 
                                             wire:click="editLogbook({{ $item['presensi_id'] }})"
                                             class="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 bg-gray-100 dark:bg-gray-700/50 hover:bg-blue-100 dark:hover:bg-blue-600/20 border border-gray-300 dark:border-gray-600 hover:border-blue-500 p-2 rounded-lg transition inline-flex items-center gap-1 text-xs"
-                                            title="Edit Logbook">
+                                            title="Ubah Logbook">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                            <span>Edit</span>
+                                            <span>Ubah</span>
                                         </button>
                                     @else
                                         <span class="text-[10px] text-gray-400 dark:text-gray-500 italic">Menunggu diproses admin</span>
@@ -215,24 +215,24 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
+            <!-- Penomoran Halaman (Pagination) -->
             <div class="mt-4">
                 {{ $dataRiwayat->links() }}
             </div>
         </div>
 
-        <!-- Modal Edit Logbook -->
+        <!-- Modal Ubah Logbook -->
         @if ($isEditModalOpen)
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 transition-opacity">
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 max-w-lg w-full text-left shadow-2xl">
                     <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Edit Logbook Harian</h3>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Ubah Jurnal Harian</h3>
                         <button wire:click="closeModal" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition">✕</button>
                     </div>
 
                     <form wire:submit.prevent="updateLogbook">
                         <div class="mb-4">
-                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Isi Logbook Kegiatan:</label>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Isi Jurnal Kegiatan:</label>
                             <textarea 
                                 wire:model="editingLogbook" 
                                 rows="4" 

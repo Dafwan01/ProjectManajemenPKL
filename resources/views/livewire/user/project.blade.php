@@ -25,15 +25,15 @@
         </div>
     @endif
 
-    <!-- Card Form Project Akhir -->
+    <!-- Kartu Formulir Proyek Akhir -->
     <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl">
         <div class="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
             <div>
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    Form Project Akhir
+                    Formulir Proyek Akhir
                 </h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Unggah laporan/berkas project akhir dan link repositori GitHub kamu.
+                    Unggah laporan atau berkas proyek akhir beserta tautan repositori GitHub Anda.
                 </p>
             </div>
             <div class="flex items-center gap-2">
@@ -43,17 +43,17 @@
                     </span>
                 @elseif ($sudahUpload)
                     <span class="px-3 py-1 bg-green-50 dark:bg-green-500/10 border border-green-400 dark:border-green-500 text-green-600 dark:text-green-400 text-xs font-medium rounded-full">
-                        ✓ Sudah Mengirim
+                        ✓ Sudah Dikirim
                     </span>
                 @endif
             </div>
         </div>
 
         <form wire:submit.prevent="simpanProject" class="space-y-5">
-            <!-- Nama Project -->
+            <!-- Nama Proyek -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Nama Project / Laporan <span class="text-red-500">*</span>
+                    Nama Proyek / Laporan <span class="text-red-500">*</span>
                 </label>
                 <input 
                     type="text" 
@@ -66,15 +66,15 @@
                 @enderror
             </div>
 
-            <!-- Link GitHub -->
+            <!-- Tautan GitHub -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Link Repository GitHub (Opsional)
+                    Tautan Repositori GitHub (Opsional)
                 </label>
                 <input 
                     type="url" 
                     wire:model.defer="link_github" 
-                    placeholder="https://github.com/username/repository" 
+                    placeholder="https://github.com/pengguna/repositori" 
                     @disabled($isLulus)
                     class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 focus:border-purple-500 focus:outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                 @error('link_github') 
@@ -82,10 +82,10 @@
                 @enderror
             </div>
 
-            <!-- Upload File Project -->
+            <!-- Unggah Berkas Proyek -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    File Project / Laporan (ZIP, RAR, PDF, DOCX - Max 20MB) 
+                    Berkas Proyek / Laporan (ZIP, RAR, PDF, DOCX - Maks 20MB) 
                     @if (!$existing_file) <span class="text-red-500">*</span> @endif
                 </label>
                 
@@ -95,7 +95,7 @@
                     @disabled($isLulus)
                     class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed file:disabled:opacity-50 file:disabled:cursor-not-allowed">
 
-                <!-- Loading Indicator -->
+                <!-- Indikator Mengunggah -->
                 <div wire:loading wire:target="file_project" class="text-xs text-purple-600 dark:text-purple-400 mt-2">
                     Mengunggah berkas... Mohon tunggu.
                 </div>
@@ -104,7 +104,7 @@
                     <span class="text-red-500 dark:text-red-400 text-xs mt-1 block">{{ $message }}</span> 
                 @enderror
 
-                <!-- Anggota Tim (Jika Project Kelompok) -->
+                <!-- Anggota Tim (Jika Proyek Kelompok) -->
                 <div wire:ignore.self x-data="{}" class="mt-4">
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -123,10 +123,10 @@
                         </button>
                     </div>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                        Pilih anak PKL lain yang mengerjakan project ini bersama kamu. Nama project, link GitHub, dan file laporan otomatis tersalin ke akun mereka.
+                        Pilih peserta magang/PKL lain yang mengerjakan proyek ini bersama Anda. Nama proyek, tautan GitHub, dan berkas laporan akan otomatis tersalin ke akun mereka.
                     </p>
 
-                    <!-- Chip / Daftar Anggota Terpilih -->
+                    <!-- Daftar Anggota Terpilih -->
                     @if (count($anggotaLain) > 0)
                         <div class="flex flex-wrap gap-2 mb-2">
                             @foreach ($this->anggotaTerpilihDetail as $anggota)
@@ -156,23 +156,23 @@
                     @enderror
                 </div>
 
-                <!-- Informasi File Lama -->
+                <!-- Informasi Berkas Terunggah -->
                 @if ($existing_file)
                     <div class="mt-3 p-3 bg-gray-50 dark:bg-gray-900/80 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
                         <div class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                             <svg class="w-4 h-4 text-green-500 dark:text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            <span>File Ter-upload: <strong class="text-purple-600 dark:text-purple-300">{{ basename($existing_file) }}</strong></span>
+                            <span>Berkas Terunggah: <strong class="text-purple-600 dark:text-purple-300">{{ basename($existing_file) }}</strong></span>
                         </div>
                         <a href="{{ Storage::url($existing_file) }}" target="_blank" class="text-xs text-purple-600 dark:text-purple-400 hover:underline font-semibold">
-                            Unduh / Lihat File
+                            Unduh / Lihat Berkas
                         </a>
                     </div>
                 @endif
             </div>
 
-            <!-- Tombol Submit -->
+            <!-- Tombol Kirim -->
             <button 
                 type="submit" 
                 wire:loading.attr="disabled" 
@@ -180,10 +180,10 @@
                 class="w-full py-3 text-white font-semibold rounded-xl transition shadow-lg flex items-center justify-center gap-2 {{ $isLulus ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-60' : 'bg-purple-600 hover:bg-purple-700' }}">
                 
                 @if ($isLulus)
-                    <span>Status Akun Lulus (Form Terkunci)</span>
+                    <span>Status Akun Lulus (Formulir Terkunci)</span>
                 @else
                     <span wire:loading.remove wire:target="simpanProject">
-                        {{ $sudahUpload ? 'Perbarui Project Akhir' : 'Kirim Project Akhir' }}
+                        {{ $sudahUpload ? 'Perbarui Proyek Akhir' : 'Kirim Proyek Akhir' }}
                     </span>
                     <span wire:loading wire:target="simpanProject">
                         Memproses...
@@ -213,7 +213,7 @@
                     </button>
                 </div>
 
-                <!-- Search Bar -->
+                <!-- Bilah Pencarian -->
                 <div class="p-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
@@ -231,7 +231,7 @@
                     </div>
                 </div>
 
-                <!-- List User -->
+                <!-- Daftar Pengguna -->
                 <div class="overflow-y-auto flex-1 p-3 space-y-1">
                     @forelse ($this->hasilPencarianAnggota as $anggota)
                         @php $sudahDipilih = in_array($anggota->user_id, $anggotaLain); @endphp
@@ -247,7 +247,7 @@
                             >
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $anggota->nama }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ $anggota->asal_sekolah ?? '-' }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ $anggota->sekolah->nama_sekolah ?? $anggota->asal_sekolah ?? '-' }}</p>
                             </div>
                             @if ($sudahDipilih)
                                 <svg class="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,11 +256,11 @@
                             @endif
                         </button>
                     @empty
-                        <p class="text-center text-xs text-gray-400 dark:text-gray-500 py-8">Tidak ada user yang ditemukan.</p>
+                        <p class="text-center text-xs text-gray-400 dark:text-gray-500 py-8">Tidak ada pengguna yang ditemukan.</p>
                     @endforelse
                 </div>
 
-                <!-- Footer -->
+                <!-- Footer Modal -->
                 <div class="flex items-center justify-between gap-3 p-4 border-t border-gray-200 dark:border-gray-800 shrink-0">
                     <span class="text-xs text-gray-500 dark:text-gray-400">{{ count($anggotaLain) }} dipilih</span>
                     <button 

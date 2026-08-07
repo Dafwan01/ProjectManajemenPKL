@@ -1,5 +1,5 @@
 <div>
-    <!-- HEADER TITLE & BADGE PENDING -->
+    <!-- JUDUL HEADER & INDIKATOR PENDING -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">Permohonan Izin / Sakit / Absen</h1>
@@ -16,7 +16,7 @@
         @endif
     </div>
 
-    <!-- Flash Message Notifikasi -->
+    <!-- Pesan Notifikasi Flash -->
     @if (session()->has('message'))
         <div class="p-4 mb-6 text-sm text-emerald-700 dark:text-emerald-400 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-between" role="alert">
             <span class="font-medium">{{ session('message') }}</span>
@@ -30,19 +30,19 @@
     @endif
 
     <div class="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-xl">
-        <!-- Top Bar -->
+        <!-- Bar Atas / Filter & Pencarian -->
         <div class="flex items-center justify-between p-5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 gap-4 overflow-x-auto no-scrollbar">
             
             <div class="flex items-center flex-nowrap shrink-0 gap-3">
-                <!-- Search -->
+                <!-- Pencarian Nama -->
                 <div class="relative shrink-0">
                     <div class="absolute inset-y-0 left-0 flex items-center ps-3.5 pointer-events-none">
                         <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
                     </div>
-                    <input type="text" wire:model.live.debounce.300ms="search" class="block p-2.5 ps-10 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl w-56 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Cari nama...">
+                    <input type="text" wire:model.live.debounce.300ms="search" class="block p-2.5 ps-10 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl w-56 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Cari nama peserta...">
                 </div>
 
-                <!-- Date Picker -->
+                <!-- Pemilih Tanggal -->
                 <div class="relative shrink-0">
                     <div class="absolute inset-y-0 left-0 flex items-center ps-3.5 pointer-events-none z-10">
                         <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,21 +69,22 @@
                 <!-- Filter Status -->
                 <select wire:model.live="filterStatus" class="bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 text-gray-900 dark:text-gray-100 text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2.5 shrink-0 transition">
                     <option value="">Semua Status</option>
-                    <option value="pending">Pending</option>
+                    <option value="pending">Menunggu Persetujuan</option>
                     <option value="disetujui">Disetujui</option>
                     <option value="ditolak">Ditolak</option>
                 </select>
             </div>
         </div>
 
+        <!-- Tabel Data Permohonan -->
         <div class="overflow-x-auto">
             <table class="w-full table-fixed text-sm text-left text-gray-600 dark:text-gray-300">
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                     <tr>
-                        <th scope="col" class="px-5 py-4 w-[16%] font-bold">Nama</th>
-                        <th scope="col" class="px-5 py-4 w-[16%] font-bold">Tanggal Permohonan</th>
+                        <th scope="col" class="px-5 py-4 w-[18%] font-bold">Nama Lengkap</th>
+                        <th scope="col" class="px-5 py-4 w-[18%] font-bold">Tanggal Pengajuan</th>
                         <th scope="col" class="px-5 py-4 w-[12%] font-bold">Jenis</th>
-                        <th scope="col" class="px-5 py-4 w-[28%] font-bold">Alasan</th>
+                        <th scope="col" class="px-5 py-4 w-[24%] font-bold">Alasan</th>
                         <th scope="col" class="px-5 py-4 w-[14%] font-bold">Status</th>
                         <th scope="col" class="px-5 py-4 w-[14%] font-bold text-center">Aksi</th>
                     </tr>
@@ -91,13 +92,6 @@
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-800/60">
                     @forelse($permohonans as $permohonan)
                         @php
-                            $tglAwal = $permohonan->tanggal_awal ? \Carbon\Carbon::parse($permohonan->tanggal_awal)->format('d/m/Y') : \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->format('d/m/Y');
-                            $tglAkhir = $permohonan->tanggal_akhir ? \Carbon\Carbon::parse($permohonan->tanggal_akhir)->format('d/m/Y') : null;
-                            
-                            $tglTampilan = ($tglAkhir && $tglAwal !== $tglAkhir) 
-                                ? $tglAwal . ' - ' . $tglAkhir 
-                                : $tglAwal;
-
                             $jenisColor = match($permohonan->jenis) {
                                 'sakit' => 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
                                 'absen' => 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
@@ -116,9 +110,10 @@
                             <th scope="row" class="px-5 py-4 font-semibold text-gray-900 dark:text-white truncate">
                                 {{ $permohonan->user->nama ?? $permohonan->user->name ?? '-' }}
                             </th>
-                           <td class="px-5 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
-        {{ \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->format('d/m/Y') }}
-    </td>
+                            <!-- Format Tanggal Baku Indonesia -->
+                            <td class="px-5 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">
+                                {{ \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->translatedFormat('d F Y') }}
+                            </td>
                             <td class="px-5 py-4">
                                 <span class="inline-flex items-center justify-center w-full capitalize px-2.5 py-1 text-xs font-semibold rounded-full border {{ $jenisColor }}">
                                     {{ $permohonan->jenis }}
@@ -132,14 +127,20 @@
                             </td>
                             <td class="px-5 py-4">
                                 @php
+                                    $statusText = match($permohonan->status) {
+                                        'disetujui' => 'Disetujui',
+                                        'ditolak' => 'Ditolak',
+                                        default => 'Menunggu',
+                                    };
+
                                     $statusColor = match($permohonan->status) {
                                         'disetujui' => 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
                                         'ditolak' => 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
-                                        default => 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700/80',
+                                        default => 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
                                     };
                                 @endphp
                                 <span class="inline-flex items-center justify-center w-full capitalize px-2.5 py-1 text-xs font-semibold rounded-full border {{ $statusColor }}">
-                                    {{ $permohonan->status }}
+                                    {{ $statusText }}
                                 </span>
                             </td>
                             <td class="px-5 py-4 text-center">
@@ -158,7 +159,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-5 py-10 text-center text-gray-400 dark:text-gray-500">Tidak ada permohonan ditemukan.</td>
+                            <td colspan="6" class="px-5 py-10 text-center text-gray-400 dark:text-gray-500">Tidak ada permohonan yang ditemukan.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -170,7 +171,7 @@
         </div>
     </div>
 
-    <!-- Modal Detail -->
+    <!-- Modal Detail Permohonan -->
     @if($showDetailModal)
         @php
             $permohonan = \App\Models\PermohonanIzin::with('user')->find($selectedId);
@@ -198,44 +199,43 @@
 
                     <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4">
                         <h2 class="text-lg font-bold text-gray-900 dark:text-white">Detail Permohonan</h2>
-                       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-    {{ $permohonan->user->nama ?? $permohonan->user->name ?? 'Pemohon' }} 
-    &bull; 
-    {{ $permohonan->user->sekolah->nama_sekolah ?? $permohonan->user->sekolah?->nama_sekolah ?? '-' }}
-</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {{ $permohonan->user->nama ?? $permohonan->user->name ?? 'Pemohon' }} 
+                            &bull; 
+                            {{ $permohonan->user->sekolah->nama_sekolah ?? $permohonan->user->sekolah?->nama_sekolah ?? '-' }}
+                        </p>
                     </div>
 
                     <div class="space-y-4">
-                        <!-- Grid 3 Kolom: Jenis, Tanggal, & Durasi Hari -->
-                       <!-- Grid 4 Kolom: Jenis, Tanggal Permohonan, Tanggal/Rentang, & Durasi Hari -->
-<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-    <div>
-        <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jenis</span>
-        <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white capitalize">{{ $permohonan->jenis }}</p>
-    </div>
-    <div>
-        <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal Pengajuan</span>
-        <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
-            {{ \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->translatedFormat('d F Y') }}
-        </p>
-    </div>
-    <div>
-        <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal / Rentang</span>
-        <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
-            @if($tglAkhirFormatted && $tglMulaiFormatted !== $tglAkhirFormatted)
-                {{ $tglMulaiFormatted }} s/d {{ $tglAkhirFormatted }}
-            @else
-                {{ $tglMulaiFormatted }}
-            @endif
-        </p>
-    </div>
-    <div>
-        <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durasi</span>
-        <p class="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400">
-            {{ $jumlahHari }} Hari
-        </p>
-    </div>
-</div>
+                        <!-- Grid 4 Kolom: Jenis, Tanggal Pengajuan, Rentang Waktu, & Durasi -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div>
+                                <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jenis</span>
+                                <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white capitalize">{{ $permohonan->jenis }}</p>
+                            </div>
+                            <div>
+                                <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal Pengajuan</span>
+                                <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
+                                    {{ \Carbon\Carbon::parse($permohonan->tanggal_permohonan)->translatedFormat('d F Y') }}
+                                </p>
+                            </div>
+                            <div>
+                                <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal / Rentang</span>
+                                <p class="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">
+                                    @if($tglAkhirFormatted && $tglMulaiFormatted !== $tglAkhirFormatted)
+                                        {{ $tglMulaiFormatted }} s.d. {{ $tglAkhirFormatted }}
+                                    @else
+                                        {{ $tglMulaiFormatted }}
+                                    @endif
+                                </p>
+                            </div>
+                            <div>
+                                <span class="block mb-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durasi</span>
+                                <p class="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                    {{ $jumlahHari }} hari
+                                </p>
+                            </div>
+                        </div>
 
                         <!-- Info Absen Masuk/Pulang (Hanya muncul jika Jenis = Absen) -->
                         @if($absenLabelModal)
@@ -247,7 +247,7 @@
                             </div>
                         @endif
 
-                        <!-- Alamat Selama Izin (Hanya muncul jika ada nilainya) -->
+                        <!-- Alamat Selama Izin -->
                         @if(!empty($permohonan->alamat_izin))
                             <div>
                                 <span class="block mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alamat Selama Izin</span>
@@ -278,14 +278,20 @@
                         <div>
                             <span class="block mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status Saat Ini</span>
                             @php
+                                $statusModalText = match($permohonan->status) {
+                                    'disetujui' => 'Disetujui',
+                                    'ditolak' => 'Ditolak',
+                                    default => 'Menunggu Persetujuan',
+                                };
+
                                 $statusColor = match($permohonan->status) {
                                     'disetujui' => 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
                                     'ditolak' => 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20',
-                                    default => 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700/80',
+                                    default => 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
                                 };
                             @endphp
                             <span class="inline-flex items-center capitalize px-3 py-1 text-xs font-semibold rounded-full border {{ $statusColor }}">
-                                {{ $permohonan->status }}
+                                {{ $statusModalText }}
                             </span>
                         </div>
 
@@ -294,12 +300,10 @@
                             <textarea 
                                 wire:model="catatanAdmin" rows="3"
                                 class="bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 text-gray-900 dark:text-gray-100 text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition"
-                                placeholder="Catatan untuk pemohon..."
+                                placeholder="Tuliskan catatan tambahan untuk pemohon..."
                             ></textarea>
                         </div>
                     </div>
-
-                    
 
                     <div class="flex items-center justify-end gap-3 pt-5 mt-6 border-t border-gray-200 dark:border-gray-800">
                         <button type="button" wire:click="closeDetail" class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition">

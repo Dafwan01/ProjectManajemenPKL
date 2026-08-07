@@ -1,28 +1,28 @@
 <div>
-    <!-- HEADER TITLE & SUBTITLE -->
+    <!-- JUDUL HEADER & SUBJUDUL -->
     <div class="mb-6">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">Sertifikat Magang</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola dan terbitkan sertifikat bagi peserta magang.</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola dan terbitkan sertifikat kelulusan bagi peserta magang.</p>
     </div>
 
-    <!-- Flash Message Sukses -->
+    <!-- Pesan Notifikasi Sukses -->
     @if (session()->has('message'))
         <div class="p-4 mb-6 text-sm text-emerald-700 dark:text-emerald-400 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-between" role="alert">
             <span class="font-medium">{{ session('message') }}</span>
         </div>
     @endif
 
-    <!-- Flash Message Error -->
+    <!-- Pesan Notifikasi Gagal -->
     @if (session()->has('error'))
         <div class="p-4 mb-6 text-sm text-rose-700 dark:text-rose-400 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-between" role="alert">
             <span class="font-medium">{{ session('error') }}</span>
         </div>
     @endif
 
-    <!-- Container Utama -->
+    <!-- Kontainer Utama -->
     <div class="relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/80 rounded-2xl shadow-xl">
         
-        <!-- Top Bar / Search Bar -->
+        <!-- Bar Atas / Kolom Pencarian -->
         <div class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700/80 gap-4 overflow-x-auto no-scrollbar">
             <div class="flex items-center flex-nowrap shrink-0 gap-3">
                 <div class="relative shrink-0">
@@ -35,7 +35,7 @@
                         type="text" 
                         wire:model.live.debounce.300ms="search" 
                         class="block p-2.5 ps-10 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-700 rounded-2xl w-64 bg-gray-50 dark:bg-gray-900/50 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" 
-                        placeholder="Cari nama, email, sekolah..."
+                        placeholder="Cari nama, email, atau sekolah..."
                     >
                 </div>
             </div>
@@ -48,8 +48,9 @@
                     <tr>
                         <th scope="col" class="px-6 py-4">Nama</th>
                         <th scope="col" class="px-6 py-4">Asal Sekolah</th>
-                        <th scope="col" class="px-6 py-4">Mentor</th>
-                        <th scope="col" class="px-6 py-4">Status</th>
+                        <th scope="col" class="px-6 py-4">Mentor Pembimbing</th>
+                        <th scope="col" class="px-6 py-4 text-center">Tanggal Mulai</th>
+                        <th scope="col" class="px-6 py-4 text-center">Status Sertifikat</th>
                         <th scope="col" class="px-6 py-4 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -62,16 +63,22 @@
                             <th scope="row" class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                                 {{ $user->nama }}
                             </th>
-                            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->sekolah?->nama_sekolah }}</td>
+                            <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->sekolah?->nama_sekolah ?? '-' }}</td>
                             <td class="px-6 py-4 text-gray-600 dark:text-gray-400">{{ $user->mentor ?? '-' }}</td>
-                            <td class="px-6 py-4 align-middle">
+                            
+                            <!-- Format Tanggal Indonesia (Contoh: "07 Agustus 2026") -->
+                            <td class="px-6 py-4 text-center whitespace-nowrap text-gray-600 dark:text-gray-400">
+                                {{ $user->tanggal_mulai ? \Illuminate\Support\Carbon::parse($user->tanggal_mulai)->translatedFormat('d F Y') : '-' }}
+                            </td>
+
+                            <td class="px-6 py-4 text-center align-middle">
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border
                                     {{ $hasSertifikat 
                                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' 
                                         : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20' 
                                     }}">
                                     <span class="w-1.5 h-1.5 rounded-full {{ $hasSertifikat ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-rose-500 dark:bg-rose-400' }}"></span>
-                                    {{ $hasSertifikat ? 'Sudah Diterbitkan' : 'Belum Ada' }}
+                                    {{ $hasSertifikat ? 'Sudah Diterbitkan' : 'Belum Diterbitkan' }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">
@@ -84,7 +91,7 @@
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 001.946.806 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                                         </svg>
-                                        <span>{{ $hasSertifikat ? 'Regenerate' : 'Generate' }}</span>
+                                        <span>{{ $hasSertifikat ? 'Terbitkan Ulang' : 'Terbitkan' }}</span>
                                     </button>
 
                                     @if($hasSertifikat)
@@ -106,7 +113,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
                                 <div class="inline-flex p-3 bg-gray-100 dark:bg-gray-900/50 rounded-full mb-3 text-gray-400">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                                 </div>
@@ -118,14 +125,14 @@
             </table>
         </div>
 
-        <!-- Pagination -->
+        <!-- Paginasi -->
         <div class="p-4 border-t border-gray-200 dark:border-gray-700/80 bg-white dark:bg-gray-800">
             {{ $users->links() }}
         </div>
     </div>
 
     <!-- ========================================== -->
-    <!-- MODAL FORM GENERATE SERTIFIKAT             -->
+    <!-- MODAL FORMULIR TERBITKAN SERTIFIKAT         -->
     <!-- ========================================== -->
     @if($showModal && $selectedUserId)
         @php
@@ -134,10 +141,10 @@
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity">
             <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 
-                <!-- Modal Header -->
+                <!-- Header Modal -->
                 <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-                        Generate Sertifikat Magang
+                        Terbitkan Sertifikat Magang
                     </h3>
                     <button wire:click="closeForm" type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,21 +153,21 @@
                     </button>
                 </div>
 
-                <!-- Modal Body -->
+                <!-- Bodi Modal -->
                 <form wire:submit.prevent="generate" class="p-5 space-y-4">
 
-                    <!-- Alert Error di Dalam Modal -->
+                    <!-- Peringatan Kesalahan di Dalam Modal -->
                     @if (session()->has('error'))
                         <div class="p-3 text-xs text-rose-700 dark:text-rose-400 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-between" role="alert">
                             <span class="font-medium">{{ session('error') }}</span>
                         </div>
                     @endif
 
-                    <!-- Detail Peserta -->
+                    <!-- Rincian Peserta -->
                     <div class="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl space-y-1 border border-gray-100 dark:border-gray-700/50">
                         <p class="text-xs text-gray-500 dark:text-gray-400">Peserta Magang:</p>
                         <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ $targetUser?->nama }}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $targetUser?->sekolah?->nama_sekolah ?? '-' }} (Mentor: {{ $targetUser?->mentor ?? '-' }})</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $targetUser?->sekolah?->nama_sekolah ?? '-' }} (Mentor Pembimbing: {{ $targetUser?->mentor ?? '-' }})</p>
                     </div>
 
                     <!-- Input Nomor Sertifikat -->
@@ -203,7 +210,7 @@
                         <input 
                             type="text" 
                             wire:model="jabatanPenandatangan" 
-                            placeholder="Contoh: Head of Human Resources"
+                            placeholder="Contoh: Kepala Bagian Sumber Daya Manusia"
                             class="w-full p-2.5 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
                         >
                         @error('jabatanPenandatangan') <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span> @enderror
@@ -225,7 +232,7 @@
                         @error('jenisTtd') <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Modal Footer -->
+                    <!-- Footer Modal -->
                     <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                         <button 
                             type="button" 
@@ -243,7 +250,7 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span>Proses & Generate PDF</span>
+                            <span>Proses & Buat PDF</span>
                         </button>
                     </div>
                 </form>
@@ -253,13 +260,13 @@
     @endif
 
     <!-- ========================================== -->
-    <!-- MODAL PREVIEW PDF (IFRAME)                 -->
+    <!-- MODAL PRATINJAU PDF (IFRAME)               -->
     <!-- ========================================== -->
     @if ($showPdfModal && $previewUrl)
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm transition-opacity">
             <div class="relative w-full max-w-5xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col h-[85vh]">
                 
-                <!-- Modal Header -->
+                <!-- Header Modal -->
                 <div class="flex items-center justify-between px-6 py-3.5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
                     <h3 class="text-base font-bold text-gray-900 dark:text-white uppercase tracking-wide">
                         Sertifikat Magang - {{ $previewUserName }}
@@ -274,7 +281,7 @@
                     </button>
                 </div>
 
-                <!-- Modal Body (Iframe PDF Viewer) -->
+                <!-- Bodi Modal (Pratinjau PDF) -->
                 <div class="flex-1 w-full bg-gray-100 dark:bg-gray-950">
                     <iframe 
                         src="{{ $previewUrl }}" 

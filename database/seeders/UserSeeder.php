@@ -99,6 +99,7 @@ class UserSeeder extends Seeder
             ['nama' => 'Muhammad Fauzi Syabana', 'email' => 'fauzimmhd6@gmail.com'],
             ['nama' => 'Tiurma Taqiyyahafizh', 'email' => 'tiurma.taqiyy@gmail.com'],
             ['nama' => 'Adrian Maulana Yusuf', 'email' => 'adrianmaul1356@gmail.com'],
+            ['nama' => 'Jonathan', 'email' => '0815nos@gmail.com'],
         ];
 
         foreach ($newUsers as $user) {

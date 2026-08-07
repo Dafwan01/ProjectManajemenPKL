@@ -1,19 +1,19 @@
 <div>
-    <!-- Header Dashboard -->
+    <!-- Judul Header & Subjudul -->
     <div class="no-print mb-6">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">Rekap Absensi Peserta PKL</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Pilih periode, status, atau cari peserta untuk melihat rekap absensi.</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Pilih periode bulan, tahun, status, atau cari nama peserta untuk melihat rekapitulasi kehadiran.</p>
     </div>
 
-    <!-- Container Utama -->
+    <!-- Kontainer Utama -->
     <div class="no-print relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-xl">
         
-        <!-- Filter Bar -->
+        <!-- Bar Filter & Pencarian -->
         <div class="p-5 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between gap-4 flex-wrap">
             <div class="flex items-center gap-3 flex-wrap w-full lg:w-auto">
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Periode:</span>
                 
-                <!-- Dropdown Bulan -->
+                <!-- Dropdown Pilih Bulan -->
                 <select 
                     wire:model.live="bulan"
                     class="p-2.5 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl w-36 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition cursor-pointer"
@@ -32,7 +32,7 @@
                     <option value="12">Desember</option>
                 </select>
 
-                <!-- Dropdown Tahun -->
+                <!-- Dropdown Pilih Tahun -->
                 <select 
                     wire:model.live="tahun"
                     class="p-2.5 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl w-28 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition cursor-pointer"
@@ -53,7 +53,7 @@
                 </select>
             </div>
 
-            <!-- Input Live Search -->
+            <!-- Input Pencarian Langsung -->
             <div class="relative w-full lg:w-72">
                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,20 +63,20 @@
                 <input 
                     type="text" 
                     wire:model.live.debounce.300ms="search" 
-                    placeholder="Cari nama / sekolah..." 
+                    placeholder="Cari nama atau asal sekolah..." 
                     class="w-full p-2.5 pl-10 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 />
             </div>
         </div>
 
-        <!-- Tabel List Anak PKL -->
+        <!-- Tabel Data Peserta PKL -->
         <div class="overflow-x-auto">
             <table class="w-full table-fixed text-sm text-gray-600 dark:text-gray-300">
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                     <tr>
                         <th scope="col" class="px-4 py-4 w-[6%] text-center font-bold">No</th>
                         <th scope="col" class="px-4 py-4 w-[28%] text-center font-bold">Nama Lengkap</th>
-                        <th scope="col" class="px-4 py-4 w-[26%] text-center font-bold">Asal Sekolah</th>
+                        <th scope="col" class="px-4 py-4 w-[26%] text-center font-bold">Asal Sekolah / Instansi</th>
                         <th scope="col" class="px-4 py-4 w-[18%] text-center font-bold">Status</th>
                         <th scope="col" class="px-4 py-4 w-[22%] text-center font-bold">Aksi</th>
                     </tr>
@@ -93,7 +93,7 @@
                             <td class="px-4 py-4 text-gray-500 dark:text-gray-400 text-center">
                                 <span class="block line-clamp-2 break-words">{{ $user->sekolah?->nama_sekolah ?? '-' }}</span>
                             </td>
-                            <!-- Kolom User Status -->
+                            <!-- Kolom Status Peserta -->
                             <td class="px-4 py-4 text-center">
                                 @php 
                                     $userStatus = strtolower($user->status->value ?? $user->status ?? '');
@@ -139,20 +139,21 @@
             </table>
         </div>
 
-        <!-- Links Pagination -->
+        <!-- Navigasi Paginasi -->
         <div class="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
             {{ $usersPKL->links() }}
         </div>
     </div>
 
-    <!-- Modal PDF Preview -->
+    <!-- Modal Pratinjau Dokumen PDF -->
     @if($showModal && $selectedUser)
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm transition-opacity">
             <div class="relative w-full max-w-6xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col h-[90vh]">
                 
+                <!-- Header Modal dengan Tanggal/Bulan Baku Indonesia -->
                 <div class="flex items-center justify-between px-6 py-3.5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
                     <h3 class="text-base font-bold text-gray-900 dark:text-white uppercase tracking-wide">
-                        Rekap Absensi - {{ $selectedUser->nama ?? $selectedUser->name }} ({{ $bulan }}/{{ $tahun }})
+                        Rekap Absensi - {{ $selectedUser->nama ?? $selectedUser->name }} ({{ \Illuminate\Support\Carbon::createFromDate((int)$tahun, (int)$bulan, 1)->translatedFormat('F Y') }})
                     </h3>
                     <button 
                         wire:click="tutupModal" 
@@ -164,6 +165,7 @@
                     </button>
                 </div>
 
+                <!-- Frame Dokumen PDF -->
                 <div class="flex-1 w-full bg-gray-100 dark:bg-gray-950">
                     <iframe 
                         src="{{ route('cetak.rekap-absensi', ['userId' => $selectedUser->user_id, 'bulan' => $bulan, 'tahun' => $tahun]) }}" 
