@@ -113,39 +113,42 @@
                 <label for="remember" class="ms-2.5 text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">Ingat Saya</label>
             </div>
 
-            {{-- Bagian Captcha --}}
-            <div>
-                <label class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Kode Captcha</label>
-                
-                <div class="p-3 border border-blue-200/80 dark:border-blue-800/50 bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl space-y-2.5 backdrop-blur-sm">
-                    <div class="flex items-center justify-between gap-2.5">
-                        <div class="flex-1 overflow-hidden rounded-xl shadow-sm border border-blue-100 dark:border-blue-800/60 flex justify-center bg-white dark:bg-gray-800 p-1">
-                            <img src="{{ $captchaImage }}" alt="Kode Captcha" class="h-14 w-full object-contain rounded-lg" />
-                        </div>
-                        <button 
-                            type="button" 
-                            wire:click="generateCaptcha"
-                            class="flex flex-col items-center justify-center p-2 text-xs font-semibold text-blue-700 dark:text-blue-400 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-800/60 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/40 active:scale-95 transition-all shadow-sm shrink-0 h-14 w-20"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            <span>Muat Ulang</span>
-                        </button>
-                    </div>
-                    <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium px-1">Masukkan 5 karakter yang tertera pada gambar di atas.</p>
-                </div>
-
-                <input
-                    type="text"
-                    wire:model="captchaInput"
-                    id="captcha"
-                    class="mt-2 bg-gray-50 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 block w-full p-2.5 transition duration-150 placeholder-gray-400 dark:placeholder-gray-500 @error('captchaInput') border-red-500 dark:border-red-500 focus:ring-red-500/20 @enderror"
-                    placeholder="Ketik kode captcha"
-                    required
-                />
-                @error('captchaInput') <span class="text-red-500 dark:text-red-400 text-xs mt-1.5 block font-medium">{{ $message }}</span> @enderror
+           {{-- Bagian Captcha --}}
+<div>
+    <label class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Kode Captcha</label>
+    
+    <div class="p-3 border border-blue-200/80 dark:border-blue-800/50 bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl space-y-2.5 backdrop-blur-sm">
+        <div class="flex items-center justify-between gap-2.5">
+            <!-- Menambah tinggi kontainer ke h-20 (80px) dan padding pas -->
+            <div class="flex-1 overflow-hidden rounded-xl shadow-sm border border-blue-100 dark:border-blue-800/60 flex items-center justify-center bg-white dark:bg-gray-800 p-1.5 h-20">
+                <img src="{{ $captchaImage }}" alt="Kode Captcha" class="h-full w-full object-contain scale-105 rounded-lg" />
             </div>
+            
+            <!-- Menyesuaikan tinggi tombol Muat Ulang agar sejajar (h-20) -->
+            <button 
+                type="button" 
+                wire:click="generateCaptcha"
+                class="flex flex-col items-center justify-center p-2 text-xs font-semibold text-blue-700 dark:text-blue-400 bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-800/60 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/40 active:scale-95 transition-all shadow-sm shrink-0 h-20 w-20"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Muat Ulang</span>
+            </button>
+        </div>
+        <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium px-1">Masukkan 5 karakter yang tertera pada gambar di atas.</p>
+    </div>
+
+    <input
+        type="text"
+        wire:model="captchaInput"
+        id="captcha"
+        class="mt-2 bg-gray-50 dark:bg-gray-800/80 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 block w-full p-2.5 transition duration-150 placeholder-gray-400 dark:placeholder-gray-500 @error('captchaInput') border-red-500 dark:border-red-500 focus:ring-red-500/20 @enderror"
+        placeholder="Ketik kode captcha"
+        required
+    />
+    @error('captchaInput') <span class="text-red-500 dark:text-red-400 text-xs mt-1.5 block font-medium">{{ $message }}</span> @enderror
+</div>
             
             {{-- Persetujuan Syarat & Ketentuan --}}
             <div>

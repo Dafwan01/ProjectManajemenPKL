@@ -36,6 +36,7 @@
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen transition-colors duration-200">
 
     <div x-data="{
+            sidebarOpen: false,
             darkMode: localStorage.getItem('theme') === 'dark'
                 || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
             toggleTheme() {
@@ -45,10 +46,26 @@
             }
          }"
          x-init="document.documentElement.classList.toggle('dark', darkMode)"
-         class="min-h-screen">
+         class="min-h-screen relative">
+
+        <!-- BACKDROP OVERLAY (Hanya muncul di Mobile saat Sidebar Terbuka) -->
+        <div x-show="sidebarOpen" 
+             @click="sidebarOpen = false" 
+             x-cloak 
+             x-transition:enter="transition-opacity ease-linear duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-30 bg-slate-900/50 backdrop-blur-sm sm:hidden">
+        </div>
 
         <!-- NAVIGASI SAMPING / SIDEBAR -->
-        <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0 bg-white dark:bg-slate-900 border-e border-slate-200 dark:border-slate-800/80" aria-label="Navigasi Samping">
+        <aside id="logo-sidebar" 
+               :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform duration-200 sm:translate-x-0 bg-white dark:bg-slate-900 border-e border-slate-200 dark:border-slate-800/80" 
+               aria-label="Navigasi Samping">
             <div class="h-full px-3 py-4 overflow-y-auto bg-white dark:bg-slate-900 flex flex-col justify-between">
                 <div>
                     <!-- Logo / Identitas -->
@@ -138,7 +155,7 @@
                             </a>
                         </li>
 
-                        <!-- Rekap Absensi (Ikon Diperbarui) -->
+                        <!-- Rekap Absensi -->
                         <li>
                             <a href="{{ route('rekap-absensi') }}" wire:navigate
                                class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('rekap-absensi') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
@@ -231,9 +248,10 @@
         <div class="sm:ml-64 min-h-screen transition-colors duration-200">
 
             <!-- HEADER ATAS -->
-            <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex justify-between items-center w-full h-16 px-6 border-b border-slate-200 dark:border-slate-800/80 sticky top-0 z-30 transition-colors duration-200">
+            <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex justify-between items-center w-full h-16 px-6 border-b border-slate-200 dark:border-slate-800/80 sticky top-0 z-20 transition-colors duration-200">
                 <div>
-                    <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button"
+                    <!-- Tombol Burger Menu Mobile -->
+                    <button @click="sidebarOpen = !sidebarOpen" type="button"
                             class="inline-flex items-center p-2 text-sm text-slate-500 dark:text-slate-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 sm:hidden">
                         <span class="sr-only">Buka/Tutup Navigasi Samping</span>
                         <i class="fa-solid fa-bars text-lg"></i>
@@ -277,10 +295,14 @@
 
     @livewireScripts
 
+    <!-- Auto close sidebar di mobile saat navigasi Livewire dipicu -->
     <script>
         document.addEventListener('livewire:navigated', () => {
-            if (typeof initFlowbite === 'function') {
-                initFlowbite();
+            if (window.innerWidth < 640 && Alpine) {
+                const rootDiv = document.querySelector('[x-data]');
+                if (rootDiv && rootDiv._x_dataStack) {
+                    rootDiv._x_dataStack[0].sidebarOpen = false;
+                }
             }
         });
     </script>

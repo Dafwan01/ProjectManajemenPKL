@@ -4,7 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Livewire\WithPagination; // 1. Trait Pagination
+use Livewire\WithPagination;
 use App\Models\Forum as ForumModel;
 use App\Enums\UserRole;
 use Illuminate\Support\Facades\Auth;
@@ -13,14 +13,18 @@ use App\Services\BadWord;
 
 class Forum extends Component
 {
-    use WithFileUploads, WithPagination; // 2. Pasang Trait
+    use WithFileUploads, WithPagination;
 
     public $showModal = false;
     public $title = '';
     public $content = '';
     public $image;
 
-    // 3. Property Search
+    // Properti pendukung mode edit
+    public $editingId = null;
+    public $existingGambar = null;
+
+    // Property Search
     public $search = '';
 
     protected array $rules = [
@@ -37,7 +41,7 @@ class Forum extends Component
         'image.max'        => 'Ukuran gambar maksimal 2 MB!',
     ];
 
-    // 4. Reset ke halaman 1 setiap kali search berubah
+    // Reset ke halaman 1 setiap kali search berubah
     public function updatingSearch()
     {
         $this->resetPage();
@@ -212,7 +216,6 @@ class Forum extends Component
     public function render()
     {
         return view('livewire.forum', [
-            // 5. Filter + Paginate
             'forums' => ForumModel::with('user')
                 ->withCount('messages')
                 ->when($this->search, function ($query) {

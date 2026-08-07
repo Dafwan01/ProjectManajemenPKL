@@ -43,24 +43,22 @@
 
    <!-- List Forum -->
     <div class="space-y-3">
+        @php
+            $user = auth()->user();
+            $authId = auth()->id();
+            $roleValue = $user?->role instanceof \UnitEnum ? $user->role->value : (string) $user?->role;
+        @endphp
+
         @forelse($forums as $forum)
-            <a href="{{ route('forum.show', $forum->forum_id) }}" class="block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 rounded-2xl p-5 shadow-sm transition duration-150 group">
-                <div class="flex gap-4 items-start">
-
-                    @if($forum->image)
-                        <img src="{{ asset('storage/' . $forum->image) }}" alt="Forum Image" class="w-20 h-20 object-cover rounded-xl border border-gray-200 dark:border-gray-800 shrink-0">
-                    @endif
-
-                // Pembuat forum ATAU Admin/Mentor/Non-PKL
+            @php
                 $isOwner = (string) $forum->user_id === (string) $authId;
                 $isAdmin = ($roleValue === \App\Enums\UserRole::ADMIN->value) || ($roleValue !== \App\Enums\UserRole::PKL->value);
-                
                 $canModify = $isOwner || $isAdmin;
             @endphp
+
             <div class="relative group">
                 <a href="{{ route('forum.show', $forum->forum_id) }}" class="block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 rounded-2xl p-5 shadow-sm transition duration-150">
                     <div class="flex gap-4 items-start">
-                        
                         @if($forum->gambar)
                             <img src="{{ asset('storage/' . $forum->gambar) }}" alt="Gambar Forum" class="w-20 h-20 object-cover rounded-xl border border-gray-200 dark:border-gray-800 shrink-0">
                         @endif
@@ -83,7 +81,7 @@
                     </div>
                 </a>
 
-                <!-- Tombol Aksi Edit & Hapus (Hanya muncul untuk Pembuat atau Admin) -->
+                <!-- Tombol Aksi Edit & Hapus (Hanya untuk Pembuat / Admin) -->
                 @if($canModify)
                     <div class="absolute top-4 right-4 flex items-center gap-1 z-10">
                         <!-- Edit -->
@@ -126,7 +124,7 @@
         </div>
     @endif
 
-    <!-- Modal Buat Forum -->
+    <!-- Modal Buat / Sunting Forum -->
     @if($showModal)
         <div class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" wire:click.self="closeModal">
             <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl">
