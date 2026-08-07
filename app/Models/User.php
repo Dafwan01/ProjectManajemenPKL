@@ -10,14 +10,18 @@ use App\Models\DetailJadwal;
 use App\Models\project;
 use App\Models\Nilai;
 use App\Models\file;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\Activitylog\Models\Concerns\HasActivity;
+
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, HasActivity,SoftDeletes;
 
     public $timestamps = false;
 
@@ -54,10 +58,41 @@ class User extends Authenticatable
         'tanggal_akhir' => 'date',
         'tanggal_lahir' => 'date',
 
-        // Casting Enum di sini
+        // Casting Enum
         'role' => UserRole::class,
         'status' => UserStatus::class,
     ];
+
+    /**
+     * Konfigurasi Spatie Activitylog untuk Model User
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            // Kolom yang dipantau perubahannya
+            ->logOnly([
+                'nama',
+                'email',
+                'role',
+                'status',
+                'mentor',
+                'sekolah_id',
+                'divisi_id',
+                'jenis_kelamin',
+                'tempat_lahir',
+                'tanggal_lahir',
+                'jurusan',
+                'skill',
+            ])
+            // Pengecualian keamanan
+            ->logExcept(['password', 'remember_token'])
+            // Hanya catat log jika ada kolom yang nilainya benar-benar berubah
+            ->logOnlyDirty()
+            // Mencegah log kosong jika tidak ada perubahan data
+            ->dontLogEmptyChanges()
+            // Tag identifikasi nama log
+            ->useLogName('user');
+    }
 
     public function getTanggalAkhirAttribute($value)
     {
@@ -120,56 +155,64 @@ class User extends Authenticatable
         };
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | RELASI MODEL
+    |--------------------------------------------------------------------------
+    */
+
     public function detailJadwals()
     {
         return $this->hasMany(DetailJadwal::class, 'user_id', 'user_id');
     }
 
-     public function projects()
+    public function projects()
     {
         return $this->hasMany(Project::class, 'user_id', 'user_id');
     }
-// Tambahkan method ini di bawah method projects()
-public function project()
-{
-    return $this->hasOne(Project::class, 'user_id', 'user_id')->latestOfMany('project_id');
-}
-      public function nilais()
+
+    public function project()
+    {
+        return $this->hasOne(Project::class, 'user_id', 'user_id')->latestOfMany('project_id');
+    }
+
+    public function nilais()
     {
         return $this->hasMany(Nilai::class, 'user_id', 'user_id');
     }
 
     public function nilai()
-{
-    return $this->hasOne(Nilai::class, 'user_id', 'user_id');
-}
-    public function presensis(){
-        return $this->hasOne(Presensi::class, 'user_id','user_id');
+    {
+        return $this->hasOne(Nilai::class, 'user_id', 'user_id');
     }
 
-      public function files()
+    public function presensis()
+    {
+        return $this->hasOne(Presensi::class, 'user_id', 'user_id');
+    }
+
+    public function files()
     {
         return $this->hasMany(file::class, 'user_id', 'user_id');
     }
 
-public function sekolah()
-{
-    return $this->belongsTo(Sekolah::class, 'sekolah_id', 'sekolah_id');
-}
-
-public function divisi()
+    public function sekolah()
     {
-        return $this->belongsTo(Divisi::class);
+        return $this->belongsTo(Sekolah::class, 'sekolah_id', 'sekolah_id');
+    }
+
+    public function divisi()
+    {
+            return $this->belongsTo(Divisi::class, 'divisi_id', 'divisi_id');
     }
 
     public function forums()
-{
-    return $this->hasMany(Forum::class);
-}
+    {
+        return $this->hasMany(Forum::class);
+    }
 
-public function forumMessages()
-{
-    return $this->hasMany(ForumMessage::class);
-}
-
+    public function forumMessages()
+    {
+        return $this->hasMany(ForumMessage::class);
+    }
 }

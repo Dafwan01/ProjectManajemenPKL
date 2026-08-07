@@ -4,10 +4,12 @@ use App\Http\Controllers\SertifikatController;
 use App\Livewire\Components\CetakNilai;
 use App\Livewire\Components\CetakRekapAbsensi;
 use App\Livewire\Dashboard\Dashboard;
+use App\Livewire\Dashboard\Log;
 use App\Livewire\Dashboard\ManajemenAkun;
 use App\Livewire\Dashboard\ManajemenPkl;
 use App\Livewire\Dashboard\MonitoringAbsensi;
 use App\Livewire\Dashboard\PermohonanIzin;
+use App\Livewire\Dashboard\Profile as DashboardProfile;
 use App\Livewire\Dashboard\RekapAbsensi;
 use App\Livewire\Dashboard\UploadFile\Nilai;
 use App\Livewire\Dashboard\UploadFile\Sertifikat;
@@ -73,6 +75,8 @@ Route::middleware(['auth', 'role:admin,mentor'])->group(function () {
     Route::get('/monitoring-absensi', MonitoringAbsensi::class)->name('monitoring-absensi');
     Route::get('/rekap-absensi', RekapAbsensi::class)->name('rekap-absensi');
     Route::get('/permohonan-izin', PermohonanIzin::class)->name('permohonan-izin');
+    Route::get('/log', Log::class)->name('log');
+    Route::get('/profile', DashboardProfile::class)->name('profile');
 
     // Upload & Document Routes
     Route::get('/surat-penerimaan-magang', SuratPenerimaanMagang::class)->name('surat-penerimaan-magang');

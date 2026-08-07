@@ -13,12 +13,40 @@
         </button>
     </div>
 
+    <!-- Search Bar -->
+    <div class="relative">
+        <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" wire:model.live.debounce.400ms="search"
+               placeholder="Cari judul, isi, atau nama penulis forum..."
+               class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition">
+
+        <!-- Indikator loading saat searching -->
+        <div wire:loading wire:target="search" class="absolute right-3.5 top-1/2 -translate-y-1/2">
+            <svg class="w-4 h-4 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+        </div>
+
+        <!-- Tombol clear search -->
+        @if($search)
+            <button type="button" wire:click="$set('search', '')" wire:loading.remove wire:target="search"
+                    class="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        @endif
+    </div>
+
    <!-- List Forum -->
     <div class="space-y-3">
         @forelse($forums as $forum)
             <a href="{{ route('forum.show', $forum->forum_id) }}" class="block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 rounded-2xl p-5 shadow-sm transition duration-150 group">
                 <div class="flex gap-4 items-start">
-                    
+
                     @if($forum->image)
                         <img src="{{ asset('storage/' . $forum->image) }}" alt="Forum Image" class="w-20 h-20 object-cover rounded-xl border border-gray-200 dark:border-gray-800 shrink-0">
                     @endif
@@ -42,10 +70,21 @@
             </a>
         @empty
             <div class="text-center py-12 bg-white dark:bg-gray-900 border border-dashed border-gray-200 dark:border-gray-800 rounded-3xl text-gray-400 dark:text-gray-500 text-xs">
-                Belum ada diskusi forum terbaru.
+                @if($search)
+                    Tidak ada forum yang cocok dengan pencarian "{{ $search }}".
+                @else
+                    Belum ada diskusi forum terbaru.
+                @endif
             </div>
         @endforelse
     </div>
+
+    <!-- Pagination Links -->
+    @if($forums->hasPages())
+        <div class="pt-2">
+            {{ $forums->links() }}
+        </div>
+    @endif
 
     <!-- Modal Buat Forum -->
     @if($showModal)
@@ -67,17 +106,14 @@
                         @error('content') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Input Gambar -->
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Unggah Gambar (Opsional)</label>
                         <input type="file" wire:model="image" accept="image/*" class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-gray-200 file:text-gray-700 dark:file:bg-gray-700 dark:file:text-white hover:file:bg-gray-300 dark:hover:file:bg-gray-600 transition">
-                        
-                        <!-- Indikator Loading Upload Gambar -->
+
                         <div wire:loading wire:target="image" class="text-xs text-cyan-600 dark:text-cyan-400 mt-1">Mengunggah gambar...</div>
 
                         @error('image') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
 
-                        <!-- Preview Gambar Sebelum Simpan -->
                         @if ($image)
                             <div class="mt-2 relative w-32 h-32 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
                                 <img src="{{ $image->temporaryUrl() }}" class="w-full h-full object-cover">
@@ -100,16 +136,4 @@
             </div>
         </div>
     @endif
-
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        Livewire.hook('request', ({ fail }) => {
-            fail(({ status, content }) => {
-                console.log('=== LIVEWIRE REQUEST FAILED ===');
-                console.log('Status:', status);
-                console.log('Content:', content);
-            });
-        });
-    });
-    </script>
 </div>
