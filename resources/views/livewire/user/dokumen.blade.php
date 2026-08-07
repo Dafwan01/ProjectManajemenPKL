@@ -33,6 +33,8 @@
         </div>
     @endif
 
+    
+
     <!-- Form Upload -->
     <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-3xl p-6 shadow-lg">
         <form wire:submit.prevent="submitDocument" class="space-y-6">

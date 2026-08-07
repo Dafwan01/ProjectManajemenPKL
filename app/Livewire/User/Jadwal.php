@@ -48,6 +48,9 @@ class Jadwal extends Component
                     'is_hari_ini'  => strtolower($hari) === strtolower($namaHariIni),
                 ]);
             }
+
+            // Tandai jadwal sudah dilihat, supaya badge notifikasi "!" di sidebar hilang
+            $user->update(['jadwal_dilihat_at' => now()]);
         }
 
         return view('livewire.user.jadwal', [

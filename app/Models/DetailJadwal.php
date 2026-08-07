@@ -8,8 +8,7 @@ use App\Models\User;
 
 class DetailJadwal extends Model
 {
-    public $timestamps = false;
-
+public $timestamps = true;
     protected $table = 'detail_jadwals';
     protected $primaryKey = 'detail_jadwal_id';
 
@@ -17,6 +16,8 @@ class DetailJadwal extends Model
         'jadwal_id',
         'user_id',
         'hari',
+        'created_at', // Tambahkan ini
+        'updated_at',
     ];
 
     public function jadwal()

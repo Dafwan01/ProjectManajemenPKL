@@ -34,13 +34,13 @@ class User extends Authenticatable
         'tanggal_akhir',
         'role',
         'divisi_id',
-        'surat_penerimaan',
         'foto',
         'skill',
         'tempat_lahir',
         'tanggal_lahir',
         'jenis_kelamin',
         'jurusan',
+        'jadwal_dilihat_at',
     ];
 
     protected $hidden = [

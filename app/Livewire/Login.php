@@ -160,9 +160,13 @@ class Login extends Component
 
         request()->session()->regenerate();
 
+        // Hapus intended URL dari session agar user PKL tidak dipaksa ke /dashboard
+        session()->forget('url.intended');
+
         $user = Auth::user();
         $userRole = $user->role instanceof \UnitEnum ? $user->role->value : $user->role;
 
+        // Redirect sesuai role
         if ($userRole === UserRole::PKL->value) {
             return redirect()->route('user.presensi');
         }
