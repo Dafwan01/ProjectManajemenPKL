@@ -5,9 +5,13 @@ namespace App\Models;
 use App\Enums\PresensiStatusKehadiran;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class presensi extends Model
 {
+    use LogsActivity;
+
     public $timestamps = false;
 
     protected $primaryKey = 'presensi_id';
@@ -30,6 +34,24 @@ class presensi extends Model
     ];
 
     /**
+     * Konfigurasi Spatie Activitylog untuk Model Presensi
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'user_id',
+                'tanggal',
+                'status_kehadiran',
+                'absen_masuk',
+                'absen_keluar',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('presensi');
+    }
+
+    /**
      * Get the log books associated with this presensi.
      */
     public function logBooks(): HasMany
@@ -38,8 +60,7 @@ class presensi extends Model
     }
 
     public function user()
-{
-    return $this->belongsTo(User::class, 'user_id', 'user_id');
-}
-
+    {
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
 }

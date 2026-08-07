@@ -185,6 +185,19 @@
                                 <span class="flex-1 ms-3 text-sm whitespace-nowrap">Forum Diskusi</span>
                             </a>
                         </li>
+
+                        <!-- Menu Log Aktivitas (Khusus Admin) -->
+                        @if(auth()->check() && (auth()->user()->role === \App\Enums\UserRole::ADMIN || auth()->user()->role?->value === \App\Enums\UserRole::ADMIN->value))
+                        <li>
+                            <a href="{{ route('log') }}" wire:navigate
+                               class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('log*') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
+                                <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('log*') ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white' }}" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                </svg>
+                                <span class="flex-1 ms-3 text-sm whitespace-nowrap">Log Aktivitas</span>
+                            </a>
+                        </li>
+                        @endif
                     </ul>
                 </div>
 

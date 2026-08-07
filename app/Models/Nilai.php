@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class Nilai extends Model
 {
+    use LogsActivity;
+
     protected $table = 'nilais';
     protected $primaryKey = 'nilai_id';
 
@@ -18,6 +22,26 @@ class Nilai extends Model
         'kualitas_ketepatan',
         'catatan',
     ];
+
+    /**
+     * Konfigurasi Spatie Activitylog untuk Model Nilai
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'user_id',
+                'kedisiplinan',
+                'kemampuan_teknis',
+                'problem_solving',
+                'komunikasi_kerjasama',
+                'kualitas_ketepatan',
+                'catatan',
+            ])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('nilai');
+    }
 
     public function user()
     {

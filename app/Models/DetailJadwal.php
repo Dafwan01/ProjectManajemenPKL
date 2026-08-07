@@ -5,10 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Jadwal;
 use App\Models\User;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class DetailJadwal extends Model
 {
-public $timestamps = true;
+    use LogsActivity;
+
+    public $timestamps = true;
     protected $table = 'detail_jadwals';
     protected $primaryKey = 'detail_jadwal_id';
 
@@ -16,9 +20,18 @@ public $timestamps = true;
         'jadwal_id',
         'user_id',
         'hari',
-        'created_at', // Tambahkan ini
+        'created_at',
         'updated_at',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['jadwal_id', 'hari'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('detail_jadwal');
+    }
 
     public function jadwal()
     {
