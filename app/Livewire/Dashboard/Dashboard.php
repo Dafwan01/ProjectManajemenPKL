@@ -15,8 +15,10 @@ use Livewire\Component;
 #[Layout('layouts.dashboard')]
 class Dashboard extends Component
 {
-    // TAMBAHAN: Fungsi untuk set kata-kata hari ini (Berganti Setiap Hari)
-    private function setKataKataHariIni()
+    public $kataKataHariIni;
+
+    // Fungsi untuk mendapatkan kata-kata hari ini (Berganti Setiap Hari)
+    public function getKataKataHariIni()
     {
         $quotes = [
             'Disiplin adalah jembatan antara tujuan dan pencapaian.',
@@ -64,8 +66,7 @@ class Dashboard extends Component
         $today = now()->toDateString();
         $index = abs(crc32($today)) % count($quotes);
 
-        // ISI NILAINYA KE PROPERTI KLAS
-        $this->kataKataHariIni = $quotes[$index];
+        return $quotes[$index];
     }
 
     public function render()
@@ -120,13 +121,11 @@ class Dashboard extends Component
             })
             ->count();
 
-        // 1. Query: Info Sekolah Terbanyak (Keseluruhan, tanpa filter created_at agar tidak error)
+        // 1. Query: Info Sekolah Terbanyak
         $topSekolahTahunIni = User::where('role', UserRole::PKL->value)
             ->when($isMentor, function ($query) use ($currentUser) {
                 $query->where('mentor', $currentUser->nama);
             })
-            // NOTE: Jika di database ada kolom 'tanggal_mulai', silakan hapus komentar pada kode di bawah:
-            // ->whereYear('tanggal_mulai', $currentYear)
             ->whereNotNull('sekolah_id')
             ->select('sekolah_id', DB::raw('count(*) as total'))
             ->groupBy('sekolah_id')
@@ -150,7 +149,7 @@ class Dashboard extends Component
         $chartSekolahLabels = $sekolahAktifData->map(fn($item) => $item->sekolah->nama_sekolah ?? 'Tidak Diketahui')->toArray();
         $chartSekolahTotals = $sekolahAktifData->map(fn($item) => $item->total)->toArray();
 
-        // Top 5 Sekolah dengan Peserta PKL Aktif Terbanyak.
+        // Top 5 Sekolah dengan Peserta PKL Aktif Terbanyak
         $topSekolahAktif = $sekolahAktifData
             ->sortByDesc('total')
             ->take(5)
@@ -218,8 +217,8 @@ class Dashboard extends Component
                 ->format('H:i');
         }
 
-        // TAMBAHAN: Memanggil Quotes
-        $kataKataHariIni = $this->getKataKataHariIni();
+        // Memanggil Quotes
+        $this->kataKataHariIni = $this->getKataKataHariIni();
 
         return view('livewire.dashboard.dashboard', [
             'totalPeserta' => $totalPeserta,
@@ -240,7 +239,7 @@ class Dashboard extends Component
             'trenIzinSakit' => $trenIzinSakit,
             'leaderboardTerlambat' => $leaderboardTerlambat,
             'rataRataJamMasukHariIni' => $rataRataJamMasukHariIni,
-            'kataKataHariIni' => $kataKataHariIni,
+            'kataKataHariIni' => $this->kataKataHariIni,
         ]);
     }
 
