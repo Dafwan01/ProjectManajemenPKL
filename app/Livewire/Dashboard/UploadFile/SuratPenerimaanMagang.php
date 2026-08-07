@@ -5,6 +5,7 @@ namespace App\Livewire\Dashboard\UploadFile;
 use App\Enums\UserRole;
 use App\Models\file as FileModel;
 use App\Models\User;
+use App\Notifications\BerkasUploadedNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -72,51 +73,54 @@ class SuratPenerimaanMagang extends Component
         $this->previewUserName = null;
     }
 
-    public function updatedFiles($value, $key)
-    {
-        $userId = $key;
+   public function updatedFiles($value, $key)
+{
+    $userId = $key;
 
-        // Validasi Dikhususkan Hanya Untuk PDF
-        $this->validateOnly("files.$userId", [
-            "files.$userId" => 'file|mimes:pdf|max:5120',
-        ], [
-            "files.$userId.mimes" => 'Berkas harus berformat PDF.',
-            "files.$userId.max"   => 'Ukuran file tidak boleh lebih dari 5MB.',
-        ], [
-            "files.$userId" => 'File',
-        ]);
+    $this->validateOnly("files.$userId", [
+        "files.$userId" => 'file|mimes:pdf|max:5120',
+    ], [
+        "files.$userId.mimes" => 'Berkas harus berformat PDF.',
+        "files.$userId.max"   => 'Ukuran file tidak boleh lebih dari 5MB.',
+    ], [
+        "files.$userId" => 'File',
+    ]);
 
-        $user = User::findOrFail($userId);
-        $file = $this->files[$userId];
+    $user = User::findOrFail($userId);
+    $file = $this->files[$userId];
 
-        $fileLama = FileModel::where('user_id', $userId)
-            ->where('nama_file', $this->namaFileKategori)
-            ->first();
+    $fileLama = FileModel::where('user_id', $userId)
+        ->where('nama_file', $this->namaFileKategori)
+        ->first();
 
-        if ($fileLama && Storage::disk('public')->exists($fileLama->file)) {
-            Storage::disk('public')->delete($fileLama->file);
-        }
-
-        $extension = $file->getClientOriginalExtension();
-        $namaFile = Str::slug($user->nama) . '-suratpenerimaanmagang.' . $extension;
-        $path = $file->storeAs('files', $namaFile, 'public');
-
-        FileModel::updateOrCreate(
-            [
-                'user_id' => $userId,
-                'nama_file' => $this->namaFileKategori,
-            ],
-            [
-                'file' => $path,
-            ]
-        );
-
-        unset($this->files[$userId]);
-
-        session()->flash('message', 'Surat penerimaan magang (PDF) untuk ' . $user->nama . ' berhasil diupload!');
+    if ($fileLama && Storage::disk('public')->exists($fileLama->file)) {
+        Storage::disk('public')->delete($fileLama->file);
     }
 
-    public function render()
+    $extension = $file->getClientOriginalExtension();
+    $namaFile = Str::slug($user->nama) . '-suratpenerimaanmagang.' . $extension;
+    $path = $file->storeAs('files', $namaFile, 'public');
+
+    FileModel::updateOrCreate(
+        [
+            'user_id' => $userId,
+            'nama_file' => $this->namaFileKategori,
+        ],
+        [
+            'file' => $path,
+        ]
+    );
+
+    // KIRIM NOTIFIKASI KE USER (ANAK PKL)
+    $uploader = Auth::user();
+    $user->notify(new BerkasUploadedNotification('Surat Penerimaan Magang', $uploader->nama ?? 'Admin/Mentor'));
+
+    unset($this->files[$userId]);
+
+    session()->flash('message', 'Surat penerimaan magang (PDF) untuk ' . $user->nama . ' berhasil diupload!');
+}
+
+   public function render()
     {
         $currentUser = Auth::user();
         $isMentor = $this->isMentorUser();
@@ -134,6 +138,12 @@ class SuratPenerimaanMagang extends Component
                 $query->where('nama', 'like', '%' . $this->search . '%')
                       ->orWhere('email', 'like', '%' . $this->search . '%');
             })
+            // Priority Sort: Status 'aktif' (1) di atas, 'lulus' (2) di bawah, status lain (3)
+            ->orderByRaw("CASE 
+                WHEN status = 'aktif' THEN 1 
+                WHEN status = 'lulus' THEN 2 
+                ELSE 3 
+            END ASC")
             ->latest('tanggal_mulai')
             ->paginate(10);
 

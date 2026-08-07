@@ -34,6 +34,24 @@ class Riwayat extends Component
         'editingLogbook.min'      => 'Logbook minimal 10 karakter.',
     ];
 
+    /**
+     * Helper untuk mengecek apakah user yang login sudah lulus.
+     */
+    private function isLulus(): bool
+    {
+        $user = auth()->user();
+
+        if (!$user || !$user->status) {
+            return false;
+        }
+
+        $statusValue = $user->status instanceof \BackedEnum 
+            ? $user->status->value 
+            : $user->status;
+
+        return strtolower((string) $statusValue) === 'lulus';
+    }
+
     public function mount()
     {
         $this->tanggalMulai = now()->startOfMonth()->format('Y-m-d');
@@ -64,6 +82,12 @@ class Riwayat extends Component
 
     public function editLogbook($presensiId)
     {
+        // Cegah jika user sudah lulus
+        if ($this->isLulus()) {
+            session()->flash('error', 'Logbook tidak dapat diubah karena Anda sudah dinyatakan LULUS.');
+            return;
+        }
+
         $presensi = PresensiModel::with('logBooks')->find($presensiId);
 
         if ($presensi && $presensi->user_id === auth()->id()) {
@@ -77,6 +101,13 @@ class Riwayat extends Component
 
     public function updateLogbook()
     {
+        // Proteksi tingkat backend jika user memanggil method via Livewire
+        if ($this->isLulus()) {
+            session()->flash('error', 'Logbook tidak dapat diubah karena Anda sudah dinyatakan LULUS.');
+            $this->closeModal();
+            return;
+        }
+
         $this->validate();
 
         $presensi = PresensiModel::findOrFail($this->editingPresensiId);
@@ -124,6 +155,7 @@ class Riwayat extends Component
     public function render()
     {
         $userId = auth()->id();
+        $userIsLulus = $this->isLulus();
 
         // 1) Data presensi asli (realisasi kehadiran harian)
         $presensiList = PresensiModel::with(['logBooks'])
@@ -149,12 +181,11 @@ class Riwayat extends Component
                 'status'       => strtoupper($statusValue ?? '-'),
                 'logbook'      => $presensi->logBooks->first()?->kegiatan,
                 'presensi_id'  => $presensi->presensi_id,
-                'bisa_edit'    => true,
+                'bisa_edit'    => !$userIsLulus, // Jika sudah lulus, otomatis set false
             ]);
         }
 
-        // 2) Semua pengajuan ABSEN SUSULAN (pending / ditolak / disetujui) -> selalu tampil,
-        //    terlepas apakah tanggalnya sudah punya presensi atau belum.
+        // 2) Semua pengajuan ABSEN SUSULAN (pending / ditolak / disetujui)
         $pengajuanAbsen = PermohonanIzinModel::where('user_id', $userId)
             ->where('jenis', 'absen')
             ->get();

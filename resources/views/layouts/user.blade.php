@@ -40,7 +40,35 @@
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 antialiased min-h-screen flex flex-col sm:flex-row transition-colors duration-200">
+@php
+    $userLogin = auth()->user();
+    $adaPerubahanJadwal = false;
+    $adaNotifBerkas = false;
 
+    if ($userLogin) {
+        // Cek Perubahan Jadwal
+        $updateTerakhirJadwal = \App\Models\DetailJadwal::where('user_id', $userLogin->user_id)
+            ->max('updated_at');
+
+        if ($updateTerakhirJadwal) {
+            $updateTerakhirJadwal = \Carbon\Carbon::parse($updateTerakhirJadwal);
+            $adaPerubahanJadwal = is_null($userLogin->jadwal_dilihat_at)
+                || $updateTerakhirJadwal->gt($userLogin->jadwal_dilihat_at);
+        }
+
+        // Cek Notifikasi Berkas, Nilai & Sertifikat Unread
+        $adaNotifBerkas = $userLogin->unreadNotifications()
+            ->whereIn('data->title', [
+                'Berkas Baru Diunggah', 
+                'Surat Penerimaan Magang', 
+                'Nilai', 
+                'Nilai Baru', 
+                'Pembaruan Nilai',
+                'Sertifikat' // <-- Tambahkan ini
+            ])
+            ->exists();
+    }
+@endphp
     <!-- WRAPPER ALPINE UNTUK GLOBAL THEME TOGGLE -->
     <div x-data="{
             darkMode: document.documentElement.classList.contains('dark'),
@@ -128,6 +156,11 @@
                         <a href="{{ route('user.dokumen') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.dokumen') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                             <span>Berkas</span>
+                            @if($adaNotifBerkas)
+        <span class="ms-auto flex items-center justify-center w-5 h-5 rounded-full bg-rose-500 text-white text-[11px] font-bold shrink-0 animate-pulse" title="Ada berkas baru">
+            !
+        </span>
+    @endif
                         </a>
                         @if(Route::has('user.project'))
                         <a href="{{ route('user.project') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.project') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
@@ -135,13 +168,26 @@
                             <span>Project</span>
                         </a>
                         @endif
-                        <a href="{{ route('forum') }}" 
-   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all {{ request()->routeIs('forum') ? 'bg-blue-600 text-white font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-.64-.025-1.289-.06-1.938-.105-.286-.02-.572-.045-.858-.073A9.012 9.012 0 0 1 3 10.5M16.5 3a9 9 0 0 0-9 9c0 .762.09 1.503.26 2.213" />
-    </svg>
-    <span>Forum</span>
-</a>
+
+                        <!-- Jadwal Magang (Mobile) -->
+                        <a href="{{ route('jadwal') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('jadwal') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span class="flex-1">Jadwal Magang</span>
+                            @if($adaPerubahanJadwal)
+                                <span class="flex items-center justify-center w-5 h-5 rounded-full bg-rose-500 text-white text-[11px] font-bold shrink-0 animate-pulse" title="Ada perubahan jadwal">
+                                    !
+                                </span>
+                            @endif
+                        </a>
+
+                        <a href="{{ route('forum') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('forum') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 shrink-0">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-.64-.025-1.289-.06-1.938-.105-.286-.02-.572-.045-.858-.073A9.012 9.012 0 0 1 3 10.5M16.5 3a9 9 0 0 0-9 9c0 .762.09 1.503.26 2.213" />
+                            </svg>
+                            <span>Forum</span>
+                        </a>
                         <a href="{{ route('user.profile') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                             <span>Profile</span>
@@ -187,6 +233,11 @@
                     <a href="{{ route('user.dokumen') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.dokumen') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                         <span>Berkas</span>
+            @if($adaNotifBerkas)
+        <span class="ms-auto flex items-center justify-center w-5 h-5 rounded-full bg-rose-500 text-white text-[11px] font-bold shrink-0 animate-pulse" title="Ada berkas baru">
+            !
+        </span>
+    @endif
                     </a>
                     @if(Route::has('user.project'))
                     <a href="{{ route('user.project') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.project') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
@@ -194,13 +245,26 @@
                         <span>Project</span>
                     </a>
                     @endif
-                  <a href="{{ route('forum') }}" 
-   class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all {{ request()->routeIs('forum') ? 'bg-blue-600 text-white font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800' }}">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-.64-.025-1.289-.06-1.938-.105-.286-.02-.572-.045-.858-.073A9.012 9.012 0 0 1 3 10.5M16.5 3a9 9 0 0 0-9 9c0 .762.09 1.503.26 2.213" />
-    </svg>
-    <span>Forum</span>
-</a>  
+
+                    <!-- Jadwal Magang (Desktop) -->
+                    <a href="{{ route('jadwal') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('jadwal') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span class="flex-1">Jadwal Magang</span>
+                        @if($adaPerubahanJadwal)
+                            <span class="flex items-center justify-center w-5 h-5 rounded-full bg-rose-500 text-white text-[11px] font-bold shrink-0 animate-pulse" title="Ada perubahan jadwal">
+                                !
+                            </span>
+                        @endif
+                    </a>
+
+                    <a href="{{ route('forum') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('forum') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 shrink-0">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-.64-.025-1.289-.06-1.938-.105-.286-.02-.572-.045-.858-.073A9.012 9.012 0 0 1 3 10.5M16.5 3a9 9 0 0 0-9 9c0 .762.09 1.503.26 2.213" />
+                        </svg>
+                        <span>Forum</span>
+                    </a>
                     <a href="{{ route('user.profile') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         <span>Profile</span>

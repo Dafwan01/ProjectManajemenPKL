@@ -487,6 +487,13 @@ public function getDaftarStatusProperty()
                         });
                 });
             })
+            // Priority Sort: Status 'lulus'/non-aktif (1) di atas, status 'aktif' (2) di bawah
+            ->orderByRaw("CASE 
+                WHEN status = 'aktif' THEN 1 
+                WHEN status = 'lulus' THEN 2 
+                ELSE 3 
+            END ASC")
+            // Pengurutan sekunder berdasarkan tanggal mulai terbaru
             ->latest('tanggal_mulai')
             ->paginate(10);
 

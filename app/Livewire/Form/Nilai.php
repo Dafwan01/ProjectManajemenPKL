@@ -7,7 +7,9 @@ use App\Models\file as FileModel;
 use App\Models\User;
 use App\Models\Divisi;
 use App\Models\Bidang;
+use App\Notifications\NilaiUpdatedNotification; // 1. Import class Notifikasi
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth; // Import Auth
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -134,6 +136,12 @@ class Nilai extends Component
             $this->generatePdfNilai($nilai);
         }
 
+        // 2. Trigger Notifikasi ke User/Anak PKL
+        if ($this->user) {
+            $currentUser = Auth::user();
+            $this->user->notify(new NilaiUpdatedNotification($currentUser->nama ?? 'Mentor'));
+        }
+
         $this->sudahAdaNilai = true;
         $this->file = null;
 
@@ -151,11 +159,8 @@ class Nilai extends Component
             $nilai->kualitas_ketepatan,
         ])->avg();
 
-        // Tambahkan rata_rata ke object nilai supaya bisa dipakai di view
         $nilai->rata_rata = number_format($rataRata, 1);
 
-        // Hitung predikat per aspek & predikat rata-rata,
-        // supaya konsisten dengan yang dipakai di CetakNilai (Controller cetak manual).
         $aspek = [
             'kedisiplinan',
             'kemampuan_teknis',
@@ -171,9 +176,6 @@ class Nilai extends Component
 
         $predikat = $this->tentukanPredikat($rataRata);
 
-        // Ambil nama Divisi & Bidang milik user.
-        // Query langsung by ID (bukan lewat relasi Eloquent $user->divisi->bidang)
-        // supaya tidak tergantung pada guessing foreign key yang pernah bermasalah.
         $namaDivisi = null;
         $namaBidang = null;
 
@@ -212,11 +214,6 @@ class Nilai extends Component
         );
     }
 
-    /**
-     * Menentukan predikat berdasarkan rentang nilai.
-     * Disamakan persis dengan logic di App\Livewire\Components\CetakNilai
-     * supaya predikat yang tampil konsisten di kedua jalur cetak PDF.
-     */
     private function tentukanPredikat($nilai): ?string
     {
         if ($nilai === null || $nilai === '') {

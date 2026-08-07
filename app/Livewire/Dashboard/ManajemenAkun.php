@@ -49,6 +49,30 @@ class ManajemenAkun extends Component
     public bool $isEditMode = false;
     public string $search = '';
 
+    // ── DEKLARASI PROPERTY SORTING (TAMBAHKAN DI SINI) ───────────────
+    public string $sortField = 'tanggal_mulai';
+    public string $sortDirection = 'desc';
+
+    /**
+     * Method untuk handle klik header tabel (opsional jika digunakan di Blade)
+     */
+    public function sortBy(string $field): void
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+        
+        $this->resetPage();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
     private function getUserRole(): string
     {
         $role = Auth::user()?->role;
@@ -78,9 +102,6 @@ class ManajemenAkun extends Component
         return [];
     }
 
-    /**
-     * Filter daftar sekolah berdasarkan input pencarian user.
-     */
     public function getDaftarSekolahProperty()
     {
         return Sekolah::query()
@@ -91,15 +112,12 @@ class ManajemenAkun extends Component
             ->get();
     }
 
-    /**
-     * Pilih sekolah dari list dropdown.
-     */
     public function pilihSekolah($id, $nama)
     {
         $this->sekolah_id = $id;
         $this->searchSekolah = $nama;
-          $this->tambahSekolahBaru = false;   // ◄ tambahkan
-    $this->namaSekolahBaru = '';    
+        $this->tambahSekolahBaru = false;
+        $this->namaSekolahBaru = '';    
     }
 
     public function updatedSearchSekolah($value)
@@ -154,7 +172,6 @@ class ManajemenAkun extends Component
             $rules['status'] = ['required', Rule::enum(UserStatus::class)];
         }
 
-        // Mentor & Asal Sekolah khusus role PKL
         if ($this->isRolePkl) {
             $rules['mentor'] = 'required|string';
 
@@ -303,7 +320,6 @@ class ManajemenAkun extends Component
 
         $this->validate();
 
-        // Opsi Buat Sekolah Baru jika dicentang/pilih tambah
         if ($this->isRolePkl && $this->tambahSekolahBaru && !empty($this->namaSekolahBaru)) {
             $sekolahBaru = Sekolah::create(['nama_sekolah' => trim($this->namaSekolahBaru)]);
             $this->sekolah_id = $sekolahBaru->sekolah_id;
@@ -377,7 +393,20 @@ class ManajemenAkun extends Component
                       });
                 });
             })
-            ->latest('tanggal_mulai')
+            // Priority 1: Status 'aktif' selalu di atas, 'lulus' di belakang
+            ->orderByRaw("CASE 
+                WHEN status = 'aktif' THEN 1 
+                WHEN status = 'lulus' THEN 2 
+                ELSE 3 
+            END ASC")
+            // Priority 2: Pengurutan sekunder berdasarkan kolom yang dipilih
+            ->when($this->sortField === 'sekolah', function ($query) {
+                $query->leftJoin('sekolahs', 'users.sekolah_id', '=', 'sekolahs.sekolah_id')
+                      ->orderBy('sekolahs.nama_sekolah', $this->sortDirection)
+                      ->select('users.*');
+            }, function ($query) {
+                $query->orderBy($this->sortField, $this->sortDirection);
+            })
             ->paginate(10);
 
         $mentors = User::where('role', UserRole::MENTOR->value)

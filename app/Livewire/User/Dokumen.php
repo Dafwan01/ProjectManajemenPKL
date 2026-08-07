@@ -46,6 +46,21 @@ class Dokumen extends Component
 
     public function mount()
     {
+     if (auth()->check()) {
+        // Gabungkan seluruh keyword notifikasi berkas & nilai dalam satu query
+        auth()->user()->unreadNotifications()
+            ->whereIn('data->title', [
+               'Berkas Baru Diunggah', 
+        'Surat Penerimaan Magang', 
+        'Nilai', 
+        'Nilai Baru', 
+        'Pembaruan Nilai',
+        'Sertifikat'
+            ])
+            ->get()
+            ->each(fn ($notification) => $notification->markAsRead());
+    }
+    
         $this->loadUploadedFiles();
         $this->cekUserStatus();
     }

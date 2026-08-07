@@ -17,6 +17,7 @@ use App\Livewire\ForumDetail;
 use App\Livewire\Login;
 use App\Livewire\User\Dokumen;
 use App\Livewire\User\IzinSakit;
+use App\Livewire\User\Jadwal;
 use App\Livewire\User\Presensi;
 use App\Livewire\User\Profile;
 use App\Livewire\User\Project as UserProject;
@@ -93,6 +94,7 @@ Route::middleware(['auth', 'role:PKL'])->group(function () {
     Route::get('/user/profile', Profile::class)->name('user.profile');
     Route::get('/user/dokumen', Dokumen::class)->name('user.dokumen');
     Route::get('/user/project', UserProject::class)->name('user.project');
+      Route::get('/user/jadwal', Jadwal::class)->name('jadwal');
  
 });
 

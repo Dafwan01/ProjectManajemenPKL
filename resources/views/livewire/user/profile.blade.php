@@ -1,18 +1,38 @@
 <div class="w-full mx-auto max-w-4xl space-y-6">
-        <!-- Header Section -->
-        <div class="border-b border-gray-200 dark:border-gray-800 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">Profil Saya</h1>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola informasi pribadi dan data keikutsertaan program magang Anda.</p>
+
+    <!-- Alert / Banner Jika User Sudah Lulus -->
+    @if (strtolower($user->status->value ?? $user->status ?? '') === 'lulus')
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+            <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div class="text-sm font-medium">
+                <span class="font-bold">Status Anda: Lulus!</span> Profil Anda telah dikunci dan tidak dapat diubah kembali.
             </div>
+        </div>
+    @endif
+
+    <!-- Header Section -->
+    <div class="border-b border-gray-200 dark:border-gray-800 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">Profil Saya</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola informasi pribadi dan data keikutsertaan program magang Anda.</p>
+        </div>
+
+        @if (strtolower($user->status->value ?? $user->status ?? '') !== 'lulus')
             @if (! $editing)
                 <button wire:click="startEditing" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 shadow-lg shadow-blue-600/20 active:scale-95">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     Edit Profil
                 </button>
             @endif
-        </div>
-
+        @else
+            <span class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                Status: Lulus (Profil Dikunci)
+            </span>
+        @endif
+    </div>
         @if(session()->has('message'))
             <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-400 dark:border-emerald-600/50 text-emerald-700 dark:text-emerald-300 text-sm flex items-center gap-3 shadow-lg shadow-emerald-950/20">
                 <svg class="w-5 h-5 flex-shrink-0 text-emerald-500 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
