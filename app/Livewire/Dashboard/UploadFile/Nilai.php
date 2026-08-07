@@ -4,6 +4,7 @@ namespace App\Livewire\Dashboard\UploadFile;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -14,16 +15,24 @@ class Nilai extends Component
 {
     use WithPagination;
 
-    // Property Search
+    // Properti Pencarian
     public string $search = '';
 
-    // Property Modal Form Input/Edit Nilai
+    // Properti Modal Formulir Input/Edit Nilai
     public bool $showModal = false; 
     public $selectedUserId = null;
 
-    // Property Modal PDF Preview (Tanpa Buka Tab Baru)
+    // Properti Modal Pratinjau PDF (Tanpa Membuka Tab Baru)
     public bool $showPdfModal = false;
     public $pdfUserId = null;
+
+    /**
+     * Memastikan locale Carbon diatur ke Bahasa Indonesia.
+     */
+    public function boot(): void
+    {
+        Carbon::setLocale('id');
+    }
 
     public function updatingSearch(): void
     {
@@ -31,7 +40,7 @@ class Nilai extends Component
     }
 
     /**
-     * Helper untuk mengecek apakah user yang login adalah Mentor secara aman
+     * Helper untuk mengecek apakah pengguna yang masuk adalah Mentor secara aman.
      */
     private function isMentorUser(): bool
     {
@@ -47,7 +56,7 @@ class Nilai extends Component
         return $userRole === UserRole::MENTOR->value;
     }
 
-    // Modal Form Nilai
+    // Modal Formulir Nilai
     public function openForm($userId): void
     {
         $this->selectedUserId = $userId;
@@ -61,7 +70,7 @@ class Nilai extends Component
         $this->selectedUserId = null;
     }
 
-    // Modal PDF Preview
+    // Modal Pratinjau PDF
     public function openPdfModal($userId): void
     {
         $this->pdfUserId = $userId;
@@ -74,7 +83,7 @@ class Nilai extends Component
         $this->pdfUserId = null;
     }
 
-   #[Layout('layouts.dashboard')]
+    #[Layout('layouts.dashboard')]
     public function render()
     {
         $currentUser = Auth::user();
@@ -92,11 +101,11 @@ class Nilai extends Component
                       });
                 });
             })
-            // Filter hanya anak bimbingan jika yang login adalah Mentor
+            // Filter hanya peserta bimbingan jika yang login adalah Mentor
             ->when($isMentor, function ($query) use ($currentUser) {
                 $query->where('mentor', $currentUser->nama);
             })
-            // Priority Sort: Status 'aktif' (1) di atas, 'lulus' (2) di bawah, status lain (3)
+            // Pengurutan Prioritas: Status 'aktif' (1) di atas, 'lulus' (2) di bawah, status lain (3)
             ->orderByRaw("CASE 
                 WHEN status = 'aktif' THEN 1 
                 WHEN status = 'lulus' THEN 2 

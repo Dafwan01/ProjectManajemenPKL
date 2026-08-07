@@ -455,7 +455,7 @@
 
                                 <div class="text-[10px] text-gray-500 dark:text-gray-400 flex justify-between mt-1 pt-1 border-t border-gray-200 dark:border-gray-800">
                                     <span>Akurasi GPS: ±<span class="text-emerald-600 dark:text-emerald-400 font-bold" x-text="locationAccuracy"></span> meter</span>
-                                    <button type="button" @click="getLocation()" class="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Refresh GPS</button>
+                                    <button type="button" @click="getLocation()" class="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Atur Ulang GPS</button>
                                 </div>
                             </div>
                         </template>
@@ -478,7 +478,7 @@
 
                     <!-- Input Logbook (Khusus Presensi PULANG) -->
                     <div x-show="$wire.tipePresensi === 'pulang'" x-collapse x-cloak>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">LOGBOOK HARIAN <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">JURNAL HARIAN <span class="text-red-500">*</span></label>
                         <textarea 
                             wire:model="logbook" 
                             rows="5" 
@@ -492,7 +492,7 @@
                     <!-- Info Box Presensi Masuk -->
                     <div x-show="$wire.tipePresensi === 'masuk'" x-collapse class="p-3.5 bg-gray-100 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/50 rounded-lg text-xs text-gray-500 dark:text-gray-400 italic flex items-start gap-2">
                         <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span>Untuk presensi masuk, Anda hanya perlu mengambil foto jepretan kamera terbaru. Logbook harian tidak perlu diisi saat presensi masuk.</span>
+                        <span>Untuk presensi masuk, Anda hanya perlu mengambil foto jepretan kamera terbaru. Jurnal harian tidak perlu diisi saat presensi masuk.</span>
                     </div>
 
                     <!-- Pengecekan Logika Disabled Sisi Backend -->
@@ -518,7 +518,7 @@
                         @elseif ($tipePresensi === 'pulang' && $sudahAbsenKeluar)
                             <span>Sudah Absen Pulang Hari Ini</span>
                         @else
-                            <span x-text="isWithinRadius ? 'Kirim Presensi' : `Di Luar Radius Kantor (Max ${maxRadiusMeters}m)`"></span>
+                            <span x-text="isWithinRadius ? 'Kirim Presensi' : `Di Luar Radius Kantor (Maks ${maxRadiusMeters}m)`"></span>
                         @endif
                     </button>
 

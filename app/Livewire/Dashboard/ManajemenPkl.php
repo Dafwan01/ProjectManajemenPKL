@@ -69,6 +69,14 @@ class ManajemenPkl extends Component
     public $selectedUserId = null;
 
     /**
+     * Memastikan locale Carbon diatur ke bahasa Indonesia untuk semua pemrosesan tanggal.
+     */
+    public function boot(): void
+    {
+        Carbon::setLocale('id');
+    }
+
+    /**
      * Memeriksa apakah pengguna yang sedang login ber-role Mentor.
      */
     private function isMentorUser(): bool
@@ -99,19 +107,20 @@ class ManajemenPkl extends Component
             ->orderBy('nama_divisi')
             ->get();
     }
+
     public function getAvailableRolesProperty()
-{
-    if ($this->isMentorUser()) {
-        return collect([UserRole::PKL]);
+    {
+        if ($this->isMentorUser()) {
+            return collect([UserRole::PKL]);
+        }
+
+        return collect(UserRole::cases());
     }
 
-    return collect(UserRole::cases());
-}
-
-public function getDaftarStatusProperty()
-{
-    return collect(UserStatus::cases());
-}
+    public function getDaftarStatusProperty()
+    {
+        return collect(UserStatus::cases());
+    }
 
     protected function rules()
     {
@@ -121,21 +130,21 @@ public function getDaftarStatusProperty()
             ->symbols();
 
         $rules = [
-            'nama' => 'required|min:3',
-            'email' => 'required|email|unique:users,email,' . $this->userId . ',user_id',
-            'role' => ['required', Rule::enum(UserRole::class)],
-            'status' => ['required', Rule::enum(UserStatus::class)],
-            'tempat_lahir' => 'nullable|string|max:255',
+            'nama'          => 'required|min:3',
+            'email'         => 'required|email|unique:users,email,' . $this->userId . ',user_id',
+            'role'          => ['required', Rule::enum(UserRole::class)],
+            'status'        => ['required', Rule::enum(UserStatus::class)],
+            'tempat_lahir'  => 'nullable|string|max:255',
             'tanggal_lahir' => 'nullable|date',
             'jenis_kelamin' => ['nullable', 'string', 'in:Laki-laki,Perempuan,laki-laki,perempuan'],
-            'jurusan' => 'nullable|string|max:255',
-            'bidang_id' => 'required|exists:bidangs,bidang_id',
-            'divisi_id' => 'required|exists:divisis,divisi_id',
-            'mentor' => 'required|string|max:255',
+            'jurusan'       => 'nullable|string|max:255',
+            'bidang_id'     => 'required|exists:bidangs,bidang_id',
+            'divisi_id'     => 'required|exists:divisis,divisi_id',
+            'mentor'        => 'required|string|max:255',
             'tanggal_mulai' => 'nullable|date',
             'tanggal_akhir' => 'nullable|date|after_or_equal:tanggal_mulai',
-            'skill' => 'nullable|string',
-            'password' => $this->isEditMode
+            'skill'         => 'nullable|string',
+            'password'      => $this->isEditMode
                 ? ['nullable', $passwordRule, 'same:confirm_password']
                 : ['required', $passwordRule, 'same:confirm_password'],
         ];
@@ -143,9 +152,9 @@ public function getDaftarStatusProperty()
         // Dynamic Validation Rule untuk Asal Sekolah
         if ($this->tambahSekolahBaru) {
             $rules['namaSekolahBaru'] = 'required|string|min:3|unique:sekolahs,nama_sekolah';
-            $rules['sekolah_id'] = 'nullable';
+            $rules['sekolah_id']      = 'nullable';
         } else {
-            $rules['sekolah_id'] = 'required|exists:sekolahs,sekolah_id';
+            $rules['sekolah_id']      = 'required|exists:sekolahs,sekolah_id';
             $rules['namaSekolahBaru'] = 'nullable';
         }
 
@@ -153,27 +162,27 @@ public function getDaftarStatusProperty()
     }
 
     protected $messages = [
-        'nama.required' => 'Nama lengkap wajib diisi.',
-        'nama.min' => 'Nama minimal 3 karakter.',
-        'email.required' => 'Alamat email wajib diisi.',
-        'email.email' => 'Format email tidak valid.',
-        'email.unique' => 'Email ini sudah terdaftar.',
-        'role.required' => 'Silakan pilih role pengguna.',
-        'status.required' => 'Silakan pilih status akun.',
-        'jenis_kelamin.in' => 'Pilihan jenis kelamin tidak valid.',
-        'bidang_id.required' => 'Silakan pilih bidang.',
-        'bidang_id.exists' => 'Bidang tidak valid.',
-        'divisi_id.required' => 'Silakan pilih divisi.',
-        'divisi_id.exists' => 'Divisi tidak valid.',
-        'mentor.required' => 'Mentor wajib dipilih atau diisi.',
+        'nama.required'                => 'Nama lengkap wajib diisi.',
+        'nama.min'                     => 'Nama minimal 3 karakter.',
+        'email.required'               => 'Alamat email wajib diisi.',
+        'email.email'                  => 'Format email tidak valid.',
+        'email.unique'                 => 'Email ini sudah terdaftar.',
+        'role.required'                => 'Silakan pilih role pengguna.',
+        'status.required'              => 'Silakan pilih status akun.',
+        'jenis_kelamin.in'             => 'Pilihan jenis kelamin tidak valid.',
+        'bidang_id.required'           => 'Silakan pilih bidang.',
+        'bidang_id.exists'             => 'Bidang tidak valid.',
+        'divisi_id.required'           => 'Silakan pilih divisi.',
+        'divisi_id.exists'             => 'Divisi tidak valid.',
+        'mentor.required'              => 'Mentor wajib dipilih atau diisi.',
         'tanggal_akhir.after_or_equal' => 'Tanggal akhir harus sama atau setelah tanggal mulai.',
-        'namaSekolahBaru.required' => 'Nama sekolah baru wajib diisi.',
-        'namaSekolahBaru.min' => 'Nama sekolah minimal 3 karakter.',
-        'namaSekolahBaru.unique' => 'Sekolah ini sudah terdaftar di sistem.',
-        'sekolah_id.required' => 'Asal sekolah wajib dipilih.',
-        'sekolah_id.exists' => 'Pilihan sekolah tidak valid.',
-        'password.required' => 'Password wajib diisi.',
-        'password.same' => 'Konfirmasi password tidak cocok.',
+        'namaSekolahBaru.required'     => 'Nama sekolah baru wajib diisi.',
+        'namaSekolahBaru.min'          => 'Nama sekolah minimal 3 karakter.',
+        'namaSekolahBaru.unique'       => 'Sekolah ini sudah terdaftar di sistem.',
+        'sekolah_id.required'          => 'Asal sekolah wajib dipilih.',
+        'sekolah_id.exists'            => 'Pilihan sekolah tidak valid.',
+        'password.required'            => 'Password wajib diisi.',
+        'password.same'                => 'Konfirmasi password tidak cocok.',
     ];
 
     public function updatedSekolahId($value)
@@ -257,24 +266,23 @@ public function getDaftarStatusProperty()
 
         $this->validate();
 
-        // Apabila pengguna menyetel opsi penambahan sekolah baru
         if ($this->tambahSekolahBaru && !empty($this->namaSekolahBaru)) {
             $sekolahBaru = Sekolah::create(['nama_sekolah' => trim($this->namaSekolahBaru)]);
             $this->sekolah_id = $sekolahBaru->sekolah_id;
         }
 
         $data = [
-            'nama' => $this->nama,
-            'email' => $this->email,
-            'role' => $this->role,
-            'status' => $this->status,
-            'tempat_lahir' => $this->tempat_lahir ?: null,
+            'nama'          => $this->nama,
+            'email'         => $this->email,
+            'role'          => $this->role,
+            'status'        => $this->status,
+            'tempat_lahir'  => $this->tempat_lahir ?: null,
             'tanggal_lahir' => $this->tanggal_lahir ?: null,
             'jenis_kelamin' => $this->jenis_kelamin ?: null,
-            'jurusan' => $this->jurusan ?: null,
-            'sekolah_id' => $this->sekolah_id ?: null,
-            'divisi_id' => $this->divisi_id ?: null,
-            'mentor' => $this->mentor ?: null,
+            'jurusan'       => $this->jurusan ?: null,
+            'sekolah_id'    => $this->sekolah_id ?: null,
+            'divisi_id'     => $this->divisi_id ?: null,
+            'mentor'        => $this->mentor ?: null,
             'tanggal_mulai' => $this->tanggal_mulai ?: null,
             'tanggal_akhir' => $this->tanggal_akhir ?: null,
         ];
@@ -312,7 +320,7 @@ public function getDaftarStatusProperty()
     {
         $this->resetFields();
         $this->isEditMode = false;
-            $this->selectedUserId = null; 
+        $this->selectedUserId = null; 
 
         $currentUser = Auth::user();
         if ($this->isMentorUser()) {
@@ -327,7 +335,7 @@ public function getDaftarStatusProperty()
     {
         $this->resetFields();
         $this->userId = $id;
-           $this->selectedUserId = $id;   
+        $this->selectedUserId = $id;   
         $user = User::findOrFail($id);
 
         $this->nama = $user->nama;
@@ -363,6 +371,10 @@ public function getDaftarStatusProperty()
         $this->showEditProfileModal = true;
     }
 
+    /**
+     * Memformat tanggal khusus untuk nilai atribut HTML <input type="date">.
+     * Harus dalam format standar ISO 'Y-m-d' agar dapat dibaca oleh browser.
+     */
     private function formatDateForInput($value): ?string
     {
         if (empty($value)) {
@@ -387,7 +399,7 @@ public function getDaftarStatusProperty()
         $this->resetFields();
         $this->showEditProfileModal = false;
         $this->isEditMode = false;
-         $this->selectedUserId = null;
+        $this->selectedUserId = null;
     }
 
     #[On('close-edit-profile')]
@@ -444,15 +456,15 @@ public function getDaftarStatusProperty()
         DB::transaction(function () use ($user, $jadwalConfig): void {
             foreach ($jadwalConfig as $hari => [$jamMasuk, $jamKeluar]) {
                 $jadwal = Jadwal::firstOrCreate([
-                    'jam_masuk' => $jamMasuk,
-                    'jam_keluar' => $jamKeluar,
+                    'jam_masuk'    => $jamMasuk,
+                    'jam_keluar'   => $jamKeluar,
                     'status_kerja' => JadwalStatusKerja::WFO->value,
                 ]);
 
                 DetailJadwal::updateOrCreate(
                     [
                         'user_id' => $user->user_id,
-                        'hari' => $hari,
+                        'hari'    => $hari,
                     ],
                     [
                         'jadwal_id' => $jadwal->jadwal_id,
@@ -487,13 +499,11 @@ public function getDaftarStatusProperty()
                         });
                 });
             })
-            // Priority Sort: Status 'lulus'/non-aktif (1) di atas, status 'aktif' (2) di bawah
             ->orderByRaw("CASE 
                 WHEN status = 'aktif' THEN 1 
                 WHEN status = 'lulus' THEN 2 
                 ELSE 3 
             END ASC")
-            // Pengurutan sekunder berdasarkan tanggal mulai terbaru
             ->latest('tanggal_mulai')
             ->paginate(10);
 

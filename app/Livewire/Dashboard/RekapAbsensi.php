@@ -4,6 +4,7 @@ namespace App\Livewire\Dashboard;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -19,9 +20,17 @@ class RekapAbsensi extends Component
     public string $search = '';
     public string $status = 'aktif'; // Default hanya menampilkan status 'aktif'
 
-    // State Modal
+    // State Modal Pratinjau Rekap
     public bool $showModal = false;
     public ?User $selectedUser = null;
+
+    /**
+     * Memastikan lokalisasi waktu Carbon diatur ke Bahasa Indonesia.
+     */
+    public function boot(): void
+    {
+        Carbon::setLocale('id');
+    }
 
     public function mount(): void
     {
@@ -79,13 +88,12 @@ class RekapAbsensi extends Component
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('nama', 'like', '%' . $this->search . '%')
-                      ->orWhere('nama', 'like', '%' . $this->search . '%')
                       ->orWhereHas('sekolah', function ($s) {
                           $s->where('nama_sekolah', 'like', '%' . $this->search . '%');
                       });
                 });
             })
-            // Sorting custom: Mengurutkan 'aktif' di atas 'lulus', lalu nama A-Z
+            // Pengurutan khusus: Mengurutkan status 'aktif' di atas 'lulus', lalu nama A-Z
             ->orderByRaw("CASE WHEN status = 'aktif' THEN 1 WHEN status = 'lulus' THEN 2 ELSE 3 END")
             ->orderBy('nama', 'asc')
             ->paginate(10);

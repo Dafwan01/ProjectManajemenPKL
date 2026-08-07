@@ -7,26 +7,30 @@
 
     <!-- Flash Message Notification -->
     @if (session()->has('message'))
-        <div class="mb-4 p-3 bg-green-100 dark:bg-green-900/40 border border-green-400 dark:border-green-600/60 text-green-700 dark:text-green-300 text-sm rounded-xl flex items-center gap-2 shadow">
-            <svg class="w-4 h-4 text-green-500 dark:text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            <span>{{ session('message') }}</span>
+        <div class="mb-4 p-3.5 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-600/50 text-emerald-800 dark:text-emerald-300 text-sm rounded-2xl flex items-center gap-2.5 shadow-sm">
+            <svg class="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span class="font-medium">{{ session('message') }}</span>
         </div>
     @endif
 
     <!-- Disclaimer Status Kerja Default WFO -->
-    <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 text-xs rounded-xl flex items-start gap-2 shadow-sm">
-        <svg class="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <div class="mb-5 p-3.5 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 text-xs rounded-2xl flex items-start gap-2.5 shadow-sm">
+        <svg class="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
         <span>
-            <strong>Catatan:</strong> Status magang secara default diset <strong>WFO</strong>. Disarankan untuk melakukan pengaturan ulang status kerja (WFO/WFA) setiap awal minggu agar data monitoring tetap akurat.
+            <strong>Catatan:</strong> Status kerja secara bawaan diatur ke <strong>WFO</strong>. Disarankan untuk memperbarui status kerja (WFO/WFA) pada setiap awal minggu agar data monitoring tetap akurat.
         </span>
     </div>
 
     <div class="relative overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-xl">
         <!-- Top Bar -->
-        <div class="flex items-center justify-between p-5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 gap-4 overflow-x-auto no-scrollbar">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 gap-4">
             
-            <!-- Date Picker -->
-            <div class="flex items-center flex-nowrap shrink-0 gap-3">
+            <!-- Date Picker & Format Tanggal Bahasa Indonesia -->
+            <div class="flex items-center gap-3">
                 <div class="relative shrink-0">
                     <div class="absolute inset-y-0 left-0 flex items-center ps-3.5 pointer-events-none z-10">
                         <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,22 +40,28 @@
                     <input 
                         type="date" 
                         wire:model.live="tanggal"
-                        class="block p-2.5 ps-10 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl w-52 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                        class="block p-2.5 ps-10 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800/60 border border-gray-300 dark:border-gray-700/80 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition cursor-pointer"
                     >
                 </div>
+                
+                @if($tanggal)
+                    <span class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hidden md:inline-block">
+                        {{ \Carbon\Carbon::parse($tanggal)->translatedFormat('l, d F Y') }}
+                    </span>
+                @endif
             </div>
 
             <!-- Tombol Lihat Lokasi -->
             <button 
                 type="button"
                 wire:click="openMap"
-                class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-2xl shadow-md shadow-blue-600/20 transition shrink-0"
+                class="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-2xl shadow-md shadow-blue-600/20 transition shrink-0"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Lihat Lokasi
+                Peta Lokasi
             </button>
         </div>
         
@@ -60,12 +70,12 @@
             <table class="w-full text-sm text-left text-gray-600 dark:text-gray-300">
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
                     <tr>
-                        <th scope="col" class="px-6 py-4 font-bold">Nama</th>
+                        <th scope="col" class="px-6 py-4 font-bold">Nama Lengkap</th>
                         <th scope="col" class="px-6 py-4 font-bold">Asal Sekolah</th>
-                        <th scope="col" class="px-6 py-4 font-bold">Kehadiran</th>
+                        <th scope="col" class="px-6 py-4 font-bold">Status Kehadiran</th>
                         <th scope="col" class="px-6 py-4 font-bold text-center">Absen Masuk</th>
                         <th scope="col" class="px-6 py-4 font-bold text-center">Absen Keluar</th>
-                        <th scope="col" class="px-6 py-4 font-bold">Logbook</th>
+                        <th scope="col" class="px-6 py-4 font-bold">Kegiatan Logbook</th>
                         <th scope="col" class="px-6 py-4 font-bold text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -89,11 +99,9 @@
                             // Cari jadwal user untuk hari presensi
                             $statusKerja = '-';
                             if ($user && $presensi->tanggal) {
-                                // Ambil hari dari tanggal presensi dalam format Inggris
                                 $hariInggris = strtolower(\Carbon\Carbon::parse($presensi->tanggal)->format('l'));
                                 $hariIndonesia = $hariMapping[$hariInggris] ?? null;
                                 
-                                // Cek apakah user memiliki detail jadwal
                                 if ($hariIndonesia && $user->detailJadwals) {
                                     foreach ($user->detailJadwals as $detail) {
                                         if ($detail->hari && strtolower($detail->hari) === $hariIndonesia) {
@@ -104,7 +112,6 @@
                                 }
                             }
 
-                            // Cek panjang logbook untuk truncate
                             $kegiatan = $presensi->logBooks->first()?->kegiatan ?? '-';
                             $isLogbookPanjang = strlen($kegiatan) > 60;
                         @endphp
@@ -112,9 +119,11 @@
                             <th scope="row" class="px-6 py-4 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                                 {{ $user->nama ?? $user->name ?? '-' }}
                             </th>
-                           <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ $user->sekolah?->nama_sekolah ?? '-' }}</td>
+                            <td class="px-6 py-4 text-gray-500 dark:text-gray-400">
+                                {{ $user->sekolah?->nama_sekolah ?? '-' }}
+                            </td>
                             <td class="px-6 py-4">
-                                <div class="flex flex-col gap-2">
+                                <div class="flex flex-col gap-1.5 items-start">
                                     <!-- Status Kehadiran -->
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border
                                         @if($status === 'hadir')
@@ -130,12 +139,12 @@
                                             @elseif($status === 'izin' || $status === 'sakit') bg-amber-500 dark:bg-amber-400
                                             @else bg-rose-500 dark:bg-rose-400 @endif">
                                         </span>
-                                        {{ $presensi->status_kehadiran?->value ?? $presensi->status_kehadiran ?? '-' }}
+                                        {{ ucfirst($presensi->status_kehadiran?->value ?? $presensi->status_kehadiran ?? '-') }}
                                     </span>
                                     
                                     <!-- Status Kerja (WFA/WFO) -->
                                     @if($statusKerja !== '-')
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase border
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide uppercase border
                                             @if($statusKerja === 'WFH' || $statusKerja === 'WFA')
                                                 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20
                                             @else
@@ -151,6 +160,8 @@
                                     @endif
                                 </div>
                             </td>
+
+                            <!-- Foto + Jam Masuk -->
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-col items-center justify-center gap-2">
                                     @if($presensi->foto_masuk)
@@ -158,10 +169,12 @@
                                             <img src="{{ asset('storage/' . $presensi->foto_masuk) }}" alt="Foto Masuk" class="w-12 h-12 object-cover rounded-xl border border-gray-200 dark:border-gray-700/80 shadow-sm group-hover:border-blue-500 transition">
                                         </a>
                                     @else
-                                        <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-dashed border-gray-300 dark:border-gray-800 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">No Photo</div>
+                                        <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-dashed border-gray-300 dark:border-gray-800 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">
+                                            Tanpa Foto
+                                        </div>
                                     @endif
                                     <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-500/20">
-                                        In: {{ $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) : '-' }}
+                                        Masuk: {{ $presensi->absen_masuk ? substr($presensi->absen_masuk, 0, 5) : '-' }}
                                     </span>
                                 </div>
                             </td>
@@ -174,10 +187,12 @@
                                             <img src="{{ asset('storage/' . $presensi->foto_keluar) }}" alt="Foto Keluar" class="w-12 h-12 object-cover rounded-xl border border-gray-200 dark:border-gray-700/80 shadow-sm group-hover:border-blue-500 transition">
                                         </a>
                                     @else
-                                        <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-dashed border-gray-300 dark:border-gray-800 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">No Photo</div>
+                                        <div class="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-dashed border-gray-300 dark:border-gray-800 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">
+                                            Tanpa Foto
+                                        </div>
                                     @endif
                                     <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-200 dark:border-amber-500/20">
-                                        Out: {{ $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) : '-' }}
+                                        Keluar: {{ $presensi->absen_keluar ? substr($presensi->absen_keluar, 0, 5) : '-' }}
                                     </span>
                                 </div>
                             </td>
@@ -191,7 +206,7 @@
                                         class="text-left w-full hover:text-blue-600 dark:hover:text-blue-400 transition group"
                                     >
                                         <span class="block truncate leading-relaxed group-hover:underline">{{ Str::limit($kegiatan, 60) }}</span>
-                                        <span class="text-[10px] text-blue-500 dark:text-blue-400 font-medium">Lihat selengkapnya</span>
+                                        <span class="text-[11px] text-blue-500 dark:text-blue-400 font-medium mt-0.5 inline-block">Lihat selengkapnya →</span>
                                     </button>
                                 @else
                                     <span class="block whitespace-normal break-words leading-relaxed">{{ $kegiatan }}</span>
@@ -208,13 +223,13 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
-                                    Edit
+                                    Ubah
                                 </button>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-gray-400 dark:text-gray-500">Tidak ada data absensi ditemukan.</td>
+                            <td colspan="7" class="px-6 py-10 text-center text-gray-400 dark:text-gray-500">Tidak ada data absensi ditemukan untuk tanggal ini.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -234,18 +249,22 @@
                 <!-- Header Modal -->
                 <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/50">
                     <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <svg class="w-5 h-5 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                        Edit Absensi - {{ $editNamaUser }}
+                        <svg class="w-5 h-5 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Ubah Data Absensi - {{ $editNamaUser }}
                     </h3>
                     <button type="button" wire:click="closeEditModal" class="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white p-1 rounded-lg transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <!-- Warning di dalam modal (muncul sebelum submit jika ada error) -->
+                <!-- Warning Notification -->
                 @if (session()->has('warning'))
                     <div class="mx-6 mt-5 p-3 bg-amber-100 dark:bg-amber-900/40 border border-amber-400 dark:border-amber-600/60 text-amber-700 dark:text-amber-300 text-xs rounded-xl flex items-center gap-2 shadow">
-                        <svg class="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <svg class="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
                         <span>{{ session('warning') }}</span>
                     </div>
                 @endif
@@ -280,11 +299,11 @@
                     <!-- Logbook / Kegiatan -->
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Kegiatan Logbook</label>
-                        <textarea wire:model="editLogbook" rows="3" class="w-full p-3 text-sm rounded-2xl border border-gray-300 dark:border-gray-700/80 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Isi catatan logbook..."></textarea>
+                        <textarea wire:model="editLogbook" rows="3" class="w-full p-3 text-sm rounded-2xl border border-gray-300 dark:border-gray-700/80 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Tuliskan ringkasan kegiatan logbook..."></textarea>
                         @error('editLogbook') <span class="text-xs text-rose-500 dark:text-rose-400 mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Footer / Actions -->
+                    <!-- Actions -->
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                         <button type="button" wire:click="closeEditModal" class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition">
                             Batal
@@ -305,8 +324,10 @@
                 <!-- Header Modal -->
                 <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/50">
                     <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        Logbook - {{ $selectedLogbookUser }}
+                        <svg class="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Rincian Logbook - {{ $selectedLogbookUser }}
                     </h3>
                     <button type="button" wire:click="closeLogbookModal" class="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white p-1 rounded-lg transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -331,5 +352,4 @@
     @if($showMap)
         @include('livewire.components.map')
     @endif
-
 </div>

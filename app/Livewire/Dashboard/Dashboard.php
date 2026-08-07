@@ -4,7 +4,7 @@ namespace App\Livewire\Dashboard;
 
 use App\Enums\UserRole;
 use App\Models\DetailJadwal;
-use App\Models\presensi; 
+use App\Models\presensi; // Menggunakan huruf kecil 'presensi' sesuai file model Anda
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -15,10 +15,15 @@ use Livewire\Component;
 #[Layout('layouts.dashboard')]
 class Dashboard extends Component
 {
-    public $kataKataHariIni;
+    /**
+     * Properti publik untuk menyimpan kata-kata harian agar dapat diakses oleh Livewire & Blade
+     */
+    public string $kataKataHariIni = '';
 
-    // Fungsi untuk mendapatkan kata-kata hari ini (Berganti Setiap Hari)
-    public function getKataKataHariIni()
+    /**
+     * Mengambil kata-kata motivasi hari ini (Berganti otomatis setiap pergantian tanggal)
+     */
+    public function getKataKataHariIni(): string
     {
         $quotes = [
             'Disiplin adalah jembatan antara tujuan dan pencapaian.',
@@ -71,6 +76,9 @@ class Dashboard extends Component
 
     public function render()
     {
+        // Set lokal Carbon ke Bahasa Indonesia untuk format tanggal
+        Carbon::setLocale('id');
+
         $currentUser = Auth::user();
         $isMentor = $currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value;
 
@@ -121,7 +129,7 @@ class Dashboard extends Component
             })
             ->count();
 
-        // 1. Query: Info Sekolah Terbanyak
+        // 1. Query: Info Sekolah Terbanyak (Keseluruhan)
         $topSekolahTahunIni = User::where('role', UserRole::PKL->value)
             ->when($isMentor, function ($query) use ($currentUser) {
                 $query->where('mentor', $currentUser->nama);
@@ -155,7 +163,7 @@ class Dashboard extends Component
             ->take(5)
             ->values();
 
-        // 3. Tren Kehadiran 30 Hari Terakhir (Line Chart)
+        // 3. Tren Kehadiran 30 Hari Terakhir (Diagram Garis)
         $tanggalMulaiTren = now()->subDays(29)->startOfDay();
         $tanggalAkhirTren = now()->endOfDay();
 
@@ -189,7 +197,7 @@ class Dashboard extends Component
             $cursorTren->addDay();
         }
 
-        // 4. Leaderboard Keterlambatan Bulan Ini
+        // 4. Peringkat Keterlambatan Bulan Ini
         $leaderboardTerlambat = presensi::whereIn('user_id', $userIdsPkl)
             ->where('status_kehadiran', 'terlambat')
             ->whereMonth('tanggal', now()->month)
@@ -217,33 +225,33 @@ class Dashboard extends Component
                 ->format('H:i');
         }
 
-        // Memanggil Quotes
+        // Mengisi properti publik $kataKataHariIni
         $this->kataKataHariIni = $this->getKataKataHariIni();
 
         return view('livewire.dashboard.dashboard', [
-            'totalPeserta' => $totalPeserta,
-            'hadirHariIni' => $hadirHariIni,
-            'terlambatHariIni' => $terlambatHariIni,
-            'izinSakitHariIni' => $izinSakitHariIni,
-            'alpaHariIni' => $alpaHariIni,
-            'wfhHariIni' => $wfhHariIni,
-            'wfoHariIni' => $wfoHariIni,
-            'topSekolahTahunIni' => $topSekolahTahunIni,
-            'chartSekolahLabels' => $chartSekolahLabels,
-            'chartSekolahTotals' => $chartSekolahTotals,
-            'topSekolahAktif' => $topSekolahAktif,
-            'currentYear' => $currentYear,
-            'trenLabels' => $trenLabels,
-            'trenHadir' => $trenHadir,
-            'trenTerlambat' => $trenTerlambat,
-            'trenIzinSakit' => $trenIzinSakit,
-            'leaderboardTerlambat' => $leaderboardTerlambat,
+            'totalPeserta'            => $totalPeserta,
+            'hadirHariIni'            => $hadirHariIni,
+            'terlambatHariIni'        => $terlambatHariIni,
+            'izinSakitHariIni'        => $izinSakitHariIni,
+            'alpaHariIni'             => $alpaHariIni,
+            'wfhHariIni'              => $wfhHariIni,
+            'wfoHariIni'              => $wfoHariIni,
+            'topSekolahTahunIni'      => $topSekolahTahunIni,
+            'chartSekolahLabels'      => $chartSekolahLabels,
+            'chartSekolahTotals'      => $chartSekolahTotals,
+            'topSekolahAktif'         => $topSekolahAktif,
+            'currentYear'             => $currentYear,
+            'trenLabels'              => $trenLabels,
+            'trenHadir'               => $trenHadir,
+            'trenTerlambat'           => $trenTerlambat,
+            'trenIzinSakit'           => $trenIzinSakit,
+            'leaderboardTerlambat'    => $leaderboardTerlambat,
             'rataRataJamMasukHariIni' => $rataRataJamMasukHariIni,
-            'kataKataHariIni' => $this->kataKataHariIni,
+            'kataKataHariIni'         => $this->kataKataHariIni,
         ]);
     }
 
-    private function namaHariIndonesia($isoDay)
+    private function namaHariIndonesia($isoDay): string
     {
         $hari = [
             1 => 'Senin',

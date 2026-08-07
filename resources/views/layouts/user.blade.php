@@ -190,7 +190,7 @@
                         </a>
                         <a href="{{ route('user.profile') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800' }}">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                            <span>Profile</span>
+                            <span>Profil</span>
                         </a>
                     </nav>
                 </div>
@@ -201,7 +201,7 @@
                         @csrf
                         <button type="submit" class="flex items-center gap-3 px-4 py-3 w-full text-left text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl text-sm font-medium transition group">
                             <svg class="w-5 h-5 shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
-                            <span>Log Out</span>
+                            <span>Keluar</span>
                         </button>
                     </form>
                 </div>
@@ -267,7 +267,7 @@
                     </a>
                     <a href="{{ route('user.profile') }}" wire:navigate class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-sm font-medium transition min-h-[46px] {{ request()->routeIs('user.profile') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                        <span>Profile</span>
+                        <span>Profil</span>
                     </a>
                 </nav>
             </div>
@@ -278,7 +278,7 @@
                     @csrf
                     <button type="submit" class="flex items-center gap-3 px-4 py-3 w-full text-left text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl text-sm font-medium transition group min-h-[50px]">
                         <svg class="w-5 h-5 shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
-                        <span>Log Out</span>
+                        <span>Keluar</span>
                     </button>
                 </form>
             </div>

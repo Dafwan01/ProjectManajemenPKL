@@ -27,32 +27,40 @@ class PermohonanIzin extends Component
     public $selectedId = null;
     public string $catatanAdmin = '';
 
-    public function mount()
+    /**
+     * Memastikan lokal waktu Carbon diatur ke Bahasa Indonesia secara baku.
+     */
+    public function boot(): void
+    {
+        Carbon::setLocale('id');
+    }
+
+    public function mount(): void
     {
         $this->tanggal = '';
     }
 
-    public function updatingSearch()
+    public function updatingSearch(): void
     {
         $this->resetPage();
     }
 
-    public function updatingFilterStatus()
+    public function updatingFilterStatus(): void
     {
         $this->resetPage();
     }
 
-    public function updatingTanggal()
+    public function updatingTanggal(): void
     {
         $this->resetPage();
     }
 
-    public function resetFilterTanggal()
+    public function resetFilterTanggal(): void
     {
         $this->tanggal = '';
     }
 
-    public function openDetail($id)
+    public function openDetail($id): void
     {
         $this->selectedId = $id;
         $permohonan = PermohonanIzinModel::findOrFail($id);
@@ -60,127 +68,187 @@ class PermohonanIzin extends Component
         $this->showDetailModal = true;
     }
 
-    public function closeDetail()
+    public function closeDetail(): void
     {
         $this->showDetailModal = false;
         $this->selectedId = null;
         $this->catatanAdmin = '';
     }
 
-  public function setujui($id)
-{
-    $permohonan = PermohonanIzinModel::with('user')->findOrFail($id);
+    public function setujui($id): void
+    {
+        $permohonan = PermohonanIzinModel::with('user')->findOrFail($id);
 
-    $permohonan->update([
-        'status' => 'disetujui',
-        'catatan_admin' => $this->catatanAdmin,
-    ]);
+        $permohonan->update([
+            'status' => 'disetujui',
+            'catatan_admin' => $this->catatanAdmin,
+        ]);
 
-    $jenisStr = strtolower($permohonan->jenis);
+        $jenisStr = strtolower($permohonan->jenis);
 
-    if ($jenisStr === 'absen') {
-        $this->prosesAbsen($permohonan);
-    } elseif ($jenisStr === 'absen pulang') {
-        $this->prosesAbsenPulang($permohonan);
-    } else {
-        $this->prosesIzinSakit($permohonan, $jenisStr);
+        if ($jenisStr === 'absen') {
+            $this->prosesAbsen($permohonan);
+        } elseif ($jenisStr === 'absen pulang') {
+            $this->prosesAbsenPulang($permohonan);
+        } else {
+            $this->prosesIzinSakit($permohonan, $jenisStr);
+        }
+
+        $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
+        session()->flash('message', 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah disetujui.');
+
+        $this->closeDetail();
     }
 
-    $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
-    session()->flash('message', 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah disetujui.');
+    private function prosesIzinSakit($permohonan, string $statusKehadiran): void
+    {
+        $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
+        $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
 
-    $this->closeDetail();
-}
+        $period = CarbonPeriod::create($startDate, $endDate);
 
-private function prosesIzinSakit($permohonan, string $statusKehadiran)
-{
-    $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
-    $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
+        foreach ($period as $date) {
+            $tglString = $date->format('Y-m-d');
 
-    $period = CarbonPeriod::create($startDate, $endDate);
+            $presensi = presensi::where('user_id', $permohonan->user_id)
+                ->whereDate('tanggal', $tglString)
+                ->first();
 
-    foreach ($period as $date) {
-        $tglString = $date->format('Y-m-d');
+            if ($presensi) {
+                $presensi->update([
+                    'status_kehadiran' => $statusKehadiran,
+                ]);
+            } else {
+                $presensiNew = presensi::create([
+                    'user_id'          => $permohonan->user_id,
+                    'tanggal'          => $tglString,
+                    'status_kehadiran' => $statusKehadiran,
+                ]);
+
+                log_book::create([
+                    'user_id'     => $permohonan->user_id,
+                    'presensi_id' => $presensiNew->presensi_id ?? $presensiNew->id,
+                    'kegiatan'    => '(' . strtoupper($permohonan->jenis) . ') ' . $permohonan->alasan,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Proses persetujuan pengajuan ABSEN (jenis = 'absen').
+     * Buat/lengkapi presensi pada tanggal yang diajukan, isi JAM MASUK & JAM KELUAR
+     * sekaligus sesuai jadwal magang user hari itu.
+     */
+    private function prosesAbsen($permohonan): void
+    {
+        $tglString = $permohonan->tanggal_awal
+            ? Carbon::parse($permohonan->tanggal_awal)->format('Y-m-d')
+            : Carbon::parse($permohonan->tanggal_permohonan)->format('Y-m-d');
+
+        $tanggalObj = Carbon::parse($tglString);
+        $namaHari = $tanggalObj->copy()->locale('id')->translatedFormat('l');
+
+        $detailJadwal = DetailJadwal::with('jadwal')
+            ->where('user_id', $permohonan->user_id)
+            ->whereRaw('LOWER(hari) = ?', [strtolower($namaHari)])
+            ->first();
+
+        if (!$detailJadwal || !$detailJadwal->jadwal) {
+            session()->flash('warning', 'Tanggal ' . $tanggalObj->translatedFormat('d F Y') . ' tidak memiliki jadwal magang untuk peserta ini, sehingga jam absen tidak dapat diisi otomatis.');
+            return;
+        }
+
+        $jadwal = $detailJadwal->jadwal;
 
         $presensi = presensi::where('user_id', $permohonan->user_id)
             ->whereDate('tanggal', $tglString)
             ->first();
 
-        if ($presensi) {
-            $presensi->update([
-                'status_kehadiran' => $statusKehadiran,
-            ]);
-        } else {
-            $presensiNew = presensi::create([
-                'user_id'          => $permohonan->user_id,
-                'tanggal'          => $tglString,
-                'status_kehadiran' => $statusKehadiran,
-            ]);
-
-            log_book::create([
-                'user_id'     => $permohonan->user_id,
-                'presensi_id' => $presensiNew->presensi_id ?? $presensiNew->id,
-                'kegiatan'    => '(' . strtoupper($permohonan->jenis) . ') ' . $permohonan->alasan,
+        if (!$presensi) {
+            $presensi = presensi::create([
+                'user_id' => $permohonan->user_id,
+                'tanggal' => $tglString,
             ]);
         }
+
+        $dataUpdate = [];
+        $keterangan = [];
+
+        // Isi jam masuk, hanya jika masih kosong
+        if (empty($presensi->absen_masuk)) {
+            $dataUpdate['absen_masuk'] = $jadwal->jam_masuk;
+            $keterangan[] = 'Masuk';
+        }
+
+        // Isi jam keluar, hanya jika masih kosong
+        if (empty($presensi->absen_keluar)) {
+            $dataUpdate['absen_keluar'] = $jadwal->jam_keluar;
+            $keterangan[] = 'Pulang';
+        }
+
+        if (!empty($dataUpdate)) {
+            $dataUpdate['status_kehadiran'] = 'hadir';
+            $presensi->update($dataUpdate);
+
+            log_book::updateOrCreate(
+                [
+                    'presensi_id' => $presensi->presensi_id ?? $presensi->id,
+                    'user_id'     => $permohonan->user_id,
+                ],
+                [
+                    'kegiatan' => '(ABSEN SUSULAN - ' . implode(' & ', $keterangan) . ') ' . $permohonan->alasan,
+                ]
+            );
+        } else {
+            session()->flash('warning', 'Tanggal ' . $tanggalObj->translatedFormat('d F Y') . ' sudah memiliki data absen masuk & pulang, sehingga tidak ada data yang diperbarui.');
+        }
     }
-}
 
-/**
- * Proses persetujuan pengajuan ABSEN (jenis = 'absen').
- * Buat/lengkapi presensi pada tanggal yang diajukan, isi JAM MASUK & JAM KELUAR
- * sekaligus sesuai jadwal magang user hari itu.
- */
-private function prosesAbsen($permohonan)
-{
-    $tglString = $permohonan->tanggal_awal
-        ? Carbon::parse($permohonan->tanggal_awal)->format('Y-m-d')
-        : Carbon::parse($permohonan->tanggal_permohonan)->format('Y-m-d');
+    /**
+     * Proses persetujuan pengajuan ABSEN PULANG (jenis = 'absen pulang').
+     * Cek apakah ada presensi di tanggal yang diajukan dan jam keluarnya masih kosong,
+     * baru diisi sesuai jadwal magang user hari itu.
+     */
+    private function prosesAbsenPulang($permohonan): void
+    {
+        $tglString = $permohonan->tanggal_awal
+            ? Carbon::parse($permohonan->tanggal_awal)->format('Y-m-d')
+            : Carbon::parse($permohonan->tanggal_permohonan)->format('Y-m-d');
 
-    $tanggalObj = Carbon::parse($tglString);
-    $namaHari = $tanggalObj->copy()->locale('id')->translatedFormat('l');
+        $tanggalObj = Carbon::parse($tglString);
+        $namaHari = $tanggalObj->copy()->locale('id')->translatedFormat('l');
 
-    $detailJadwal = DetailJadwal::with('jadwal')
-        ->where('user_id', $permohonan->user_id)
-        ->whereRaw('LOWER(hari) = ?', [strtolower($namaHari)])
-        ->first();
+        $detailJadwal = DetailJadwal::with('jadwal')
+            ->where('user_id', $permohonan->user_id)
+            ->whereRaw('LOWER(hari) = ?', [strtolower($namaHari)])
+            ->first();
 
-    if (!$detailJadwal || !$detailJadwal->jadwal) {
-        session()->flash('warning', 'Tanggal ' . $tanggalObj->translatedFormat('d F Y') . ' tidak memiliki jadwal magang untuk user ini, sehingga jam absen tidak bisa diisi otomatis.');
-        return;
-    }
+        if (!$detailJadwal || !$detailJadwal->jadwal) {
+            session()->flash('warning', 'Tanggal ' . $tanggalObj->translatedFormat('d F Y') . ' tidak memiliki jadwal magang untuk peserta ini, sehingga jam absen pulang tidak dapat diisi otomatis.');
+            return;
+        }
 
-    $jadwal = $detailJadwal->jadwal;
+        $jadwal = $detailJadwal->jadwal;
 
-    $presensi = presensi::where('user_id', $permohonan->user_id)
-        ->whereDate('tanggal', $tglString)
-        ->first();
+        // Cek apakah presensi di tanggal tersebut sudah ada
+        $presensi = presensi::where('user_id', $permohonan->user_id)
+            ->whereDate('tanggal', $tglString)
+            ->first();
 
-    if (!$presensi) {
-        $presensi = presensi::create([
-            'user_id' => $permohonan->user_id,
-            'tanggal' => $tglString,
+        if (!$presensi) {
+            session()->flash('warning', 'Tidak ditemukan data presensi pada tanggal ' . $tanggalObj->translatedFormat('d F Y') . '. Absen pulang tidak dapat diisi karena belum ada data kehadiran di hari tersebut.');
+            return;
+        }
+
+        // Cek apakah jam keluar masih kosong
+        if (!empty($presensi->absen_keluar)) {
+            session()->flash('warning', 'Tanggal ' . $tanggalObj->translatedFormat('d F Y') . ' sudah memiliki data absen pulang, sehingga data tidak ditimpa.');
+            return;
+        }
+
+        $presensi->update([
+            'absen_keluar' => $jadwal->jam_keluar,
         ]);
-    }
-
-    $dataUpdate = [];
-    $keterangan = [];
-
-    // Isi jam masuk, hanya jika masih kosong
-    if (empty($presensi->absen_masuk)) {
-        $dataUpdate['absen_masuk'] = $jadwal->jam_masuk;
-        $keterangan[] = 'Masuk';
-    }
-
-    // Isi jam keluar, hanya jika masih kosong
-    if (empty($presensi->absen_keluar)) {
-        $dataUpdate['absen_keluar'] = $jadwal->jam_keluar;
-        $keterangan[] = 'Pulang';
-    }
-
-    if (!empty($dataUpdate)) {
-        $dataUpdate['status_kehadiran'] = 'hadir';
-        $presensi->update($dataUpdate);
 
         log_book::updateOrCreate(
             [
@@ -188,71 +256,12 @@ private function prosesAbsen($permohonan)
                 'user_id'     => $permohonan->user_id,
             ],
             [
-                'kegiatan' => '(ABSEN SUSULAN - ' . implode(' & ', $keterangan) . ') ' . $permohonan->alasan,
+                'kegiatan' => '(ABSEN SUSULAN - Pulang) ' . $permohonan->alasan,
             ]
         );
-    } else {
-        session()->flash('warning', 'Tanggal ' . $tanggalObj->translatedFormat('d F Y') . ' sudah memiliki data absen masuk & pulang, sehingga tidak ada yang perlu ditimpa.');
-    }
-}
-
-/**
- * Proses persetujuan pengajuan ABSEN PULANG (jenis = 'absen pulang').
- * Cek dulu apakah ada presensi di tanggal yang diajukan dan apakah jam keluarnya masih kosong,
- * baru isi sesuai jadwal magang user hari itu.
- */
-private function prosesAbsenPulang($permohonan)
-{
-    $tglString = $permohonan->tanggal_awal
-        ? Carbon::parse($permohonan->tanggal_awal)->format('Y-m-d')
-        : Carbon::parse($permohonan->tanggal_permohonan)->format('Y-m-d');
-
-    $tanggalObj = Carbon::parse($tglString);
-    $namaHari = $tanggalObj->copy()->locale('id')->translatedFormat('l');
-
-    $detailJadwal = DetailJadwal::with('jadwal')
-        ->where('user_id', $permohonan->user_id)
-        ->whereRaw('LOWER(hari) = ?', [strtolower($namaHari)])
-        ->first();
-
-    if (!$detailJadwal || !$detailJadwal->jadwal) {
-        session()->flash('warning', 'Tanggal ' . $tanggalObj->translatedFormat('d F Y') . ' tidak memiliki jadwal magang untuk user ini, sehingga jam absen pulang tidak bisa diisi otomatis.');
-        return;
     }
 
-    $jadwal = $detailJadwal->jadwal;
-
-    // Cek dulu apakah presensi di tanggal itu SUDAH ADA
-    $presensi = presensi::where('user_id', $permohonan->user_id)
-        ->whereDate('tanggal', $tglString)
-        ->first();
-
-    if (!$presensi) {
-        session()->flash('warning', 'Tidak ditemukan data presensi pada tanggal ' . $tanggalObj->translatedFormat('d F Y') . '. Absen pulang tidak dapat diisi karena belum ada data kehadiran di hari tersebut.');
-        return;
-    }
-
-    // Cek apakah jam keluar memang masih kosong
-    if (!empty($presensi->absen_keluar)) {
-        session()->flash('warning', 'Tanggal ' . $tanggalObj->translatedFormat('d F Y') . ' sudah memiliki data absen pulang, sehingga tidak ditimpa.');
-        return;
-    }
-
-    $presensi->update([
-        'absen_keluar' => $jadwal->jam_keluar,
-    ]);
-
-    log_book::updateOrCreate(
-        [
-            'presensi_id' => $presensi->presensi_id ?? $presensi->id,
-            'user_id'     => $permohonan->user_id,
-        ],
-        [
-            'kegiatan' => '(ABSEN SUSULAN - Pulang) ' . $permohonan->alasan,
-        ]
-    );
-}
-    public function tolak($id)
+    public function tolak($id): void
     {
         $permohonan = PermohonanIzinModel::with('user')->findOrFail($id);
         

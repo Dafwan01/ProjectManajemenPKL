@@ -10,8 +10,11 @@ use Livewire\Component;
 
 class Jadwal extends Component
 {
-    public $namaHariIni = '';
+    public string $namaHariIni = '';
 
+    /**
+     * Mengambil data pengguna saat ini atau baris cadangan pertama pengguna PKL.
+     */
     private function currentUser()
     {
         return Auth::user() ?? User::where('role', UserRole::PKL)->first();
@@ -21,7 +24,7 @@ class Jadwal extends Component
     {
         $user = $this->currentUser();
 
-        // Urutan hari kerja tetap Senin-Jumat
+        // Urutan hari kerja standar (Senin hingga Jumat)
         $urutanHari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 
         $namaHariIni = now()->locale('id')->translatedFormat('l');
@@ -49,13 +52,13 @@ class Jadwal extends Component
                 ]);
             }
 
-            // Tandai jadwal sudah dilihat, supaya badge notifikasi "!" di sidebar hilang
+            // Menandai bahwa jadwal telah dilihat agar tanda notifikasi di menu navigasi hilang
             $user->update(['jadwal_dilihat_at' => now()]);
         }
 
         return view('livewire.user.jadwal', [
             'jadwalMingguan' => $jadwalMingguan,
-            'user' => $user,
+            'user'           => $user,
         ])->layout('layouts.user');
     }
 }

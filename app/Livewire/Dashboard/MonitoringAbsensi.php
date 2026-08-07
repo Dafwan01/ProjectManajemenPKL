@@ -15,9 +15,10 @@ use Livewire\WithPagination;
 class MonitoringAbsensi extends Component
 {
     use WithPagination;
-public bool $showLogbookModal = false;
-public string $selectedLogbookText = '';
-public string $selectedLogbookUser = '';
+
+    public bool $showLogbookModal = false;
+    public string $selectedLogbookText = '';
+    public string $selectedLogbookUser = '';
     public string $tanggal = '';
     public bool $showMap = false;
     public $locations = [];
@@ -68,7 +69,7 @@ public string $selectedLogbookUser = '';
             $user = $presensi->user ?? $presensi->logBooks->first()?->user;
 
             $this->selectedPresensiId = $presensi->presensi_id;
-            $this->editNamaUser = $user->nama ?? $user->name ?? 'User';
+            $this->editNamaUser = $user->nama ?? $user->name ?? 'Pengguna';
             $this->editStatusKehadiran = is_object($presensi->status_kehadiran) 
                 ? $presensi->status_kehadiran->value 
                 : ($presensi->status_kehadiran ?? 'hadir');
@@ -149,12 +150,12 @@ public string $selectedLogbookUser = '';
             $user = $item->user ?? $item->logBooks->first()?->user;
 
             return [
-                'nama' => $user->nama ?? $user->name ?? 'Tanpa Nama',
-               'sekolah' => $user->sekolah?->nama_sekolah ?? '-', 
-                'jam_masuk' => $item->absen_masuk ? substr($item->absen_masuk, 0, 5) : '-',
+                'nama'       => $user->nama ?? $user->name ?? 'Tanpa Nama',
+                'sekolah'    => $user->sekolah?->nama_sekolah ?? '-', 
+                'jam_masuk'  => $item->absen_masuk ? substr($item->absen_masuk, 0, 5) : '-',
                 'jam_keluar' => $item->absen_keluar ? substr($item->absen_keluar, 0, 5) : '-',
-                'lat' => (float) $item->latitude,
-                'lng' => (float) $item->longitude,
+                'lat'        => (float) $item->latitude,
+                'lng'        => (float) $item->longitude,
             ];
         })->toArray();
 
@@ -166,19 +167,20 @@ public string $selectedLogbookUser = '';
     {
         $this->showMap = false;
     }
-    public function openLogbookModal($text, $nama)
-{
-    $this->selectedLogbookText = $text;
-    $this->selectedLogbookUser = $nama;
-    $this->showLogbookModal = true;
-}
 
-public function closeLogbookModal()
-{
-    $this->showLogbookModal = false;
-    $this->selectedLogbookText = '';
-    $this->selectedLogbookUser = '';
-}
+    public function openLogbookModal($text, $nama)
+    {
+        $this->selectedLogbookText = $text;
+        $this->selectedLogbookUser = $nama;
+        $this->showLogbookModal = true;
+    }
+
+    public function closeLogbookModal()
+    {
+        $this->showLogbookModal = false;
+        $this->selectedLogbookText = '';
+        $this->selectedLogbookUser = '';
+    }
 
     // --- RENDER COMPONENT ---
     public function render()
