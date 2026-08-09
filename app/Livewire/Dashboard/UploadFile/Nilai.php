@@ -4,6 +4,7 @@ namespace App\Livewire\Dashboard\UploadFile;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Models\Nilai as NilaiModel; // ✅ sesuaikan namespace model Nilai kamu
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -15,20 +16,14 @@ class Nilai extends Component
 {
     use WithPagination;
 
-    // Properti Pencarian
     public string $search = '';
 
-    // Properti Modal Formulir Input/Edit Nilai
-    public bool $showModal = false; 
+    public bool $showModal = false;
     public $selectedUserId = null;
 
-    // Properti Modal Pratinjau PDF (Tanpa Membuka Tab Baru)
     public bool $showPdfModal = false;
     public $pdfUserId = null;
 
-    /**
-     * Memastikan locale Carbon diatur ke Bahasa Indonesia.
-     */
     public function boot(): void
     {
         Carbon::setLocale('id');
@@ -39,9 +34,6 @@ class Nilai extends Component
         $this->resetPage();
     }
 
-    /**
-     * Helper untuk mengecek apakah pengguna yang masuk adalah Mentor secara aman.
-     */
     private function isMentorUser(): bool
     {
         $currentUser = Auth::user();
@@ -56,7 +48,6 @@ class Nilai extends Component
         return $userRole === UserRole::MENTOR->value;
     }
 
-    // Modal Formulir Nilai
     public function openForm($userId): void
     {
         $this->selectedUserId = $userId;
@@ -70,7 +61,6 @@ class Nilai extends Component
         $this->selectedUserId = null;
     }
 
-    // Modal Pratinjau PDF
     public function openPdfModal($userId): void
     {
         $this->pdfUserId = $userId;
@@ -91,7 +81,6 @@ class Nilai extends Component
 
         $users = User::query()
             ->where('role', UserRole::PKL->value)
-            // Filter Pencarian
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('nama', 'like', '%' . $this->search . '%')
@@ -101,11 +90,15 @@ class Nilai extends Component
                       });
                 });
             })
-            // Filter hanya peserta bimbingan jika yang login adalah Mentor
             ->when($isMentor, function ($query) use ($currentUser) {
                 $query->where('mentor', $currentUser->nama);
             })
-            // Pengurutan Prioritas: Status 'aktif' (1) di atas, 'lulus' (2) di bawah, status lain (3)
+            // ✅ Hitung apakah user sudah punya nilai (0 = belum ada, >0 = sudah ada)
+            ->addSelect(['sudah_ada_nilai' => NilaiModel::selectRaw('COUNT(*)')
+                ->whereColumn('user_id', 'users.user_id')
+            ])
+            // ✅ Urutan: yang BELUM ada nilai (0) tampil duluan, baru status aktif/lulus, lalu terbaru
+            ->orderBy('sudah_ada_nilai', 'asc')
             ->orderByRaw("CASE 
                 WHEN status = 'aktif' THEN 1 
                 WHEN status = 'lulus' THEN 2 

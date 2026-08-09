@@ -7,34 +7,29 @@ use App\Enums\UserStatus;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 
 class Dokumen extends Component
 {
     use WithFileUploads;
+    use WithPagination;
 
     public $fileProject;
     public $nama = '';
-    public $uploadedFiles = [];
     public $filterName = '';
     public $filterExtension = '';
     public $filterUploadAt = '';
 
-    // Flag status kelulusan pengguna
     public bool $isLulus = false;
 
-    // State Modal & Pratinjau
     public $showModal = false;
     public $selectedFile = null;
     public $previewUrl = '';
     public $fileExtension = '';
     public $confirmDeleteId = null;
-
-    protected $rules = [
-        'fileProject' => 'required|file|mimes:zip,rar,pdf,png,jpg,jpeg|max:51200',
-        'nama'        => 'required|string|max:255',
-    ];
 
     protected $messages = [
         'fileProject.mimes'    => 'Format berkas yang diperbolehkan: ZIP, RAR, PDF, PNG, JPG, JPEG.',
@@ -42,12 +37,12 @@ class Dokumen extends Component
         'fileProject.required' => 'Silakan pilih berkas yang ingin diunggah.',
         'nama.required'        => 'Nama berkas wajib diisi.',
         'nama.max'             => 'Nama berkas maksimal 255 karakter.',
+        'nama.unique'          => 'Nama berkas ini sudah pernah Anda gunakan. Silakan gunakan nama lain.',
     ];
 
     public function mount()
     {
         if (auth()->check()) {
-            // Gabungkan seluruh kata kunci notifikasi berkas & nilai dalam satu query
             auth()->user()->unreadNotifications()
                 ->whereIn('data->title', [
                     'Berkas Baru Diunggah', 
@@ -60,14 +55,10 @@ class Dokumen extends Component
                 ->get()
                 ->each(fn ($notification) => $notification->markAsRead());
         }
-    
-        $this->loadUploadedFiles();
+
         $this->cekUserStatus();
     }
 
-    /**
-     * Pengecekan apakah status pengguna saat ini adalah LULUS
-     */
     private function cekUserStatus()
     {
         $user = Auth::user();
@@ -81,6 +72,27 @@ class Dokumen extends Component
         }
     }
 
+    /**
+     * Rules dibuat dinamis (method) supaya bisa akses $userId untuk unique-per-user.
+     */
+    protected function rules(): array
+    {
+        $user = Auth::user();
+        $userId = $user ? ($user->user_id ?? $user->id) : null;
+
+        return [
+            'fileProject' => 'required|file|mimes:zip,rar,pdf,png,jpg,jpeg|max:51200',
+            'nama' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('files', 'nama_file')->where(function ($query) use ($userId) {
+                    return $query->where('user_id', $userId);
+                }),
+            ],
+        ];
+    }
+
     public function updatedFileProject()
     {
         $this->validateOnly('fileProject');
@@ -89,7 +101,7 @@ class Dokumen extends Component
     public function updated($propertyName)
     {
         if (str_starts_with($propertyName, 'filter')) {
-            $this->loadUploadedFiles();
+            $this->resetPage();
             return;
         }
 
@@ -132,13 +144,10 @@ class Dokumen extends Component
         ]);
 
         $this->reset(['fileProject', 'nama']);
-        $this->loadUploadedFiles();
+        $this->resetPage();
         session()->flash('message', 'Berkas berhasil disimpan di penyimpanan pribadi Anda.');
     }
 
-    /**
-     * Membuka Modal Pratinjau untuk Gambar & PDF
-     */
     public function openPreviewModal($fileId)
     {
         $user = Auth::user();
@@ -159,9 +168,6 @@ class Dokumen extends Component
         }
     }
 
-    /**
-     * Tutup Modal Pratinjau
-     */
     public function closePreviewModal()
     {
         $this->showModal = false;
@@ -215,7 +221,6 @@ class Dokumen extends Component
 
         $fileRecord->delete();
         $this->confirmDeleteId = null;
-        $this->loadUploadedFiles();
 
         if ($this->selectedFile && $this->selectedFile->file_id === $fileRecord->file_id) {
             $this->closePreviewModal();
@@ -224,17 +229,18 @@ class Dokumen extends Component
         session()->flash('message', 'Berkas berhasil dihapus.');
     }
 
-    public function loadUploadedFiles()
+    protected function getUploadedFilesQuery()
     {
         $user = Auth::user();
         $userId = $user ? ($user->user_id ?? $user->id) : null;
 
+        $query = FileModel::query();
+
         if (! $userId) {
-            $this->uploadedFiles = collect();
-            return;
+            return $query->whereRaw('1 = 0');
         }
 
-        $query = FileModel::where('user_id', $userId);
+        $query->where('user_id', $userId);
 
         if ($this->filterName) {
             $query->where('nama_file', 'like', '%' . $this->filterName . '%');
@@ -248,11 +254,15 @@ class Dokumen extends Component
             $query->whereDate('created_at', date('Y-m-d', strtotime($this->filterUploadAt)));
         }
 
-        $this->uploadedFiles = $query->orderByDesc('created_at')->get();
+        return $query->orderByDesc('created_at');
     }
 
     public function render()
     {
-        return view('livewire.user.dokumen')->layout('layouts.user');
+        $uploadedFiles = $this->getUploadedFilesQuery()->paginate(10);
+
+        return view('livewire.user.dokumen', [
+            'uploadedFiles' => $uploadedFiles,
+        ])->layout('layouts.user');
     }
 }

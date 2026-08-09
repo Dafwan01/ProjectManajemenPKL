@@ -4,10 +4,10 @@
         <!-- Header Judul Ringkas -->
         <div class="mb-4 border-b border-gray-200 dark:border-gray-800 pb-3">
             <h1 class="text-xl font-bold text-gray-900 dark:text-white tracking-wide">PENGAJUAN IZIN, SAKIT & ABSEN</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Formulir permohonan ketidakhadiran magang untuk ketiadaan sementara karena izin, sakit, atau pengajuan absen susulan.</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Formulir permohonan ketidakhadiran magang untuk ketiadaan sementara karena izin, sakit, atau absen.</p>
         </div>
 
-        <!-- Notifikasi Pesan Sistem -->
+        <!-- Flash Message Notification -->
         @if (session()->has('message'))
             <div class="mb-4 p-3 bg-green-100 dark:bg-green-900/40 border border-green-400 dark:border-green-600/60 text-green-700 dark:text-green-300 text-xs rounded-lg flex items-center justify-between shadow">
                 <div class="flex items-center gap-2">
@@ -27,15 +27,25 @@
                 <button type="button" class="text-amber-600 dark:text-amber-400 hover:text-gray-900 dark:hover:text-white text-xs" @click="$el.parentElement.remove()">✕</button>
             </div>
         @endif
+        
+        @if($sudahAdaPengajuan)
+    <div class="flex items-center gap-2 text-xs bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700/50 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg">
+        ⚠️ Kamu sudah memiliki pengajuan untuk tanggal ini. Tidak bisa mengirim pengajuan baru.
+    </div>
+@endif
 
-        <!-- Wadah Formulir Ringkas -->
+        <!-- Card Container Compact Form -->
         <div class="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-lg">
             <form wire:submit.prevent="kirimPengajuan" class="space-y-4">
 
-                <!-- Baris 1: Grid Komponen Input Utama -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                @php
+                    $isTipeAbsen = in_array($tipePengajuan, ['absen', 'absen_pulang']);
+                @endphp
+
+                <!-- Baris 1: Dynamic Grid bergantung tipe pengajuan -->
+                <div class="grid grid-cols-1 {{ $isTipeAbsen ? 'md:grid-cols-2' : 'md:grid-cols-3' }} gap-3">
                     
-                    <!-- Pilihan Tipe Pengajuan -->
+                    <!-- Dropdown Tipe Pengajuan -->
                     <div>
                         <label for="tipePengajuan" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Tipe Pengajuan</label>
                         <div class="relative">
@@ -46,6 +56,7 @@
                                 <option value="izin">Izin</option>
                                 <option value="sakit">Sakit</option>
                                 <option value="absen">Absen</option>
+                                <option value="absen_pulang">Absen Pulang</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400 dark:text-gray-400">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,35 +69,10 @@
                         @enderror
                     </div>
 
-                    <!-- Pilihan Tambahan: Kategori Absen (Hanya tampil jika Tipe Pengajuan = Absen) -->
-                    @if ($tipePengajuan === 'absen')
-                        <div>
-                            <label for="kategoriAbsen" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori Absen</label>
-                            <div class="relative">
-                                <select 
-                                    id="kategoriAbsen" 
-                                    wire:model="kategoriAbsen"
-                                    class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded-lg px-3 py-2 pr-8 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none appearance-none cursor-pointer">
-                                    <option value="masuk">Pengajuan Masuk</option>
-                                    <option value="pulang">Pengajuan Pulang</option>
-                                    <option value="keduanya">Keduanya (Masuk & Pulang)</option>
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400 dark:text-gray-400">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                            @error('kategoriAbsen')
-                                <span class="text-[10px] text-red-500 dark:text-red-400 mt-0.5 block">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    @endif
-
                     <!-- Tanggal Mulai / Tanggal Absen -->
                     <div>
                         <label for="tanggalMulai" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            {{ $tipePengajuan === 'absen' ? 'Tanggal' : 'Tanggal Mulai' }}
+                            {{ $isTipeAbsen ? 'Tanggal' : 'Tanggal Mulai' }}
                         </label>
                         <input 
                             type="date" 
@@ -99,8 +85,8 @@
                         @enderror
                     </div>
 
-                    <!-- Tanggal Selesai (Hanya muncul jika Tipe Pengajuan = Izin atau Sakit) -->
-                    @if ($tipePengajuan !== 'absen')
+                    <!-- Tanggal Selesai (Hanya muncul jika Izin atau Sakit) -->
+                    @if (!$isTipeAbsen)
                         <div>
                             <label for="tanggalSelesai" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Selesai</label>
                             <input 
@@ -139,7 +125,7 @@
                     </div>
                 @endif
 
-                <!-- Baris 2: Kolom Teks Alasan -->
+                <!-- Baris 2: Textarea Alasan -->
                 <div>
                     <label for="alasan" class="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">Alasan / Keterangan</label>
                     <textarea 
@@ -153,15 +139,15 @@
                     @enderror
                 </div>
 
-                <!-- Baris 3: Tombol Kirim -->
+                <!-- Baris 3: Tombol Submit Compact -->
                 <div class="flex flex-col items-end gap-2 pt-1">
                     <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">Silakan lengkapi tanggal dan alasan keterangan sebelum mengirim.</p>
                     <button 
                         type="submit" 
                         class="w-full sm:w-auto text-white bg-blue-600 hover:bg-blue-500 focus:ring-2 focus:ring-blue-800 font-medium rounded-lg text-xs px-5 py-2.5 transition duration-150 flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
-                        @disabled($isLulus)>
+                        @disabled($isLulus || $sudahAdaPengajuan )>
                         <span wire:loading.remove wire:target="kirimPengajuan">
-                            Kirim Pengajuan {{ ucfirst($tipePengajuan) }}
+                            Kirim Pengajuan {{ $tipePengajuan === 'absen_pulang' ? 'Absen Pulang' : ucfirst($tipePengajuan) }}
                         </span>
                         <span wire:loading wire:target="kirimPengajuan">Mengirim Data...</span>
                     </button>
@@ -176,7 +162,85 @@
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Daftar pengajuan izin, sakit, dan absen yang sudah pernah dikirim.</p>
             </div>
 
-            <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-900 shadow-sm">
+            <!-- MOBILE & TABLET VIEW: Card Grid (Tampil di Layar < lg) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 lg:hidden">
+                @forelse($riwayat as $item)
+                    @php
+                        $tglAwal = \Carbon\Carbon::parse($item->tanggal_awal ?? $item->tanggal_permohonan)->format('d/m/Y');
+                        $tglAkhir = $item->tanggal_akhir ? \Carbon\Carbon::parse($item->tanggal_akhir)->format('d/m/Y') : null;
+                        $rangeTanggal = ($tglAkhir && $tglAwal !== $tglAkhir) ? $tglAwal . ' - ' . $tglAkhir : $tglAwal;
+
+                        $rawStatus = strtolower($item->status);
+                        $statusLabel = match($rawStatus) {
+                            'disetujui', 'diterima', 'approved' => 'Disetujui',
+                            'ditolak', 'rejected'               => 'Ditolak',
+                            default                             => ucfirst($item->status),
+                        };
+
+                        $statusBadge = match($rawStatus) {
+                            'disetujui', 'diterima', 'approved' => 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-400 dark:border-emerald-600/50',
+                            'ditolak', 'rejected'               => 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 border border-red-400 dark:border-red-600/50',
+                            default                             => 'bg-yellow-100 dark:bg-yellow-900/60 text-yellow-700 dark:text-yellow-300 border border-yellow-400 dark:border-yellow-600/50',
+                        };
+
+                        $labelJenis = match(strtolower($item->jenis)) {
+                            'absen'        => 'Absen',
+                            'absen pulang' => 'Absen Pulang',
+                            default        => ucfirst($item->jenis),
+                        };
+                    @endphp
+
+                    <div wire:key="card-pengajuan-{{ $item->id ?? $loop->index }}" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-xl p-4 shadow-sm flex flex-col justify-between gap-3">
+                        
+                        <!-- Header Card: Tipe & Status Badge -->
+                        <div class="flex items-center justify-between gap-2 border-b border-gray-100 dark:border-gray-700/60 pb-3">
+                            <div>
+                                <span class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide block">
+                                    {{ $labelJenis }}
+                                </span>
+                                <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                                    {{ $nama }}
+                                </span>
+                            </div>
+
+                            <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-semibold rounded-full capitalize {{ $statusBadge }}">
+                                {{ $statusLabel }}
+                            </span>
+                        </div>
+
+                        <!-- Mid Section: Tanggal & Durasi -->
+                        <div class="grid grid-cols-2 gap-2 bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-lg text-xs">
+                            <div class="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+                                <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span>{{ $rangeTanggal }}</span>
+                            </div>
+                            <div class="text-right font-semibold text-gray-900 dark:text-white">
+                                {{ $item->jumlah_hari ?? 1 }} Hari
+                            </div>
+                        </div>
+
+                        <!-- Alasan & Alamat -->
+                        <div class="text-xs text-gray-600 dark:text-gray-300 bg-gray-50/50 dark:bg-gray-800/30 p-2.5 rounded-lg border border-gray-100 dark:border-gray-700">
+                            <span class="font-semibold text-gray-400 text-[10px] uppercase block mb-0.5">Alasan:</span>
+                            <p class="leading-relaxed">{{ $item->alasan }}</p>
+                            @if(!empty($item->alamat_izin))
+                                <div class="text-[10px] text-gray-400 dark:text-gray-500 italic mt-1.5 pt-1 border-t border-gray-200/60 dark:border-gray-700">
+                                    📍 {{ $item->alamat_izin }}
+                                </div>
+                            @endif
+                        </div>
+
+                    </div>
+                @empty
+                    <div class="col-span-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 rounded-xl p-8 text-center text-gray-400 dark:text-gray-500 text-xs">
+                        <svg class="w-10 h-10 mx-auto mb-3 text-gray-300 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Belum ada pengajuan yang tersimpan di database.
+                    </div>
+                @endforelse
+            </div>
+
+            <!-- DESKTOP VIEW: Table (Tampil di Layar >= lg) -->
+            <div class="hidden lg:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-900 shadow-sm">
                 <table class="min-w-full text-left text-xs text-gray-600 dark:text-gray-300">
                     <thead class="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase text-[10px] tracking-wider">
                         <tr>
@@ -191,7 +255,6 @@
                     <tbody>
                         @forelse($riwayat as $item)
                             @php
-                                // Format Tanggal Mulai & Akhir
                                 $tglAwal = \Carbon\Carbon::parse($item->tanggal_awal ?? $item->tanggal_permohonan)->format('d/m/Y');
                                 $tglAkhir = $item->tanggal_akhir ? \Carbon\Carbon::parse($item->tanggal_akhir)->format('d/m/Y') : null;
                                 
@@ -199,48 +262,25 @@
                                     ? $tglAwal . ' - ' . $tglAkhir 
                                     : $tglAwal;
 
-                                // Penentuan Badge dan Teks Status (Bahasa Indonesia Baku)
-                                $rawStatus = strtolower($item->status);
-                                $statusLabel = match($rawStatus) {
-                                    'disetujui', 'diterima', 'approved' => 'Disetujui',
-                                    'ditolak', 'rejected'               => 'Ditolak',
-                                    default                             => 'Menunggu',
-                                };
-
-                                $statusBadge = match($rawStatus) {
+                                $statusBadge = match(strtolower($item->status)) {
                                     'disetujui', 'diterima', 'approved' => 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-400 dark:border-emerald-600/50',
                                     'ditolak', 'rejected'               => 'bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 border border-red-400 dark:border-red-600/50',
                                     default                             => 'bg-yellow-100 dark:bg-yellow-900/60 text-yellow-700 dark:text-yellow-300 border border-yellow-400 dark:border-yellow-600/50',
                                 };
 
-                                // Label Tipe Pengajuan (Sesuai flag ketersediaan absen_masuk & absen_pulang)
                                 $labelJenis = match(strtolower($item->jenis)) {
-                                    'absen' => (function() use ($item) {
-                                        $bagian = [];
-                                        if ($item->absen_masuk) $bagian[] = 'Masuk';
-                                        if ($item->absen_pulang) $bagian[] = 'Pulang';
-                                        return count($bagian) > 0 ? 'Absen (' . implode(' & ', $bagian) . ')' : 'Absen';
-                                    })(),
-                                    'absen pulang' => 'Absen (Pulang)',
-                                    default => ucfirst($item->jenis),
+                                    'absen'        => 'Absen',
+                                    'absen pulang' => 'Absen Pulang',
+                                    default        => ucfirst($item->jenis),
                                 };
                             @endphp
                             <tr class="border-t border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors">
-                                <!-- NAMA -->
                                 <td class="px-3 py-3 text-gray-800 dark:text-gray-200 font-medium whitespace-nowrap">{{ $nama }}</td>
-                                
-                                <!-- TANGGAL -->
                                 <td class="px-3 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ $rangeTanggal }}</td>
-                                
-                                <!-- DURASI (JUMLAH HARI) -->
                                 <td class="px-3 py-3 text-gray-800 dark:text-gray-200 font-medium whitespace-nowrap">{{ $item->jumlah_hari ?? 1 }} Hari</td>
-
-                                <!-- TIPE PENGAJUAN -->
-                                <td class="px-3 py-3 font-semibold text-blue-600 dark:text-blue-400">
+                                <td class="px-3 py-3 uppercase font-semibold text-blue-600 dark:text-blue-400">
                                     {{ $labelJenis }}
                                 </td>
-                                
-                                <!-- ALASAN & ALAMAT -->
                                 <td class="px-3 py-3 text-gray-600 dark:text-gray-300 max-w-[20rem]" title="{{ $item->alasan }}">
                                     <div>{{ $item->alasan }}</div>
                                     @if(!empty($item->alamat_izin))
@@ -249,22 +289,24 @@
                                         </div>
                                     @endif
                                 </td>
-                                
-                                <!-- STATUS PENGAJUAN -->
                                 <td class="px-3 py-3">
                                     <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-semibold rounded-full capitalize {{ $statusBadge }}">
-                                        {{ $statusLabel }}
+                                        {{ $item->status }}
                                     </span>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-3 py-6 text-center text-gray-400 dark:text-gray-500">Belum ada riwayat pengajuan yang tersimpan.</td>
+                                <td colspan="6" class="px-3 py-6 text-center text-gray-400 dark:text-gray-500">Belum ada pengajuan yang tersimpan di database.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
+               <div class="mt-4">
+                {{ $riwayat->links() }}
+            </div>
         </div>
     </div>
+    <!-- MODAL KONFIRMASI TIMPA PRESENSI -->
 </div>

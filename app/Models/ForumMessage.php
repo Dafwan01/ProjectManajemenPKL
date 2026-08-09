@@ -9,7 +9,7 @@ use Spatie\Activitylog\Support\LogOptions;
 class ForumMessage extends Model
 {
     use LogsActivity;
-
+ protected $primaryKey = 'message_id';
     protected $guarded = ['message_id'];
 
     /**

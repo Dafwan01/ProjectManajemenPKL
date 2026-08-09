@@ -26,23 +26,24 @@
     @endif
 
     <!-- Kartu Formulir Proyek Akhir -->
+   <!-- Kartu Formulir Proyek Akhir -->
     <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl">
-        <div class="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
-            <div>
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
+            <div class="min-w-0">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     Formulir Proyek Akhir
                 </h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
                     Unggah laporan atau berkas proyek akhir beserta tautan repositori GitHub Anda.
                 </p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 shrink-0">
                 @if ($isLulus)
-                    <span class="px-3 py-1 bg-amber-50 dark:bg-amber-500/10 border border-amber-400 dark:border-amber-500 text-amber-600 dark:text-amber-400 text-xs font-medium rounded-full">
+                    <span class="px-3 py-1 bg-amber-50 dark:bg-amber-500/10 border border-amber-400 dark:border-amber-500 text-amber-600 dark:text-amber-400 text-xs font-medium rounded-full whitespace-nowrap">
                         🎓 Status: Lulus
                     </span>
                 @elseif ($sudahUpload)
-                    <span class="px-3 py-1 bg-green-50 dark:bg-green-500/10 border border-green-400 dark:border-green-500 text-green-600 dark:text-green-400 text-xs font-medium rounded-full">
+                    <span class="px-3 py-1 bg-green-50 dark:bg-green-500/10 border border-green-400 dark:border-green-500 text-green-600 dark:text-green-400 text-xs font-medium rounded-full whitespace-nowrap">
                         ✓ Sudah Dikirim
                     </span>
                 @endif

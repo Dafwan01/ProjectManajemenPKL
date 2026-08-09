@@ -70,12 +70,17 @@
         <tr>
             <td>Jabatan</td>
             <td>:</td>
-            <td>Peserta PKL - {{ $selectedUser->asal_sekolah ?? '-' }}</td>
+            <td>Peserta PKL - {{ $selectedUser->sekolah?->nama_sekolah ?? '-' }}</td>
         </tr>
         <tr>
             <td>Bidang</td>
             <td>:</td>
-            <td>{{ $selectedUser->divisi?->value ?? $selectedUser->divisi ?? '-' }}</td>
+            <td>{{ $selectedUser->divisi?->bidang?->nama_bidang ?? '-' }}</td>
+        </tr>
+        <tr>
+            <td>Divisi</td>
+            <td>:</td>
+            <td>{{ $selectedUser->divisi?->nama_divisi ?? '-' }}</td>
         </tr>
     </table>
 

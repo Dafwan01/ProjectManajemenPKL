@@ -10,6 +10,7 @@ use App\Models\presensi;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -27,9 +28,11 @@ class PermohonanIzin extends Component
     public $selectedId = null;
     public string $catatanAdmin = '';
 
-    /**
-     * Memastikan lokal waktu Carbon diatur ke Bahasa Indonesia secara baku.
-     */
+    // State untuk modal konfirmasi "presensi sudah ada"
+    public bool $showConfirmTimpaModal = false;
+    public $pendingSetujuiId = null;
+    public array $tanggalBentrok = [];
+
     public function boot(): void
     {
         Carbon::setLocale('id');
@@ -75,24 +78,51 @@ class PermohonanIzin extends Component
         $this->catatanAdmin = '';
     }
 
+    /**
+     * Entry point saat admin klik "Setujui".
+     * - absen        -> proses langsung
+     * - absen pulang  -> cek absen masuk dulu, tolak otomatis jika tidak ada
+     * - izin/sakit    -> cek bentrok presensi dulu, munculkan modal konfirmasi jika bentrok
+     */
     public function setujui($id): void
     {
         $permohonan = PermohonanIzinModel::with('user')->findOrFail($id);
+        $jenisStr = strtolower($permohonan->jenis);
 
+        if ($jenisStr === 'absen') {
+            $this->approveAndProcess($permohonan, fn () => $this->prosesAbsen($permohonan));
+            return;
+        }
+
+        if ($jenisStr === 'absen pulang') {
+            $this->handleAbsenPulangApproval($permohonan);
+            return;
+        }
+
+        // Tipe: izin / sakit
+        $bentrok = $this->cekPresensiBentrok($permohonan);
+
+        if (!empty($bentrok)) {
+            $this->pendingSetujuiId = $id;
+            $this->tanggalBentrok = $bentrok;
+            $this->showConfirmTimpaModal = true;
+            return; // Tunggu konfirmasi user (Ya/Tidak) sebelum lanjut
+        }
+
+        $this->approveAndProcess($permohonan, fn () => $this->prosesIzinSakit($permohonan, $jenisStr));
+    }
+
+    /**
+     * Helper umum: update status jadi disetujui, jalankan proses, flash message, tutup modal.
+     */
+    private function approveAndProcess($permohonan, callable $proses): void
+    {
         $permohonan->update([
             'status' => 'disetujui',
             'catatan_admin' => $this->catatanAdmin,
         ]);
 
-        $jenisStr = strtolower($permohonan->jenis);
-
-        if ($jenisStr === 'absen') {
-            $this->prosesAbsen($permohonan);
-        } elseif ($jenisStr === 'absen pulang') {
-            $this->prosesAbsenPulang($permohonan);
-        } else {
-            $this->prosesIzinSakit($permohonan, $jenisStr);
-        }
+        $proses();
 
         $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
         session()->flash('message', 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah disetujui.');
@@ -100,45 +130,132 @@ class PermohonanIzin extends Component
         $this->closeDetail();
     }
 
-    private function prosesIzinSakit($permohonan, string $statusKehadiran): void
-    {
-        $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
-        $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
+    /**
+     * Cek apakah tanggal (rentang) permohonan izin/sakit sudah punya data presensi.
+     * Mengembalikan array detail tanggal yang bentrok (kosong jika tidak ada bentrok).
+     */
+   private function cekPresensiBentrok($permohonan): array
+{
+    $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
+    $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
 
-        $period = CarbonPeriod::create($startDate, $endDate);
+    $period = CarbonPeriod::create($startDate, $endDate);
+    $bentrok = [];
 
-        foreach ($period as $date) {
-            $tglString = $date->format('Y-m-d');
+    foreach ($period as $date) {
+        $tglString = $date->format('Y-m-d');
 
-            $presensi = presensi::where('user_id', $permohonan->user_id)
-                ->whereDate('tanggal', $tglString)
-                ->first();
+        $presensi = presensi::where('user_id', $permohonan->user_id)
+            ->whereDate('tanggal', $tglString)
+            ->first();
 
-            if ($presensi) {
-                $presensi->update([
-                    'status_kehadiran' => $statusKehadiran,
-                ]);
-            } else {
-                $presensiNew = presensi::create([
-                    'user_id'          => $permohonan->user_id,
-                    'tanggal'          => $tglString,
-                    'status_kehadiran' => $statusKehadiran,
-                ]);
+        if ($presensi) {
+            // ✅ Ambil value dari enum (kalau enum), atau pakai apa adanya kalau sudah string
+            $statusValue = $presensi->status_kehadiran instanceof \BackedEnum
+                ? $presensi->status_kehadiran->value
+                : $presensi->status_kehadiran;
 
-                log_book::create([
-                    'user_id'     => $permohonan->user_id,
-                    'presensi_id' => $presensiNew->presensi_id ?? $presensiNew->id,
-                    'kegiatan'    => '(' . strtoupper($permohonan->jenis) . ') ' . $permohonan->alasan,
-                ]);
-            }
+            $bentrok[] = [
+                'tanggal'         => $tglString,
+                'tanggal_format'  => $date->copy()->translatedFormat('l, d F Y'),
+                'status_sekarang' => strtoupper((string) ($statusValue ?? '-')),
+            ];
         }
     }
 
+    return $bentrok;
+}
+
     /**
-     * Proses persetujuan pengajuan ABSEN (jenis = 'absen').
-     * Buat/lengkapi presensi pada tanggal yang diajukan, isi JAM MASUK & JAM KELUAR
-     * sekaligus sesuai jadwal magang user hari itu.
+     * Dipanggil saat admin klik "Ya, Timpa Presensi" di modal konfirmasi.
      */
+    public function konfirmasiTimpaPresensi(): void
+    {
+        if (!$this->pendingSetujuiId) {
+            $this->batalTimpaPresensi();
+            return;
+        }
+
+        $permohonan = PermohonanIzinModel::with('user')->findOrFail($this->pendingSetujuiId);
+        $jenisStr = strtolower($permohonan->jenis);
+
+        $this->approveAndProcess($permohonan, fn () => $this->prosesIzinSakit($permohonan, $jenisStr));
+
+        $this->resetConfirmTimpaState();
+    }
+
+    /**
+     * Dipanggil saat admin klik "Tidak" di modal konfirmasi -> batalkan semua, kembali ke list.
+     */
+    public function batalTimpaPresensi(): void
+    {
+        $this->resetConfirmTimpaState();
+        $this->closeDetail();
+    }
+
+    private function resetConfirmTimpaState(): void
+    {
+        $this->showConfirmTimpaModal = false;
+        $this->pendingSetujuiId = null;
+        $this->tanggalBentrok = [];
+    }
+
+    private function prosesIzinSakit($permohonan, string $statusKehadiran): void
+{
+    $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
+    $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
+
+    $period = CarbonPeriod::create($startDate, $endDate);
+
+    foreach ($period as $date) {
+        $tglString = $date->format('Y-m-d');
+
+        $presensi = presensi::where('user_id', $permohonan->user_id)
+            ->whereDate('tanggal', $tglString)
+            ->first();
+
+        if ($presensi) {
+            // ✅ Hapus file foto lama (jika ada) sebelum kolomnya dikosongkan
+            $this->hapusFotoPresensi($presensi);
+
+            $presensi->update([
+                'status_kehadiran' => $statusKehadiran,
+                'absen_masuk'      => null,
+                'absen_keluar'     => null,
+                'foto_masuk'       => null,
+                'foto_keluar'      => null,
+            ]);
+        } else {
+            $presensiNew = presensi::create([
+                'user_id'          => $permohonan->user_id,
+                'tanggal'          => $tglString,
+                'status_kehadiran' => $statusKehadiran,
+                'absen_masuk'      => null,
+                'absen_keluar'     => null,
+                'foto_masuk'       => null,
+                'foto_keluar'      => null,
+            ]);
+
+            log_book::create([
+                'user_id'     => $permohonan->user_id,
+                'presensi_id' => $presensiNew->presensi_id ?? $presensiNew->id,
+                'kegiatan'    => '(' . strtoupper($permohonan->jenis) . ') ' . $permohonan->alasan,
+            ]);
+        }
+    }
+}
+
+private function hapusFotoPresensi($presensi): void
+{
+    foreach (['foto_masuk', 'foto_keluar'] as $kolom) {
+        $path = $presensi->{$kolom};
+
+        if (!empty($path) && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+    }
+}
+
     private function prosesAbsen($permohonan): void
     {
         $tglString = $permohonan->tanggal_awal
@@ -174,13 +291,11 @@ class PermohonanIzin extends Component
         $dataUpdate = [];
         $keterangan = [];
 
-        // Isi jam masuk, hanya jika masih kosong
         if (empty($presensi->absen_masuk)) {
             $dataUpdate['absen_masuk'] = $jadwal->jam_masuk;
             $keterangan[] = 'Masuk';
         }
 
-        // Isi jam keluar, hanya jika masih kosong
         if (empty($presensi->absen_keluar)) {
             $dataUpdate['absen_keluar'] = $jadwal->jam_keluar;
             $keterangan[] = 'Pulang';
@@ -205,10 +320,48 @@ class PermohonanIzin extends Component
     }
 
     /**
-     * Proses persetujuan pengajuan ABSEN PULANG (jenis = 'absen pulang').
-     * Cek apakah ada presensi di tanggal yang diajukan dan jam keluarnya masih kosong,
-     * baru diisi sesuai jadwal magang user hari itu.
+     * ✅ Pengecekan baru: jika tanggal belum punya data absen_masuk,
+     * permohonan otomatis DITOLAK (bukan disetujui) + flash alert.
      */
+    private function handleAbsenPulangApproval($permohonan): void
+    {
+        $tglString = $permohonan->tanggal_awal
+            ? Carbon::parse($permohonan->tanggal_awal)->format('Y-m-d')
+            : Carbon::parse($permohonan->tanggal_permohonan)->format('Y-m-d');
+
+        $tanggalObj = Carbon::parse($tglString);
+        $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
+
+        $presensi = presensi::where('user_id', $permohonan->user_id)
+            ->whereDate('tanggal', $tglString)
+            ->first();
+
+        // ❌ Tidak ada presensi sama sekali, atau absen_masuk masih kosong -> tolak otomatis
+        if (!$presensi || empty($presensi->absen_masuk)) {
+            $permohonan->update([
+                'status'        => 'ditolak',
+                'catatan_admin' => $this->catatanAdmin ?: 'Ditolak otomatis: tidak ditemukan data absen masuk pada tanggal ' . $tanggalObj->translatedFormat('d F Y') . '.',
+            ]);
+
+            session()->flash('warning', 'Permohonan ABSEN PULANG dari ' . $namaUser . ' otomatis DITOLAK karena belum ada data absen masuk pada tanggal ' . $tanggalObj->translatedFormat('d F Y') . '.');
+
+            $this->closeDetail();
+            return;
+        }
+
+        // ✅ Ada absen masuk -> lanjut proses normal
+        $permohonan->update([
+            'status'        => 'disetujui',
+            'catatan_admin' => $this->catatanAdmin,
+        ]);
+
+        $this->prosesAbsenPulang($permohonan);
+
+        session()->flash('message', 'Permohonan ABSEN PULANG dari ' . $namaUser . ' telah disetujui.');
+
+        $this->closeDetail();
+    }
+
     private function prosesAbsenPulang($permohonan): void
     {
         $tglString = $permohonan->tanggal_awal
@@ -230,17 +383,12 @@ class PermohonanIzin extends Component
 
         $jadwal = $detailJadwal->jadwal;
 
-        // Cek apakah presensi di tanggal tersebut sudah ada
         $presensi = presensi::where('user_id', $permohonan->user_id)
             ->whereDate('tanggal', $tglString)
             ->first();
 
-        if (!$presensi) {
-            session()->flash('warning', 'Tidak ditemukan data presensi pada tanggal ' . $tanggalObj->translatedFormat('d F Y') . '. Absen pulang tidak dapat diisi karena belum ada data kehadiran di hari tersebut.');
-            return;
-        }
-
-        // Cek apakah jam keluar masih kosong
+        // Catatan: pengecekan "tidak ada presensi" & "absen_masuk kosong"
+        // sudah ditangani lebih awal di handleAbsenPulangApproval().
         if (!empty($presensi->absen_keluar)) {
             session()->flash('warning', 'Tanggal ' . $tanggalObj->translatedFormat('d F Y') . ' sudah memiliki data absen pulang, sehingga data tidak ditimpa.');
             return;
@@ -264,7 +412,7 @@ class PermohonanIzin extends Component
     public function tolak($id): void
     {
         $permohonan = PermohonanIzinModel::with('user')->findOrFail($id);
-        
+
         $permohonan->update([
             'status' => 'ditolak',
             'catatan_admin' => $this->catatanAdmin,
@@ -272,7 +420,7 @@ class PermohonanIzin extends Component
 
         $namaUser = $permohonan->user->nama ?? $permohonan->user->name ?? 'Pengguna';
         session()->flash('message', 'Permohonan ' . strtoupper($permohonan->jenis) . ' dari ' . $namaUser . ' telah ditolak.');
-        
+
         $this->closeDetail();
     }
 
