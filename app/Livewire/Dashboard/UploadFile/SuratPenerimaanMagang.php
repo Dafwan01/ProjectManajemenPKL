@@ -23,7 +23,6 @@ class SuratPenerimaanMagang extends Component
     public string $search = '';
     public $files = [];
 
-    // Status Modal Pratinjau PDF / Gambar
     public bool $showPreviewModal = false;
     public ?string $previewUrl = null;
     public ?string $previewUserName = null;
@@ -31,17 +30,11 @@ class SuratPenerimaanMagang extends Component
 
     protected $namaFileKategori = 'surat_penerimaan_magang';
 
-    /**
-     * Memastikan locale Carbon diatur ke bahasa Indonesia untuk semua pemrosesan tanggal.
-     */
     public function boot(): void
     {
         Carbon::setLocale('id');
     }
 
-    /**
-     * Fungsi bantuan untuk mengecek apakah pengguna yang masuk adalah Mentor secara aman.
-     */
     private function isMentorUser(): bool
     {
         $currentUser = Auth::user();
@@ -73,7 +66,6 @@ class SuratPenerimaanMagang extends Component
             $this->previewUrl = Storage::url($suratFile->file);
             $this->previewUserName = $user->nama;
 
-            // Deteksi jenis file (PDF atau Gambar)
             $extension = pathinfo($suratFile->file, PATHINFO_EXTENSION);
             $this->previewFileType = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'webp']) ? 'image' : 'pdf';
 
@@ -93,7 +85,6 @@ class SuratPenerimaanMagang extends Component
     {
         $userId = $key;
 
-        // Validasi Dikhususkan Hanya Untuk PDF
         $this->validateOnly("files.$userId", [
             "files.$userId" => 'file|mimes:pdf|max:5120',
         ], [
@@ -128,7 +119,6 @@ class SuratPenerimaanMagang extends Component
             ]
         );
 
-        // Kirim Notifikasi ke Peserta Magang
         $uploader = Auth::user();
         $user->notify(new BerkasUploadedNotification('Surat Penerimaan Magang', $uploader->nama ?? 'Admin/Mentor'));
 
@@ -156,6 +146,13 @@ class SuratPenerimaanMagang extends Component
                 $query->where('nama', 'like', '%' . $this->search . '%')
                       ->orWhere('email', 'like', '%' . $this->search . '%');
             })
+            // ✅ Hitung apakah user sudah punya surat penerimaan magang (0 = belum ada)
+            ->addSelect(['sudah_ada_surat' => FileModel::selectRaw('COUNT(*)')
+                ->whereColumn('user_id', 'users.user_id')
+                ->where('nama_file', $this->namaFileKategori)
+            ])
+            // ✅ Urutan: yang BELUM upload (0) tampil duluan
+            ->orderBy('sudah_ada_surat', 'asc')
             ->orderByRaw("CASE 
                 WHEN status = 'aktif' THEN 1 
                 WHEN status = 'lulus' THEN 2 

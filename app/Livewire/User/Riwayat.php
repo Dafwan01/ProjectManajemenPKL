@@ -147,130 +147,94 @@ class Riwayat extends Component
         return 'ABSEN (' . implode(' & ', $bagian) . ')';
     }
 
-    public function render()
-    {
-        // Set locale Carbon ke Indonesia untuk nama hari & bulan
-        Carbon::setLocale('id');
+  public function render()
+{
+    // Set locale Carbon ke Indonesia untuk nama hari & bulan
+    Carbon::setLocale('id');
 
-        $userId = auth()->id();
-        $userIsLulus = $this->isLulus();
+    $userId = auth()->id();
+    $userIsLulus = $this->isLulus();
 
-        // 1) Data presensi asli
-        $presensiList = PresensiModel::with(['logBooks'])
-            ->where('user_id', $userId)
-            ->when($this->tanggalMulai, function ($query) {
-                $query->whereDate('tanggal', '>=', $this->tanggalMulai);
-            })
-            ->when($this->tanggalSelesai, function ($query) {
-                $query->whereDate('tanggal', '<=', $this->tanggalSelesai);
-            })
-            ->get();
+    // Data presensi asli
+    $presensiList = PresensiModel::with(['logBooks'])
+        ->where('user_id', $userId)
+        ->when($this->tanggalMulai, function ($query) {
+            $query->whereDate('tanggal', '>=', $this->tanggalMulai);
+        })
+        ->when($this->tanggalSelesai, function ($query) {
+            $query->whereDate('tanggal', '<=', $this->tanggalSelesai);
+        })
+        ->get();
 
-        $baris = collect();
+    $baris = collect();
 
-        foreach ($presensiList as $presensi) {
-            $statusValue = $presensi->status_kehadiran?->value ?? $presensi->status_kehadiran;
+    foreach ($presensiList as $presensi) {
+        $statusValue = $presensi->status_kehadiran?->value ?? $presensi->status_kehadiran;
 
-            // Format tanggal & jam ke standar Indonesia
-            $tanggalFormatIndo = $presensi->tanggal 
-                ? Carbon::parse($presensi->tanggal)->translatedFormat('l, d F Y') 
-                : '-';
+        $tanggalFormatIndo = $presensi->tanggal 
+            ? Carbon::parse($presensi->tanggal)->translatedFormat('l, d F Y') 
+            : '-';
 
-            $jamMasukFormatIndo = $presensi->absen_masuk 
-                ? Carbon::parse($presensi->absen_masuk)->format('H.i') . ' WIB' 
-                : '-';
+        $jamMasukFormatIndo = $presensi->absen_masuk 
+            ? Carbon::parse($presensi->absen_masuk)->format('H.i') . ' WIB' 
+            : '-';
 
-            $jamPulangFormatIndo = $presensi->absen_keluar 
-                ? Carbon::parse($presensi->absen_keluar)->format('H.i') . ' WIB' 
-                : '-';
+        $jamPulangFormatIndo = $presensi->absen_keluar 
+            ? Carbon::parse($presensi->absen_keluar)->format('H.i') . ' WIB' 
+            : '-';
 
-            $baris->push([
-                'tanggal_sort' => $presensi->tanggal,
-                'tanggal'      => $tanggalFormatIndo,
-                'jam_masuk'    => $jamMasukFormatIndo,
-                'jam_pulang'   => $jamPulangFormatIndo,
-                'status'       => strtoupper($statusValue ?? '-'),
-                'logbook'      => $presensi->logBooks->first()?->kegiatan,
-                'presensi_id'  => $presensi->presensi_id,
-                'bisa_edit'    => !$userIsLulus,
-            ]);
-        }
-
-        // 2) Pengajuan Absen Susulan
-        $pengajuanAbsen = PermohonanIzinModel::where('user_id', $userId)
-            ->where('jenis', 'absen')
-            ->get();
-
-        foreach ($pengajuanAbsen as $p) {
-            $awal = Carbon::parse($p->tanggal_awal ?? $p->tanggal_permohonan);
-            $akhir = $p->tanggal_akhir ? Carbon::parse($p->tanggal_akhir) : $awal;
-
-            foreach (CarbonPeriod::create($awal, $akhir) as $tgl) {
-                $tglString = $tgl->format('Y-m-d');
-
-                if ($this->tanggalMulai && $tglString < $this->tanggalMulai) continue;
-                if ($this->tanggalSelesai && $tglString > $this->tanggalSelesai) continue;
-
-                $prefix = match ($p->status) {
-                    'pending'   => 'MENUNGGU: ',
-                    'ditolak'   => 'DITOLAK: ',
-                    'disetujui' => 'DISETUJUI: ',
-                    default     => '',
-                };
-
-                $baris->push([
-                    'tanggal_sort' => $tgl->copy(),
-                    'tanggal'      => $tgl->translatedFormat('l, d F Y'),
-                    'jam_masuk'    => '-',
-                    'jam_pulang'   => '-',
-                    'status'       => $prefix . $this->labelAbsenSusulan($p),
-                    'logbook'      => $p->alasan,
-                    'presensi_id'  => null,
-                    'bisa_edit'    => false,
-                ]);
-            }
-        }
-
-        // Filter status
-        if ($this->filterStatus !== 'semua') {
-            $baris = $baris->filter(function ($item) {
-                return str_contains(strtolower($item['status']), strtolower($this->filterStatus));
-            });
-        }
-
-        $baris = $baris->sortByDesc('tanggal_sort')->values();
-
-        // Pagination
-        $page = LengthAwarePaginator::resolveCurrentPage() ?: 1;
-        $perPage = 10;
-        $items = $baris->slice(($page - 1) * $perPage, $perPage)->values();
-
-        $dataRiwayat = new LengthAwarePaginator(
-            $items,
-            $baris->count(),
-            $perPage,
-            $page,
-            ['path' => LengthAwarePaginator::resolveCurrentPath()]
-        );
-
-        $totalHadir = PresensiModel::where('user_id', $userId)
-            ->where('status_kehadiran', 'hadir')
-            ->count();
-
-        $totalIzinSakit = PresensiModel::where('user_id', $userId)
-            ->whereIn('status_kehadiran', ['izin', 'sakit'])
-            ->count();
-
-        $totalMenunggu = PermohonanIzinModel::where('user_id', $userId)
-            ->where('jenis', 'absen')
-            ->where('status', 'pending')
-            ->count();
-
-        return view('livewire.user.riwayat', [
-            'dataRiwayat'    => $dataRiwayat,
-            'totalHadir'     => $totalHadir,
-            'totalIzinSakit' => $totalIzinSakit,
-            'totalMenunggu'  => $totalMenunggu,
+        $baris->push([
+            'tanggal_sort' => $presensi->tanggal,
+            'tanggal'      => $tanggalFormatIndo,
+            'jam_masuk'    => $jamMasukFormatIndo,
+            'jam_pulang'   => $jamPulangFormatIndo,
+            'status'       => strtoupper($statusValue ?? '-'),
+            'logbook'      => $presensi->logBooks->first()?->kegiatan,
+            'presensi_id'  => $presensi->presensi_id,
+            'bisa_edit'    => !$userIsLulus,
         ]);
     }
+
+    // Filter status
+    if ($this->filterStatus !== 'semua') {
+        $baris = $baris->filter(function ($item) {
+            return str_contains(strtolower($item['status']), strtolower($this->filterStatus));
+        });
+    }
+
+    $baris = $baris->sortByDesc('tanggal_sort')->values();
+
+    // Pagination
+    $page = LengthAwarePaginator::resolveCurrentPage() ?: 1;
+    $perPage = 10;
+    $items = $baris->slice(($page - 1) * $perPage, $perPage)->values();
+
+    $dataRiwayat = new LengthAwarePaginator(
+        $items,
+        $baris->count(),
+        $perPage,
+        $page,
+        ['path' => LengthAwarePaginator::resolveCurrentPath()]
+    );
+
+    $totalHadir = PresensiModel::where('user_id', $userId)
+        ->where('status_kehadiran', 'hadir')
+        ->count();
+
+    $totalIzinSakit = PresensiModel::where('user_id', $userId)
+        ->whereIn('status_kehadiran', ['izin', 'sakit'])
+        ->count();
+
+    $totalMenunggu = PermohonanIzinModel::where('user_id', $userId)
+        ->where('jenis', 'absen')
+        ->where('status', 'pending')
+        ->count();
+
+    return view('livewire.user.riwayat', [
+        'dataRiwayat'    => $dataRiwayat,
+        'totalHadir'     => $totalHadir,
+        'totalIzinSakit' => $totalIzinSakit,
+        'totalMenunggu'  => $totalMenunggu,
+    ]);
+}
 }

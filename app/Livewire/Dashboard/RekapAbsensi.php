@@ -73,33 +73,39 @@ class RekapAbsensi extends Component
         $this->selectedUser = null;
     }
 
-    public function render()
-    {
-        $currentUser = Auth::user();
+   public function render()
+{
+    $currentUser = Auth::user();
 
-        $usersPKL = User::query()
-            ->where('role', UserRole::PKL->value ?? 'PKL')
-            ->when($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value, function ($query) use ($currentUser) {
-                $query->where('mentor', $currentUser->nama);
-            })
-            ->when($this->status !== 'semua', function ($query) {
-                $query->where('status', $this->status);
-            })
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('nama', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('sekolah', function ($s) {
-                          $s->where('nama_sekolah', 'like', '%' . $this->search . '%');
-                      });
-                });
-            })
-            // Pengurutan khusus: Mengurutkan status 'aktif' di atas 'lulus', lalu nama A-Z
-            ->orderByRaw("CASE WHEN status = 'aktif' THEN 1 WHEN status = 'lulus' THEN 2 ELSE 3 END")
-            ->orderBy('nama', 'asc')
-            ->paginate(10);
+    $usersPKL = User::query()
+        ->with(['sekolah', 'divisi.bidang']) // ✅ eager load supaya tidak N+1 query
+        ->where('role', UserRole::PKL->value ?? 'PKL')
+        ->when($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value, function ($query) use ($currentUser) {
+            $query->where('mentor', $currentUser->nama);
+        })
+        ->when($this->status !== 'semua', function ($query) {
+            $query->where('status', $this->status);
+        })
+        ->when($this->search, function ($query) {
+            $query->where(function ($q) {
+                $q->where('nama', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('sekolah', function ($s) {
+                      $s->where('nama_sekolah', 'like', '%' . $this->search . '%');
+                  })
+                  ->orWhereHas('divisi', function ($d) {
+                      $d->where('nama_divisi', 'like', '%' . $this->search . '%');
+                  })
+                  ->orWhereHas('divisi.bidang', function ($b) {
+                      $b->where('nama_bidang', 'like', '%' . $this->search . '%');
+                  });
+            });
+        })
+        ->orderByRaw("CASE WHEN status = 'aktif' THEN 1 WHEN status = 'lulus' THEN 2 ELSE 3 END")
+        ->orderBy('nama', 'asc')
+        ->paginate(10);
 
-        return view('livewire.dashboard.rekap-absensi', [
-            'usersPKL' => $usersPKL,
-        ]);
-    }
+    return view('livewire.dashboard.rekap-absensi', [
+        'usersPKL' => $usersPKL,
+    ]);
+}
 }

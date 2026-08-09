@@ -48,7 +48,7 @@
          x-init="document.documentElement.classList.toggle('dark', darkMode)"
          class="min-h-screen relative">
 
-        <!-- BACKDROP OVERLAY (Hanya muncul di Mobile saat Sidebar Terbuka) -->
+        <!-- BACKDROP OVERLAY (Hanya muncul di Mobile & Medium saat Sidebar Terbuka) -->
         <div x-show="sidebarOpen" 
              @click="sidebarOpen = false" 
              x-cloak 
@@ -58,14 +58,14 @@
              x-transition:leave="transition-opacity ease-linear duration-200"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-30 bg-slate-900/50 backdrop-blur-sm sm:hidden">
+             class="fixed inset-0 z-30 bg-slate-900/50 backdrop-blur-sm lg:hidden">
         </div>
 
         <!-- NAVIGASI SAMPING / SIDEBAR -->
-        <aside id="logo-sidebar" 
-               :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-               class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform duration-200 sm:translate-x-0 bg-white dark:bg-slate-900 border-e border-slate-200 dark:border-slate-800/80" 
-               aria-label="Navigasi Samping">
+<aside id="logo-sidebar" 
+       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+       class="-translate-x-full fixed top-0 left-0 z-40 w-64 h-screen transition-transform duration-200 lg:translate-x-0 bg-white dark:bg-slate-900 border-e border-slate-200 dark:border-slate-800/80" 
+       aria-label="Navigasi Samping">
             <div class="h-full px-3 py-4 overflow-y-auto bg-white dark:bg-slate-900 flex flex-col justify-between">
                 <div>
                     <!-- Logo / Identitas -->
@@ -245,14 +245,14 @@
         </aside>
 
         <!-- KONTEN UTAMA -->
-        <div class="sm:ml-64 min-h-screen transition-colors duration-200">
+        <div class="lg:ml-64 min-h-screen transition-colors duration-200">
 
             <!-- HEADER ATAS -->
             <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex justify-between items-center w-full h-16 px-6 border-b border-slate-200 dark:border-slate-800/80 sticky top-0 z-20 transition-colors duration-200">
                 <div>
-                    <!-- Tombol Burger Menu Mobile -->
+                    <!-- Tombol Burger Menu Mobile & Medium -->
                     <button @click="sidebarOpen = !sidebarOpen" type="button"
-                            class="inline-flex items-center p-2 text-sm text-slate-500 dark:text-slate-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 sm:hidden">
+                            class="inline-flex items-center p-2 text-sm text-slate-500 dark:text-slate-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 lg:hidden">
                         <span class="sr-only">Buka/Tutup Navigasi Samping</span>
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
@@ -295,10 +295,10 @@
 
     @livewireScripts
 
-    <!-- Auto close sidebar di mobile saat navigasi Livewire dipicu -->
+    <!-- Auto close sidebar di mobile & medium saat navigasi Livewire dipicu -->
     <script>
         document.addEventListener('livewire:navigated', () => {
-            if (window.innerWidth < 640 && Alpine) {
+            if (window.innerWidth < 1024 && Alpine) {
                 const rootDiv = document.querySelector('[x-data]');
                 if (rootDiv && rootDiv._x_dataStack) {
                     rootDiv._x_dataStack[0].sidebarOpen = false;
