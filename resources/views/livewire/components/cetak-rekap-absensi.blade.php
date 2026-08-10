@@ -92,7 +92,7 @@
                 <th style="width: 13%;">Tanggal</th>
                 <th style="width: 12%;">Jam Masuk</th>
                 <th style="width: 12%;">Jam Keluar</th>
-                <th style="width: 18%;">Total Kerja</th>
+                <th style="width: 18%;">Total Jam Kerja</th>
                 <th style="width: 30%;">Kegiatan</th>
             </tr>
         </thead>

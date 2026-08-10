@@ -116,6 +116,7 @@
                             </a>
                         </li>
 
+                            <script> console.log('Daffa was here');</script>
                         <li>
                             <a href="{{ route('manajemen-pkl') }}" wire:navigate
                                class="flex items-center p-2.5 rounded-xl transition-all {{ request()->routeIs('manajemen-pkl') ? 'bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }} group">
