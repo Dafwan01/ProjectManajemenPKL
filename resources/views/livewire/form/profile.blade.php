@@ -1,4 +1,3 @@
-
 <div class="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
     
     <!-- Container Modal dengan Batas Tinggi Max 90vh -->
@@ -172,42 +171,28 @@
                 </div>
             </div>
 
-            <!-- Baris 5: Asal Sekolah (Searchable Dropdown) & Mentor -->
+            <!-- Baris 5: Asal Sekolah (Dropdown + Search) & Mentor -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 
-                <!-- Searchable Asal Sekolah Component -->
+                <!-- Field Asal Sekolah -->
                 <div 
                     x-data="{
-                        query: '{{ $this->daftarSekolah->firstWhere('sekolah_id', $sekolah_id)?->nama_sekolah ?? '' }}',
                         open: false,
-                        sekolahList: {{ $this->daftarSekolah->map(fn($s) => ['id' => $s->sekolah_id, 'nama' => $s->nama_sekolah])->values()->toJson() }},
                         tambahBaru: @entangle('tambahSekolahBaru'),
                         namaBaru: @entangle('namaSekolahBaru'),
-
-                        get filtered() {
-                            if (!this.query) return this.sekolahList;
-                            return this.sekolahList.filter(s => s.nama.toLowerCase().includes(this.query.toLowerCase()));
-                        },
-
-                        select(s) {
-                            this.query = s.nama;
-                            $wire.set('sekolah_id', s.id);
-                            this.tambahBaru = false;
-                            this.namaBaru = '';
-                            this.open = false;
-                        },
+                        search: @entangle('searchSekolah').live,
 
                         enableTambahBaru() {
                             $wire.set('sekolah_id', null);
                             this.tambahBaru = true;
-                            this.namaBaru = this.query;
+                            this.namaBaru = this.search;
                             this.open = false;
                         },
 
                         batalTambahBaru() {
                             this.tambahBaru = false;
                             this.namaBaru = '';
-                            this.query = '';
+                            this.search = '';
                             $wire.set('sekolah_id', null);
                         }
                     }"
@@ -217,62 +202,95 @@
                         Asal Sekolah / Universitas
                     </label>
 
-                    <div class="relative">
-                        <input 
-                            type="text" 
-                            x-model="query"
-                            @focus="open = true"
-                            @input="open = true"
-                            @click.outside="open = false"
-                            placeholder="Cari atau ketik nama sekolah..." 
-                            autocomplete="off"
-                            class="bg-gray-50 dark:bg-gray-800/60 border @error('sekolah_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10 transition placeholder-gray-400 dark:placeholder-gray-500"
-                        />
+                  <div class="relative" @click.outside="open = false">
+    <button
+        type="button"
+        @click="open = !open; if (open) { $nextTick(() => $refs.searchSekolahInput.focus()) }"
+        class="w-full flex items-center justify-between bg-gray-50 dark:bg-gray-800/60 border @error('sekolah_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2.5 sm:p-3 transition disabled:opacity-60 disabled:cursor-not-allowed text-left"
+    >
+       <span x-show="!tambahBaru" class="truncate {{ !$sekolah_id ? 'text-gray-400 dark:text-gray-500' : '' }}">
+    {{ $sekolah_id && $this->sekolahTerpilih ? $this->sekolahTerpilih->nama_sekolah : '-- Pilih Sekolah --' }}
+</span>
+<span x-show="tambahBaru" x-cloak x-text="namaBaru" class="truncate text-emerald-600 dark:text-emerald-400 font-medium"></span> 
+        <svg class="w-4 h-4 shrink-0 text-gray-400 transition" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+    </button>
 
-                        <button 
-                            type="button" 
-                            @click="open = !open" 
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
-                        >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-                    </div>
+    <!-- Panel Dropdown -->
+    <div 
+        x-show="open" 
+        x-cloak
+        class="absolute z-30 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden"
+    >
+        <!-- Search bar di dalam panel -->
+        <div class="p-2 border-b border-gray-100 dark:border-gray-700/60">
+            <div class="relative">
+                <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                </svg>
+                <input 
+                    type="text" 
+                    x-ref="searchSekolahInput"
+                    x-model="search"
+                    autocomplete="off"
+                    placeholder="Cari nama sekolah..." 
+                    class="w-full bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2.5 pl-9 transition placeholder-gray-400 dark:placeholder-gray-500"
+                >
+            </div>
+        </div>
 
-                    <!-- Dropdown List Overlay -->
-                    <div 
-                        x-show="open" 
-                        x-cloak 
-                        class="absolute z-30 w-full mt-1 max-h-52 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl py-1 text-sm text-gray-800 dark:text-gray-200 scrollbar-thin"
+        <!-- Daftar Opsi -->
+        <div class="max-h-48 overflow-y-auto py-1 scrollbar-thin">
+            @forelse($this->daftarSekolah as $sekolah)
+                <div class="flex items-center gap-1 px-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded-xl mx-1 transition group">
+                    <button 
+                        type="button"
+                        wire:click="pilihSekolah({{ $sekolah->sekolah_id }}, '{{ addslashes($sekolah->nama_sekolah) }}')"
+                        @click="tambahBaru = false; namaBaru = ''; open = false"
+                        class="flex-1 min-w-0 text-left px-2.5 py-2.5 text-sm text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition flex items-center justify-between gap-2"
                     >
-                        <template x-for="s in filtered" :key="s.id">
-                            <div 
-                                @mousedown.prevent="select(s)"
-                                class="px-3.5 py-2 hover:bg-blue-50 dark:hover:bg-gray-700/60 cursor-pointer transition flex items-center justify-between"
-                            >
-                                <span x-text="s.nama"></span>
-                                <template x-if="$wire.sekolah_id == s.id">
-                                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                </template>
-                            </div>
-                        </template>
+                        <span class="truncate">{{ $sekolah->nama_sekolah }}</span>
+                        @if($sekolah_id == $sekolah->sekolah_id)
+                            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        @endif
+                    </button>
 
-                        <!-- Empty state & Action tambah baru -->
-                        <div 
-                            x-show="filtered.length === 0 && query.trim().length > 0"
-                            class="px-3.5 py-2 text-xs text-gray-400 dark:text-gray-500 italic"
-                        >
-                            Sekolah tidak ditemukan.
-                        </div>
+                    <!-- Tombol Hapus per-item -->
+                    <button
+                        type="button"
+                        wire:click.stop="confirmHapusSekolah({{ $sekolah->sekolah_id }}, '{{ addslashes($sekolah->nama_sekolah) }}')"
+                        @click.stop
+                        title="Hapus sekolah ini dari sistem"
+                        class="shrink-0 p-1.5 text-gray-400 hover:text-white hover:bg-red-500 dark:hover:bg-red-600 rounded-lg transition"
+                    >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            @empty
+                <div class="px-4 py-2 text-xs text-gray-400 dark:text-gray-500 italic">
+                    Sekolah tidak ditemukan.
+                </div>
+            @endforelse
 
-                        <div 
-                            x-show="query.trim().length >= 3"
-                            @mousedown.prevent="enableTambahBaru()"
-                            class="px-3.5 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer border-t border-gray-100 dark:border-gray-700/60 flex items-center gap-2 text-xs transition"
-                        >
-                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            <span class="truncate">Tambah "<strong x-text="query"></strong>" sebagai Sekolah Baru</span>
-                        </div>
-                    </div>
+            <!-- Opsi Tambah Baru -->
+            <div 
+                x-show="search.trim().length >= 3"
+                @mousedown.prevent="enableTambahBaru()"
+                class="px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer border-t border-gray-100 dark:border-gray-700/60 flex items-center gap-2 text-xs transition"
+            >
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                <span class="truncate">Tambah "<strong x-text="search"></strong>" sebagai Sekolah Baru</span>
+            </div>
+        </div>
+    </div>
+</div>
 
                     <!-- Indikator mode Sekolah Baru diset -->
                     <template x-if="tambahBaru">
@@ -445,3 +463,42 @@
 
     </div>
 </div>
+
+<!-- Popup Konfirmasi Hapus Sekolah -->
+@if($showDeleteSekolahConfirm)
+    <div class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/70 dark:bg-black/80 backdrop-blur-sm p-4">
+        <div class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
+            <div class="flex items-start gap-3">
+                <div class="shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-gray-900 dark:text-white">Hapus Data Sekolah?</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Yakin ingin menghapus sekolah <strong>"{{ $namaSekolahToDelete }}"</strong>? Tindakan ini tidak dapat dibatalkan.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button 
+                    type="button" 
+                    wire:click="batalHapusSekolah" 
+                    class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition"
+                >
+                    Batal
+                </button>
+                <button 
+                    type="button" 
+                    wire:click="hapusSekolah" 
+                    wire:loading.attr="disabled"
+                    class="px-5 py-2.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-500 rounded-2xl shadow-md shadow-red-600/20 transition disabled:opacity-60"
+                >
+                    Ya, Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+@endif

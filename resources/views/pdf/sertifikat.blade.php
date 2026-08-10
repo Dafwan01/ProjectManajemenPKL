@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Sertifikat {{ $user->nama }}</title>
     <style>
-        /* Load Font Kaligrafi secara Lokal */
         @font-face {
             font-family: 'Great Vibes';
             src: url("{{ public_path('fonts/GreatVibes-Regular.ttf') }}") format('truetype');
@@ -16,10 +15,8 @@
             size: A4 landscape;
             margin: 0;
         }
-        
-        * {
-            box-sizing: border-box;
-        }
+
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -40,29 +37,33 @@
         }
 
         /* ========================================================
-           0. NOMOR SERTIFIKAT (DI ATAS DIBERIKAN KEPADA)
+           0. NOMOR SERTIFIKAT
+           Tepat di tengah, di bawah kata "MAGANG" pada background.
            ======================================================== */
         .section-nomor {
             position: absolute;
-            top: 322px; /* Disesuaikan agar berada persis di bawah kata MAGANG */
+            top: 300px;
             left: 0;
             width: 100%;
             text-align: center;
         }
 
         .nomor-sertifikat {
-            font-size: 12px;
+            font-size: 13px;
             color: #1e3a8a;
             font-weight: bold;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
 
         /* ========================================================
            1. NAMA PESERTA
+           Label "Diberikan kepada :" TIDAK ditulis lagi di sini
+           karena sudah ada pada gambar template. Garis di bawah
+           nama juga sudah ada pada template, jadi tidak dibuat ulang.
            ======================================================== */
         .section-nama {
             position: absolute;
-            top: 360px;
+            top: 368px;
             left: 0;
             width: 100%;
             text-align: center;
@@ -80,62 +81,80 @@
            ======================================================== */
         .section-keterangan {
             position: absolute;
-            top: 485px;
+            top: 460px;
             left: 0;
             width: 100%;
             text-align: center;
         }
 
         .keterangan {
-            font-size: 18px;
+            width: 100%;
+            font-size: 16px;
             color: #1b263b;
-            line-height: 1.5;
-            margin-bottom: 12px;
+            line-height: 1.4;
+            margin-bottom: 0;
+            text-align: center;
         }
 
         .proyek-container {
-            margin-top: 10px;
-            font-size: 16px;
+            width: 100%;
+            margin-top: 4px;
+            font-size: 15px;
+            line-height: 1.4;
             color: #334155;
+            text-align: center;
         }
 
         .tanggal {
-            font-size: 14px;
+            font-size: 13px;
             color: #475569;
             font-weight: 500;
-            margin-top: 15px;
+            margin-top: 12px;
         }
 
         /* ========================================================
-           3. AREA TANDA TANGAN / PENANDATANGAN
+           3. AREA TANDA TANGAN
+           Urutan dari atas ke bawah: NAMA -> GARIS -> JABATAN
+           (dompdf tidak mendukung flexbox dengan baik, jadi
+           dibuat dengan block/absolute biasa)
            ======================================================== */
         .section-ttd {
             position: absolute;
-            bottom: 40px;
+            bottom: 50px;
             left: 0;
             width: 100%;
             text-align: center;
         }
 
-        .jabatan {
-            font-size: 16px;
-            font-weight: bold;
-            color: #0d1b2a;
-            margin-bottom: 10px;
+        .garis-ttd {
+            width: 220px;
+            margin: 0 auto 10px;
+            border-top: 1.5px solid #0d1b2a;
         }
 
-        .section-mentor {
-            position: absolute;
-            top: 708px; 
-            right: 198px;
-            width: 320px;
-            text-align: center;
-            font-size: 15px;
+        .badge-ttd-elektronik {
+            font-size: 11px;
+            color: #334155;
+            line-height: 1.4;
+            margin-top: 6px;
+        }
+
+        .nama-penandatangan {
+            font-size: 22px;
+            font-weight: normal;
+            color: #0d1b2a;
+            margin-top: 20px;
+            margin-bottom: 2px;
+            line-height: 1.2;
+        }
+
+        .jabatan {
+            font-size: 22px;
             font-weight: bold;
             color: #0d1b2a;
-            text-decoration: underline;
-            margin-top: 5px;
+            line-height: 1.2;
         }
+
     </style>
 </head>
 <body>
@@ -168,36 +187,27 @@
         <div class="keterangan">
             Telah menyelesaikan Program Magang / PKL di <br>
             <strong>Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor</strong>
-            
-            <div style="margin-top: 10px; font-size: 18px;">
-                dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong>
-                Dengan Mentor: <strong>{{ $user->mentor ?? '-' }}</strong>
+
+            <div class="proyek-container">
+                dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong> Dengan Mentor: <strong>{{ $user->mentor ?? '-' }}</strong>
             </div>
         </div>
 
         <div class="tanggal">
             Diterbitkan pada: {{ \Carbon\Carbon::parse($tanggalTerbit ?? now())->isoFormat('D MMMM Y') }}
         </div>
+
+        @if($jenisTtd === 'elektronik')
+            <div class="badge-ttd-elektronik">
+                Ditandatangani secara elektronik oleh
+            </div>
+        @endif
     </div>
 
-    <!-- BLOCK 3: TANDA TANGAN -->
+    <!-- BLOCK 3: TANDA TANGAN (nama di atas, jabatan di bawah, sejajar) -->
     <div class="section-ttd">
-        <!-- 1. Panggil Jabatan Penandatangan -->
-        <div class="jabatan">{{ $jabatanPenandatangan }}</div>
-
-        <div class="box-ttd">
-            <!-- 2. Pengecekan Jenis TTD Elektronik / Non-Elektronik -->
-            @if($jenisTtd === 'elektronik')
-                <div class="badge-ttd-elektronik">
-                    Ditandatangani secara elektronik oleh<br>
-                    <strong>{{ $namaPenandatangan }}</strong>
-                </div>
-            @endif
-            <!-- Jika 'non_elektronik', area ini dibiarkan kosong untuk TTD basah -->
-        </div>
-
-        <!-- 3. Panggil Nama Penandatangan -->
         <div class="nama-penandatangan">{{ $namaPenandatangan }}</div>
+        <div class="jabatan">{{ $jabatanPenandatangan ?? '-' }}</div>
     </div>
 
 </body>

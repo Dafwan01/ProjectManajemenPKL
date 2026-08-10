@@ -39,6 +39,7 @@ class ManajemenPkl extends Component
 
     // Relasi Sekolah, Mentor, Periode & Skill
     public $sekolah_id = null;
+    public $searchSekolah = '';
     public $mentor = '';
     public $tanggal_mulai = null;
     public $tanggal_akhir = null;
@@ -57,6 +58,11 @@ class ManajemenPkl extends Component
     // State Input Sekolah Baru
     public bool $tambahSekolahBaru = false;
     public string $namaSekolahBaru = '';
+
+    // State Konfirmasi Hapus Sekolah
+    public bool $showDeleteSekolahConfirm = false;
+    public $sekolahIdToDelete = null;
+    public string $namaSekolahToDelete = '';
 
     // Modal Control & Filter
     public bool $showEditProfileModal = false;
@@ -89,7 +95,28 @@ class ManajemenPkl extends Component
 
     public function getDaftarSekolahProperty()
     {
-        return Sekolah::orderBy('nama_sekolah')->get();
+        return Sekolah::query()
+            ->when($this->searchSekolah, function ($query) {
+                $query->where('nama_sekolah', 'like', '%' . $this->searchSekolah . '%');
+            })
+            ->orderBy('nama_sekolah')
+            ->get();
+    }
+
+    /**
+     * Data sekolah yang sedang terpilih pada form (untuk ditampilkan di tombol dropdown).
+     */
+    public function getSekolahTerpilihProperty()
+    {
+        return $this->sekolah_id ? Sekolah::find($this->sekolah_id) : null;
+    }
+
+    public function pilihSekolah($id, $nama)
+    {
+        $this->sekolah_id = $id;
+        $this->searchSekolah = '';
+        $this->tambahSekolahBaru = false;
+        $this->namaSekolahBaru = '';
     }
 
     public function getDaftarBidangProperty()
@@ -185,17 +212,6 @@ class ManajemenPkl extends Component
         'password.same'                => 'Konfirmasi password tidak cocok.',
     ];
 
-    public function updatedSekolahId($value)
-    {
-        if ($value === '__tambah_baru__') {
-            $this->tambahSekolahBaru = true;
-            $this->sekolah_id = null;
-        } else if (!empty($value)) {
-            $this->tambahSekolahBaru = false;
-            $this->namaSekolahBaru = '';
-        }
-    }
-
     public function updatedBidangId($value)
     {
         if ($this->isMentorUser()) {
@@ -226,6 +242,7 @@ class ManajemenPkl extends Component
         $this->jenis_kelamin = '';
         $this->jurusan = '';
         $this->sekolah_id = null;
+        $this->searchSekolah = '';
         $this->bidang_id = null;
         $this->divisi_id = null;
         $this->mentor = '';
@@ -347,6 +364,7 @@ class ManajemenPkl extends Component
         $this->jenis_kelamin = strtolower($user->jenis_kelamin ?? '');
         $this->jurusan = $user->jurusan;
         $this->sekolah_id = $user->sekolah_id;
+        $this->searchSekolah = '';
 
         $currentUser = Auth::user();
         if ($this->isMentorUser()) {
@@ -432,6 +450,50 @@ class ManajemenPkl extends Component
     {
         $this->showProjectModal = false;
         $this->selectedUserId = null;
+    }
+
+    /**
+     * Menampilkan popup konfirmasi hapus data sekolah.
+     */
+    public function confirmHapusSekolah($id, $nama)
+    {
+        $this->sekolahIdToDelete = $id;
+        $this->namaSekolahToDelete = $nama;
+        $this->showDeleteSekolahConfirm = true;
+    }
+
+    /**
+     * Membatalkan aksi hapus data sekolah.
+     */
+    public function batalHapusSekolah()
+    {
+        $this->showDeleteSekolahConfirm = false;
+        $this->sekolahIdToDelete = null;
+        $this->namaSekolahToDelete = '';
+    }
+
+    /**
+     * Mengeksekusi penghapusan data sekolah setelah dikonfirmasi.
+     */
+    public function hapusSekolah()
+    {
+        if ($this->sekolahIdToDelete) {
+            try {
+                Sekolah::where('sekolah_id', $this->sekolahIdToDelete)->delete();
+
+                // Jika sekolah yang dihapus sedang dipilih di form, kosongkan pilihannya
+                if ($this->sekolah_id == $this->sekolahIdToDelete) {
+                    $this->sekolah_id = null;
+                    $this->searchSekolah = '';
+                }
+
+                session()->flash('message', 'Data sekolah berhasil dihapus!');
+            } catch (\Illuminate\Database\QueryException $e) {
+                session()->flash('error', 'Sekolah tidak dapat dihapus karena masih digunakan oleh data akun lain.');
+            }
+        }
+
+        $this->batalHapusSekolah();
     }
 
     /**

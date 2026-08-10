@@ -37,6 +37,11 @@ class ManajemenAkun extends Component
     public bool $tambahSekolahBaru = false;
     public string $namaSekolahBaru = '';
 
+    // State Konfirmasi Hapus Sekolah
+    public bool $showDeleteSekolahConfirm = false;
+    public $sekolahIdToDelete = null;
+    public string $namaSekolahToDelete = '';
+
     public $mentor = '';
     public $password = '';
     public $confirm_password = '';
@@ -121,19 +126,20 @@ class ManajemenAkun extends Component
             ->get();
     }
 
+    /**
+     * Data sekolah yang sedang terpilih pada form (untuk ditampilkan di tombol dropdown).
+     */
+    public function getSekolahTerpilihProperty()
+    {
+        return $this->sekolah_id ? Sekolah::find($this->sekolah_id) : null;
+    }
+
     public function pilihSekolah($id, $nama)
     {
         $this->sekolah_id = $id;
-        $this->searchSekolah = $nama;
+        $this->searchSekolah = '';
         $this->tambahSekolahBaru = false;
-        $this->namaSekolahBaru = '';    
-    }
-
-    public function updatedSearchSekolah($value)
-    {
-        if (empty($value)) {
-            $this->sekolah_id = null;
-        }
+        $this->namaSekolahBaru = '';
     }
 
     public function getDaftarBidangProperty()
@@ -296,7 +302,7 @@ class ManajemenAkun extends Component
         $this->status = $user->status instanceof \UnitEnum ? $user->status->value : $user->status;
         
         $this->sekolah_id = $user->sekolah_id;
-        $this->searchSekolah = $user->sekolah?->nama_sekolah ?? '';
+        $this->searchSekolah = '';
 
         $currentUser = Auth::user();
         if ($this->isMentor()) {
@@ -376,6 +382,50 @@ class ManajemenAkun extends Component
     {
         User::findOrFail($id)->delete();
         session()->flash('message', 'Akun pengguna berhasil dihapus!');
+    }
+
+    /**
+     * Menampilkan popup konfirmasi hapus data sekolah.
+     */
+    public function confirmHapusSekolah($id, $nama)
+    {
+        $this->sekolahIdToDelete = $id;
+        $this->namaSekolahToDelete = $nama;
+        $this->showDeleteSekolahConfirm = true;
+    }
+
+    /**
+     * Membatalkan aksi hapus data sekolah.
+     */
+    public function batalHapusSekolah()
+    {
+        $this->showDeleteSekolahConfirm = false;
+        $this->sekolahIdToDelete = null;
+        $this->namaSekolahToDelete = '';
+    }
+
+    /**
+     * Mengeksekusi penghapusan data sekolah setelah dikonfirmasi.
+     */
+    public function hapusSekolah()
+    {
+        if ($this->sekolahIdToDelete) {
+            try {
+                Sekolah::where('sekolah_id', $this->sekolahIdToDelete)->delete();
+
+                // Jika sekolah yang dihapus sedang dipilih di form, kosongkan pilihannya
+                if ($this->sekolah_id == $this->sekolahIdToDelete) {
+                    $this->sekolah_id = null;
+                    $this->searchSekolah = '';
+                }
+
+                session()->flash('message', 'Data sekolah berhasil dihapus!');
+            } catch (\Illuminate\Database\QueryException $e) {
+                session()->flash('error', 'Sekolah tidak dapat dihapus karena masih digunakan oleh data akun lain.');
+            }
+        }
+
+        $this->batalHapusSekolah();
     }
 
     #[On('close-jadwal-modal')]

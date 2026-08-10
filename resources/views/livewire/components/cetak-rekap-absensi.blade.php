@@ -93,7 +93,7 @@
                 <th style="width: 12%;">Jam Masuk</th>
                 <th style="width: 12%;">Jam Keluar</th>
                 <th style="width: 18%;">Total Kerja</th>
-                <th style="width: 30%;">Keterangan</th>
+                <th style="width: 30%;">Kegiatan</th>
             </tr>
         </thead>
         <tbody>
@@ -109,12 +109,12 @@
                 @endphp
                 <tr>
                     <td style="text-align: center;">{{ $idx + 1 }}</td>
-                    <td style="text-align: center;">{{ \Carbon\Carbon::parse($item->tanggal)->locale('id')->translatedFormat('l') }}</td>
+                    <td style="text-align: center;">{{ \Carbon\Carbon::parse($item->tanggal)->locale('id')->translatedFormat('l') }} </td>
                     <td style="text-align: center;">{{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('j M Y') }}</td>
-                    <td style="text-align: center;">{{ $item->absen_masuk ? substr($item->absen_masuk, 0, 5) : '-' }}</td>
+                    <td style="text-align: center;">{{ $item->absen_masuk ? substr($item->absen_masuk, 0, 5) : '-' }} <br> {{ $item->status_kehadiran?->value ?? $item->status_kehadiran ?? '-' }}</td>
                     <td style="text-align: center;">{{ $item->absen_keluar ? substr($item->absen_keluar, 0, 5) : '-' }}</td>
                     <td style="text-align: center;">{{ $totalKerja }}</td>
-                    <td>{{ $item->logBooks->first()?->kegiatan ?? $item->status_kehadiran?->value ?? $item->status_kehadiran ?? '-' }}</td>
+                    <td>{{ $item->logBooks->first()?->kegiatan ?? '-' }}
                 </tr>
             @empty
                 <tr>
