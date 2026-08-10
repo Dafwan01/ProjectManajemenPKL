@@ -56,3 +56,83 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Panduan Fitur
+# 🚀 SIMPATI — Sistem Informasi Magang & Presensi Terintegrasi
+
+**SIMPATI** adalah platform berbasis web untuk mengelola dan memantau kegiatan peserta Praktik Kerja Lapangan (PKL) / Magang secara terpadu, mulai dari presensi berbasis GPS, pengelolaan administrasi berkas, penilaian kinerja multiaspek, hingga penerbitan sertifikat digital secara otomatis.
+
+---
+
+## ✨ Fitur-Fitur Utama
+
+### 📊 1. Dashboard & Analitik Real-Time
+* **Statistik Harian:** Ringkasan jumlah peserta Hadir, Izin, Sakit, Alpa, serta sebaran lokasi kerja WFO vs WFH.
+* **Analitik & Tren:** Visualisasi grafik kehadiran 30 hari terakhir, rata-rata jam masuk, dan *leaderboard* keterlambatan.
+* **Quote Motivasi:** Tampilan kutipan inspiratif harian otomatis untuk peserta.
+
+### 📍 2. Monitoring Presensi & Mapping GPS
+* **Pelacakan GPS (Leaflet JS):** Pemetaan titik koordinat lokasi check-in peserta pada peta interaktif.
+* **Koreksi Presensi:** Edit manual jam masuk, jam keluar, serta logbook kegiatan harian peserta jika terjadi kendala.
+* **Filter Bimbingan:** Penyaringan data kehadiran khusus untuk peserta bimbingan mentor tertentu.
+
+### 📝 3. Manajemen Izin & Absen Susulan
+* **Verifikasi Permohonan:** Pengolahan pengajuan surat Izin, Sakit, dan Absen Susulan dengan validasi bentrok jadwal.
+* **Proteksi Sistem:** Validasi ketat yang mencegah persetujuan absen pulang jika belum ada data absen masuk.
+* **Auto Update Logbook:** Otomatis memperbarui status kegiatan harian peserta saat izin disetujui.
+
+### 📈 4. Rekapitulasi Presensi & Cetak PDF
+* **Perekapan Kehadiran:** Rekapitulasi statistik kehadiran bulanan dan tahunan per peserta.
+* **Pratinjau & Cetak Laporan:** Modal pratinjau detail presensi dan ekspor laporan PDF (DomPDF) berstandar cetak A4.
+
+### 💼 5. Manajemen PKL, Jadwal & Proyek
+* **Data Peserta:** Pengelolaan profil peserta (sekolah, jurusan, keahlian, dan periode magang).
+* **Jadwal & Tugas:** Pembuatan jadwal harian/mingguan dan penugasan proyek kerja peserta.
+
+### 📑 6. Pengelolaan Berkas Administrasi
+* **Surat Penerimaan Magang:** Unggah berkas resmi penerimaan magang (PDF maks. 5MB) dengan urutan prioritas peserta yang belum mengunggah berada di paling atas.
+* **Notifikasi Berkas:** Pemberitahuan otomatis ke akun peserta saat dokumen berhasil diunggah.
+
+### 💯 7. Penilaian Kinerja Multiaspek
+* **Evaluasi 5 Aspek:** Penilaian Kedisiplinan, Kemampuan Teknis, Problem Solving, Komunikasi/Kerjasama, dan Kualitas Hasil.
+* **Kalkulasi Predikat:** Perhitungan otomatis nilai rata-rata dan konversi predikat (Sangat Baik, Baik, Cukup, dll.).
+* **Cetak Transkrip PDF:** Ekspor lembar transkrip nilai resmi berformat PDF lengkap dengan info Divisi & Bidang.
+
+### 🎓 8. Penerbitan Sertifikat & Auto-Lulus
+* **Sertifikat Digital:** Generasi otomatis sertifikat PDF via `CertificateService` (dukungan TTD Elektronik & Non-Elektronik).
+* **Otomatisasi Status:** Mengubah status peserta dari **Aktif** menjadi **Lulus** secara otomatis saat sertifikat diterbitkan.
+
+### 📜 9. Audit Log Aktivitas
+* **Audit Trail (Spatie Activitylog):** Pencatatan seluruh riwayat aktivitas dan perubahan data dalam sistem untuk transparansi operasional.
+
+### 👤 10. Manajemen Akun & Profil
+* **Multi-Role & Auto Schedule:** Pengelolaan akun (Admin, Mentor, PKL) dengan pembuat jadwal default otomatis (Senin–Jumat).
+* **Profil Mandiri:** Pembaruan data diri, ubah kata sandi, dan foto profil.
+
+### 📱 11. Antarmuka Seluler
+* **Bottom Navigation:** Navigation bar bagian bawah yang responsif untuk kenyamanan penggunaan dari smartphone.
+
+---
+
+## 🔐 Matriks Hak Akses (RBAC)
+
+| Fitur / Modul | Admin | Mentor | Peserta PKL |
+| :--- | :---: | :---: | :---: |
+| **Dashboard & Analitik** | ✅ (Semua) | ✅ (Bimbingan) | ❌ |
+| **Monitoring Presensi & GPS** | ✅ (Semua) | ✅ (Bimbingan) | ❌ |
+| **Persetujuan Izin / Sakit** | ✅ | ✅ | ❌ (Mengajukan) |
+| **Input Penilaian Kinerja** | ✅ | ✅ (Bimbingan) | ❌ (Melihat) |
+| **Terbitkan Sertifikat Digital** | ✅ | ✅ (Bimbingan) | ❌ (Unduh) |
+| **Unggah Surat Penerimaan** | ✅ | ✅ | ❌ (Unduh) |
+| **Manajemen Akun & Audit Log** | ✅ | ❌ | ❌ |
+| **Kelola Profil Mandiri** | ✅ | ✅ | ✅ |
+
+---
+
+## 🛠️ Arsitektur Teknis
+
+* **Core Framework:** Laravel (Livewire v3)
+* **UI & Interaktivitas:** Tailwind CSS & Leaflet.js (Peta GPS)
+* **PDF Engine:** `barryvdh/laravel-dompdf`
+* **Audit Trail:** `spatie/laravel-activitylog`
+* **Locale Date:** Carbon ID (Bahasa Indonesia)
