@@ -12,17 +12,21 @@ class CertificateService
     User $user, 
     string $nomorSertifikat, 
     string $tanggalTerbit,
+    string $tanggalMulai,
+    string $tanggalSelesai,
     string $namaPenandatangan,
     string $jabatanPenandatangan,
     string $jenisTtd
 ): string {
-    // Eager load relasi project
-    $user->load('project');
+    // Eager load relasi project dan sekolah
+    $user->load(['project', 'sekolah']);
 
     $pdf = Pdf::loadView('pdf.sertifikat', compact(
         'user', 
         'nomorSertifikat', 
         'tanggalTerbit',
+        'tanggalMulai',
+        'tanggalSelesai',
         'namaPenandatangan',
         'jabatanPenandatangan',
         'jenisTtd'
