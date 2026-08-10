@@ -46,7 +46,7 @@
            ======================================================== */
         .section-nomor {
             position: absolute;
-            top: 37%;
+            top: 32.4%;
             left: 0;
             width: 100%;
             text-align: center;
@@ -63,7 +63,7 @@
            ======================================================== */
         .section-nama {
             position: absolute;
-            top: 49%;
+            top: 40%;
             left: 0;
             width: 100%;
             text-align: center;
@@ -79,7 +79,7 @@
         /* NIM/NIS - Asal Sekolah, tepat DI BAWAH garis pertama */
         .section-nim {
             position: absolute;
-            top: 57.5%;
+            top: 52.5%;
             left: 0;
             width: 100%;
             text-align: center;
@@ -95,11 +95,11 @@
            ======================================================== */
         .section-paragraf {
             position: absolute;
-            top: 62%;
+            top: 55%;
             left: 0;
             width: 100%;
             text-align: center;
-            padding: 0 90px;
+            padding: 0;
         }
 
         .paragraf {
@@ -113,7 +113,7 @@
            ======================================================== */
         .section-proyek {
             position: absolute;
-            top: 74%;
+            top: 64%;
             left: 0;
             width: 100%;
             text-align: center;
@@ -149,7 +149,7 @@
            ======================================================== */
         .section-nama-ttd {
             position: absolute;
-            top: 86%;
+            top: 88%;
             left: 0;
             width: 100%;
             text-align: center;
@@ -163,7 +163,7 @@
 
         .section-nip {
             position: absolute;
-            top: 90.5%;
+            top: 91.5%;
             left: 0;
             width: 100%;
             text-align: center;
@@ -184,9 +184,9 @@
 <body>
 
     @php
-        $imagePath = public_path('images/template-sertifikat.png');
+        $imagePath = public_path('images/template-sertifikat-new.png');
         if (!file_exists($imagePath)) {
-            $imagePath = public_path('images/template-sertifikat.jpg');
+            $imagePath = public_path('images/template-sertifikat-new.jpg');
         }
     @endphp
 
@@ -209,15 +209,15 @@
     <!-- NIM/NIS - Asal Sekolah (di bawah garis pertama) -->
     <div class="section-nim">
         <div class="nim-asal">
-            {{ $user->nim ?? '-' }} &mdash; {{ $user->asal_sekolah ?? '-' }}
+            {{ $user->sekolah->nama_sekolah ?? '-' }}
         </div>
     </div>
 
     <!-- BLOCK 2: PARAGRAF PARTISIPASI -->
     <div class="section-paragraf">
         <div class="paragraf">
-            Atas partisipasi dan kinerjanya yang baik selama mengikuti program magang/praktik kerja lapangan
-            di <strong>{{ $bidangUnitKerja ?? 'Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor' }}</strong>,
+            Atas partisipasi dan kinerjanya yang baik selama mengikuti program magang/praktik kerja lapangan <br>
+            di <strong>{{ $bidangUnitKerja ?? 'Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor' }}</strong>, <br>
             yang dilaksanakan pada tanggal
             <strong>{{ \Carbon\Carbon::parse($tanggalMulai ?? now())->isoFormat('D MMMM Y') }}</strong>
             sampai dengan

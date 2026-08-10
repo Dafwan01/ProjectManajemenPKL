@@ -149,6 +149,8 @@ class Sertifikat extends Component
                 $user,
                 $this->nomorSertifikat,
                 $this->tanggalTerbit,
+ 		$user->tanggal_mulai,   // <-- baris baru
+    		$user->tanggal_akhir,   // <-- baris baru
                 $this->namaPenandatangan,
                 $this->jabatanPenandatangan,
                 $this->jenisTtd
