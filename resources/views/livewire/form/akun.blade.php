@@ -89,63 +89,277 @@
                 @error('role') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
             </div>
 
-            <!-- Baris 3: Bidang & Divisi -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label for="bidang_id" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Bidang <span class="text-red-500">*</span>
-                    </label>
-                    <select
-                        id="bidang_id"
-                        wire:model.live="bidang_id"
-                        @disabled($isMentorUser)
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('bidang_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                        <option value="">-- Pilih Bidang --</option>
-                        @foreach($this->daftarBidang as $bidang)
-                            <option value="{{ $bidang->bidang_id }}">{{ $bidang->nama_bidang }}</option>
-                        @endforeach
-                    </select>
+           <!-- Baris 3: Bidang & Divisi -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                    @if($isMentorUser)
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                            * Otomatis disesuaikan dengan bidang Anda sebagai Mentor.
-                        </p>
-                    @endif
+    <!-- Field Bidang -->
+    <div 
+        x-data="{
+            open: false,
+            tambahBaru: @entangle('tambahBidangBaru'),
+            namaBaru: @entangle('namaBidangBaru'),
+            search: @entangle('searchBidang').live,
 
-                    @error('bidang_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+            enableTambahBaru() {
+                $wire.set('bidang_id', null);
+                this.tambahBaru = true;
+                this.namaBaru = this.search;
+                this.open = false;
+            },
+
+            batalTambahBaru() {
+                this.tambahBaru = false;
+                this.namaBaru = '';
+                this.search = '';
+                $wire.set('bidang_id', null);
+            }
+        }"
+        class="relative"
+    >
+        <label class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            Bidang <span class="text-red-500">*</span>
+        </label>
+
+        <div class="relative" @click.outside="open = false">
+            <button
+                type="button"
+                @click="if (!{{ $isMentorUser ? 'true' : 'false' }}) { open = !open; if (open) { $nextTick(() => $refs.searchBidangInput.focus()) } }"
+                @disabled($isMentorUser)
+                class="w-full flex items-center justify-between bg-gray-50 dark:bg-gray-800/60 border @error('bidang_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-3 transition disabled:opacity-60 disabled:cursor-not-allowed text-left"
+            >
+                <span x-show="!tambahBaru" class="truncate {{ !$bidang_id ? 'text-gray-400 dark:text-gray-500' : '' }}">
+                    {{ $bidang_id && $this->bidangTerpilih ? $this->bidangTerpilih->nama_bidang : '-- Pilih Bidang --' }}
+                </span>
+                <span x-show="tambahBaru" x-cloak x-text="namaBaru" class="truncate text-emerald-600 dark:text-emerald-400 font-medium"></span>
+                <svg class="w-4 h-4 shrink-0 text-gray-400 transition" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <!-- Panel Dropdown Bidang -->
+            <div 
+                x-show="open" 
+                x-cloak
+                class="absolute z-30 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden"
+            >
+                <div class="p-2 border-b border-gray-100 dark:border-gray-700/60">
+                    <div class="relative">
+                        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                        </svg>
+                        <input 
+                            type="text" 
+                            x-ref="searchBidangInput"
+                            x-model="search"
+                            autocomplete="off"
+                            placeholder="Cari nama bidang..." 
+                            class="w-full bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2.5 pl-9 transition placeholder-gray-400 dark:placeholder-gray-500"
+                        >
+                    </div>
                 </div>
 
-                <div>
-                    <label for="divisi_id" class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Divisi <span class="text-red-500">*</span>
-                    </label>
-                    <select
-                        id="divisi_id"
-                        wire:model="divisi_id"
-                        @disabled($isMentorUser || !$bidang_id)
-                        class="bg-gray-50 dark:bg-gray-800/60 border @error('divisi_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                <div class="max-h-48 overflow-y-auto py-1 scrollbar-thin">
+                    @forelse($this->daftarBidang as $bidangItem)
+                        <div class="flex items-center gap-1 px-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded-xl mx-1 transition group">
+                            <button 
+                                type="button"
+                                wire:click="pilihBidang({{ $bidangItem->bidang_id }}, '{{ addslashes($bidangItem->nama_bidang) }}')"
+                                @click="tambahBaru = false; namaBaru = ''; open = false"
+                                class="flex-1 min-w-0 text-left px-2.5 py-2.5 text-sm text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition flex items-center justify-between gap-2"
+                            >
+                                <span class="truncate">{{ $bidangItem->nama_bidang }}</span>
+                                @if($bidang_id == $bidangItem->bidang_id)
+                                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                @endif
+                            </button>
+
+                            <button
+                                type="button"
+                                wire:click.stop="confirmHapusBidang({{ $bidangItem->bidang_id }}, '{{ addslashes($bidangItem->nama_bidang) }}')"
+                                @click.stop
+                                title="Hapus bidang ini dari sistem"
+                                class="shrink-0 p-1.5 text-gray-400 hover:text-white hover:bg-red-500 dark:hover:bg-red-600 rounded-lg transition"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    @empty
+                        <div class="px-4 py-2 text-xs text-gray-400 dark:text-gray-500 italic">
+                            Bidang tidak ditemukan.
+                        </div>
+                    @endforelse
+
+                    <div 
+                        x-show="search.trim().length >= 3"
+                        @mousedown.prevent="enableTambahBaru()"
+                        class="px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer border-t border-gray-100 dark:border-gray-700/60 flex items-center gap-2 text-xs transition"
                     >
-                        <option value="">-- Pilih Divisi --</option>
-                        @foreach($this->daftarDivisi as $divisiOption)
-                            <option value="{{ $divisiOption->divisi_id }}">{{ $divisiOption->nama_divisi }}</option>
-                        @endforeach
-                    </select>
-
-                    @if($isMentorUser)
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                            * Otomatis disesuaikan dengan divisi Anda sebagai Mentor.
-                        </p>
-                    @elseif(!$bidang_id)
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
-                            * Pilih bidang terlebih dahulu.
-                        </p>
-                    @endif
-
-                    @error('divisi_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        <span class="truncate">Tambah "<strong x-text="search"></strong>" sebagai Bidang Baru</span>
+                    </div>
                 </div>
             </div>
+        </div>
 
+        <template x-if="tambahBaru">
+            <div class="mt-2 text-xs text-blue-600 dark:text-blue-400 flex items-center justify-between bg-blue-50 dark:bg-blue-950/40 px-3 py-2 rounded-xl border border-blue-200 dark:border-blue-800/60">
+                <span class="truncate">Menambahkan: <strong x-text="namaBaru"></strong></span>
+                <button type="button" @click="batalTambahBaru()" class="text-red-500 hover:text-red-600 font-semibold ml-2 shrink-0 transition">Batal</button>
+            </div>
+        </template>
+
+        @if($isMentorUser)
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                * Otomatis disesuaikan dengan bidang Anda sebagai Mentor.
+            </p>
+        @endif
+
+        @error('bidang_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+        @error('namaBidangBaru') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+    </div>
+
+    <!-- Field Divisi -->
+    <div 
+        x-data="{
+            open: false,
+            tambahBaru: @entangle('tambahDivisiBaru'),
+            namaBaru: @entangle('namaDivisiBaru'),
+            search: @entangle('searchDivisi').live,
+
+            enableTambahBaru() {
+                $wire.set('divisi_id', null);
+                this.tambahBaru = true;
+                this.namaBaru = this.search;
+                this.open = false;
+            },
+
+            batalTambahBaru() {
+                this.tambahBaru = false;
+                this.namaBaru = '';
+                this.search = '';
+                $wire.set('divisi_id', null);
+            }
+        }"
+        class="relative"
+    >
+        <label class="block mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            Divisi <span class="text-red-500">*</span>
+        </label>
+
+        <div class="relative" @click.outside="open = false">
+            <button
+                type="button"
+                @click="if (!({{ $isMentorUser ? 'true' : 'false' }} || !{{ $bidang_id ? 'true' : 'false' }})) { open = !open; if (open) { $nextTick(() => $refs.searchDivisiInput.focus()) } }"
+                @disabled($isMentorUser || !$bidang_id)
+                class="w-full flex items-center justify-between bg-gray-50 dark:bg-gray-800/60 border @error('divisi_id') border-red-500 dark:border-red-500 @else border-gray-300 dark:border-gray-700/80 @enderror text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-3 transition disabled:opacity-60 disabled:cursor-not-allowed text-left"
+            >
+                <span x-show="!tambahBaru" class="truncate {{ !$divisi_id ? 'text-gray-400 dark:text-gray-500' : '' }}">
+                    {{ $divisi_id && $this->divisiTerpilih ? $this->divisiTerpilih->nama_divisi : '-- Pilih Divisi --' }}
+                </span>
+                <span x-show="tambahBaru" x-cloak x-text="namaBaru" class="truncate text-emerald-600 dark:text-emerald-400 font-medium"></span>
+                <svg class="w-4 h-4 shrink-0 text-gray-400 transition" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <!-- Panel Dropdown Divisi -->
+            <div 
+                x-show="open" 
+                x-cloak
+                class="absolute z-30 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden"
+            >
+                <div class="p-2 border-b border-gray-100 dark:border-gray-700/60">
+                    <div class="relative">
+                        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                        </svg>
+                        <input 
+                            type="text" 
+                            x-ref="searchDivisiInput"
+                            x-model="search"
+                            autocomplete="off"
+                            placeholder="Cari nama divisi..." 
+                            class="w-full bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2.5 pl-9 transition placeholder-gray-400 dark:placeholder-gray-500"
+                        >
+                    </div>
+                </div>
+
+                <div class="max-h-48 overflow-y-auto py-1 scrollbar-thin">
+                    @forelse($this->daftarDivisi as $divisiOption)
+                        <div class="flex items-center gap-1 px-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded-xl mx-1 transition group">
+                            <button 
+                                type="button"
+                                wire:click="pilihDivisi({{ $divisiOption->divisi_id }}, '{{ addslashes($divisiOption->nama_divisi) }}')"
+                                @click="tambahBaru = false; namaBaru = ''; open = false"
+                                class="flex-1 min-w-0 text-left px-2.5 py-2.5 text-sm text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition flex items-center justify-between gap-2"
+                            >
+                                <span class="truncate">{{ $divisiOption->nama_divisi }}</span>
+                                @if($divisi_id == $divisiOption->divisi_id)
+                                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                @endif
+                            </button>
+
+                            <button
+                                type="button"
+                                wire:click.stop="confirmHapusDivisi({{ $divisiOption->divisi_id }}, '{{ addslashes($divisiOption->nama_divisi) }}')"
+                                @click.stop
+                                title="Hapus divisi ini dari sistem"
+                                class="shrink-0 p-1.5 text-gray-400 hover:text-white hover:bg-red-500 dark:hover:bg-red-600 rounded-lg transition"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    @empty
+                        <div class="px-4 py-2 text-xs text-gray-400 dark:text-gray-500 italic">
+                            Divisi tidak ditemukan.
+                        </div>
+                    @endforelse
+
+                    <div 
+                        x-show="search.trim().length >= 3"
+                        @mousedown.prevent="enableTambahBaru()"
+                        class="px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer border-t border-gray-100 dark:border-gray-700/60 flex items-center gap-2 text-xs transition"
+                    >
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        <span class="truncate">Tambah "<strong x-text="search"></strong>" sebagai Divisi Baru</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <template x-if="tambahBaru">
+            <div class="mt-2 text-xs text-blue-600 dark:text-blue-400 flex items-center justify-between bg-blue-50 dark:bg-blue-950/40 px-3 py-2 rounded-xl border border-blue-200 dark:border-blue-800/60">
+                <span class="truncate">Menambahkan: <strong x-text="namaBaru"></strong></span>
+                <button type="button" @click="batalTambahBaru()" class="text-red-500 hover:text-red-600 font-semibold ml-2 shrink-0 transition">Batal</button>
+            </div>
+        </template>
+
+        @if($isMentorUser)
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                * Otomatis disesuaikan dengan divisi Anda sebagai Mentor.
+            </p>
+        @elseif(!$bidang_id)
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                * Pilih bidang terlebih dahulu.
+            </p>
+        @endif
+
+        @error('divisi_id') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+        @error('namaDivisiBaru') <span class="text-red-500 dark:text-red-400 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+    </div>
+</div>
             <!-- Baris 4: Mentor & Asal Sekolah -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- Field Mentor -->
@@ -429,11 +643,27 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                     </svg>
                 </div>
-                <div>
+                <div class="flex-1 min-w-0">
                     <h4 class="text-sm font-bold text-gray-900 dark:text-white">Hapus Data Sekolah?</h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Yakin ingin menghapus sekolah <strong>"{{ $namaSekolahToDelete }}"</strong>? Tindakan ini tidak dapat dibatalkan.
-                    </p>
+
+                    @if(count($sekolahUsersToDelete) > 0)
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Sekolah <strong>"{{ $namaSekolahToDelete }}"</strong> masih digunakan oleh
+                            <strong>{{ count($sekolahUsersToDelete) }} akun</strong>:
+                        </p>
+                        <ul class="mt-2 max-h-32 overflow-y-auto text-xs text-gray-600 dark:text-gray-300 list-disc list-inside space-y-0.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl p-2">
+                            @foreach($sekolahUsersToDelete as $namaUser)
+                                <li>{{ $namaUser }}</li>
+                            @endforeach
+                        </ul>
+                        <p class="text-[10px] text-red-500 dark:text-red-400 mt-2 font-medium">
+                            * Data tidak akan bisa dihapus selama masih dipakai akun-akun di atas.
+                        </p>
+                    @else
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Yakin ingin menghapus sekolah <strong>"{{ $namaSekolahToDelete }}"</strong>? Tindakan ini tidak dapat dibatalkan.
+                        </p>
+                    @endif
                 </div>
             </div>
 
@@ -449,7 +679,123 @@
                     type="button" 
                     wire:click="hapusSekolah" 
                     wire:loading.attr="disabled"
-                    class="px-5 py-2.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-500 rounded-2xl shadow-md shadow-red-600/20 transition disabled:opacity-60"
+                    @disabled(count($sekolahUsersToDelete) > 0)
+                    title="{{ count($sekolahUsersToDelete) > 0 ? 'Tidak dapat dihapus karena masih digunakan' : '' }}"
+                    class="px-5 py-2.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-500 rounded-2xl shadow-md shadow-red-600/20 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600"
+                >
+                    Ya, Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+@endif
+
+<!-- Popup Konfirmasi Hapus Bidang -->
+@if($showDeleteBidangConfirm)
+    <div class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/70 dark:bg-black/80 backdrop-blur-sm p-4">
+        <div class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
+            <div class="flex items-start gap-3">
+                <div class="shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-bold text-gray-900 dark:text-white">Hapus Data Bidang?</h4>
+
+                    @if(count($bidangUsersToDelete) > 0)
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Bidang <strong>"{{ $namaBidangToDelete }}"</strong> masih digunakan oleh
+                            <strong>{{ count($bidangUsersToDelete) }} akun</strong> (melalui divisi di dalamnya):
+                        </p>
+                        <ul class="mt-2 max-h-32 overflow-y-auto text-xs text-gray-600 dark:text-gray-300 list-disc list-inside space-y-0.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl p-2">
+                            @foreach($bidangUsersToDelete as $namaUser)
+                                <li>{{ $namaUser }}</li>
+                            @endforeach
+                        </ul>
+                        <p class="text-[10px] text-red-500 dark:text-red-400 mt-2 font-medium">
+                            * Data tidak akan bisa dihapus selama masih dipakai akun-akun di atas.
+                        </p>
+                    @else
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Yakin ingin menghapus bidang <strong>"{{ $namaBidangToDelete }}"</strong>? Tindakan ini tidak dapat dibatalkan.
+                        </p>
+                    @endif
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button 
+                    type="button" 
+                    wire:click="batalHapusBidang" 
+                    class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition"
+                >
+                    Batal
+                </button>
+                <button 
+                    type="button" 
+                    wire:click="hapusBidang" 
+                    wire:loading.attr="disabled"
+                    @disabled(count($bidangUsersToDelete) > 0)
+                    title="{{ count($bidangUsersToDelete) > 0 ? 'Tidak dapat dihapus karena masih digunakan' : '' }}"
+                    class="px-5 py-2.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-500 rounded-2xl shadow-md shadow-red-600/20 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600"
+                >
+                    Ya, Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+@endif
+
+<!-- Popup Konfirmasi Hapus Divisi -->
+@if($showDeleteDivisiConfirm)
+    <div class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/70 dark:bg-black/80 backdrop-blur-sm p-4">
+        <div class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
+            <div class="flex items-start gap-3">
+                <div class="shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-bold text-gray-900 dark:text-white">Hapus Data Divisi?</h4>
+
+                    @if(count($divisiUsersToDelete) > 0)
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Divisi <strong>"{{ $namaDivisiToDelete }}"</strong> masih digunakan oleh
+                            <strong>{{ count($divisiUsersToDelete) }} akun</strong>:
+                        </p>
+                        <ul class="mt-2 max-h-32 overflow-y-auto text-xs text-gray-600 dark:text-gray-300 list-disc list-inside space-y-0.5 bg-gray-50 dark:bg-gray-800/60 rounded-xl p-2">
+                            @foreach($divisiUsersToDelete as $namaUser)
+                                <li>{{ $namaUser }}</li>
+                            @endforeach
+                        </ul>
+                        <p class="text-[10px] text-red-500 dark:text-red-400 mt-2 font-medium">
+                            * Data tidak akan bisa dihapus selama masih dipakai akun-akun di atas.
+                        </p>
+                    @else
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            Yakin ingin menghapus divisi <strong>"{{ $namaDivisiToDelete }}"</strong>? Tindakan ini tidak dapat dibatalkan.
+                        </p>
+                    @endif
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button 
+                    type="button" 
+                    wire:click="batalHapusDivisi" 
+                    class="px-4 py-2.5 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800/60 hover:bg-gray-200 dark:hover:bg-gray-700/60 border border-gray-200 dark:border-gray-700/50 rounded-2xl transition"
+                >
+                    Batal
+                </button>
+                <button 
+                    type="button" 
+                    wire:click="hapusDivisi" 
+                    wire:loading.attr="disabled"
+                    @disabled(count($divisiUsersToDelete) > 0)
+                    title="{{ count($divisiUsersToDelete) > 0 ? 'Tidak dapat dihapus karena masih digunakan' : '' }}"
+                    class="px-5 py-2.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-500 rounded-2xl shadow-md shadow-red-600/20 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600"
                 >
                     Ya, Hapus
                 </button>

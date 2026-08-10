@@ -30,7 +30,7 @@ class ManajemenAkun extends Component
     public $nama = '';
     public $email = '';
     public $role = '';
-    
+
     // State Sekolah
     public $sekolah_id = null;
     public $searchSekolah = '';
@@ -41,15 +41,38 @@ class ManajemenAkun extends Component
     public bool $showDeleteSekolahConfirm = false;
     public $sekolahIdToDelete = null;
     public string $namaSekolahToDelete = '';
+    public array $sekolahUsersToDelete = [];
 
     public $mentor = '';
     public $password = '';
     public $confirm_password = '';
     public $status = '';
-    
+
     // Bidang & Divisi
     public $bidang_id = null;
     public $divisi_id = null;
+
+    // State Bidang
+    public $searchBidang = '';
+    public bool $tambahBidangBaru = false;
+    public string $namaBidangBaru = '';
+
+    // State Konfirmasi Hapus Bidang
+    public bool $showDeleteBidangConfirm = false;
+    public $bidangIdToDelete = null;
+    public string $namaBidangToDelete = '';
+    public array $bidangUsersToDelete = [];
+
+    // State Divisi
+    public $searchDivisi = '';
+    public bool $tambahDivisiBaru = false;
+    public string $namaDivisiBaru = '';
+
+    // State Konfirmasi Hapus Divisi
+    public bool $showDeleteDivisiConfirm = false;
+    public $divisiIdToDelete = null;
+    public string $namaDivisiToDelete = '';
+    public array $divisiUsersToDelete = [];
 
     public bool $showModal = false;
     public bool $isEditMode = false;
@@ -78,7 +101,7 @@ class ManajemenAkun extends Component
             $this->sortField = $field;
             $this->sortDirection = 'asc';
         }
-        
+
         $this->resetPage();
     }
 
@@ -116,6 +139,8 @@ class ManajemenAkun extends Component
         return [];
     }
 
+    /* ================= SEKOLAH ================= */
+
     public function getDaftarSekolahProperty()
     {
         return Sekolah::query()
@@ -126,9 +151,6 @@ class ManajemenAkun extends Component
             ->get();
     }
 
-    /**
-     * Data sekolah yang sedang terpilih pada form (untuk ditampilkan di tombol dropdown).
-     */
     public function getSekolahTerpilihProperty()
     {
         return $this->sekolah_id ? Sekolah::find($this->sekolah_id) : null;
@@ -142,10 +164,131 @@ class ManajemenAkun extends Component
         $this->namaSekolahBaru = '';
     }
 
+    /**
+     * Menampilkan popup konfirmasi hapus sekolah beserta daftar akun
+     * yang masih menggunakan sekolah tersebut (jika ada).
+     */
+    public function confirmHapusSekolah($id, $nama)
+    {
+        $this->sekolahIdToDelete = $id;
+        $this->namaSekolahToDelete = $nama;
+
+        $this->sekolahUsersToDelete = User::where('sekolah_id', $id)
+            ->orderBy('nama')
+            ->pluck('nama')
+            ->toArray();
+
+        $this->showDeleteSekolahConfirm = true;
+    }
+
+    public function batalHapusSekolah()
+    {
+        $this->showDeleteSekolahConfirm = false;
+        $this->sekolahIdToDelete = null;
+        $this->namaSekolahToDelete = '';
+        $this->sekolahUsersToDelete = [];
+    }
+
+    public function hapusSekolah()
+    {
+        if ($this->sekolahIdToDelete) {
+            try {
+                Sekolah::where('sekolah_id', $this->sekolahIdToDelete)->delete();
+
+                if ($this->sekolah_id == $this->sekolahIdToDelete) {
+                    $this->sekolah_id = null;
+                    $this->searchSekolah = '';
+                }
+
+                session()->flash('message', 'Data sekolah berhasil dihapus!');
+            } catch (\Illuminate\Database\QueryException $e) {
+                session()->flash('error', 'Sekolah tidak dapat dihapus karena masih digunakan oleh data akun lain.');
+            }
+        }
+
+        $this->batalHapusSekolah();
+    }
+
+    /* ================= BIDANG ================= */
+
     public function getDaftarBidangProperty()
     {
-        return Bidang::orderBy('nama_bidang')->get();
+        return Bidang::query()
+            ->when($this->searchBidang, function ($query) {
+                $query->where('nama_bidang', 'like', '%' . $this->searchBidang . '%');
+            })
+            ->orderBy('nama_bidang')
+            ->get();
     }
+
+    public function getBidangTerpilihProperty()
+    {
+        return $this->bidang_id ? Bidang::find($this->bidang_id) : null;
+    }
+
+    public function pilihBidang($id, $nama)
+    {
+        $this->bidang_id = $id;
+        $this->divisi_id = null;
+        $this->searchBidang = '';
+        $this->tambahBidangBaru = false;
+        $this->namaBidangBaru = '';
+
+        // Reset state divisi karena bidang berganti
+        $this->searchDivisi = '';
+        $this->tambahDivisiBaru = false;
+        $this->namaDivisiBaru = '';
+    }
+
+    /**
+     * Menampilkan popup konfirmasi hapus bidang beserta daftar akun
+     * yang masih menggunakan divisi-divisi di dalam bidang tersebut.
+     */
+    public function confirmHapusBidang($id, $nama)
+    {
+        $this->bidangIdToDelete = $id;
+        $this->namaBidangToDelete = $nama;
+
+        $divisiIds = Divisi::where('bidang_id', $id)->pluck('divisi_id');
+
+        $this->bidangUsersToDelete = User::whereIn('divisi_id', $divisiIds)
+            ->orderBy('nama')
+            ->pluck('nama')
+            ->toArray();
+
+        $this->showDeleteBidangConfirm = true;
+    }
+
+    public function batalHapusBidang()
+    {
+        $this->showDeleteBidangConfirm = false;
+        $this->bidangIdToDelete = null;
+        $this->namaBidangToDelete = '';
+        $this->bidangUsersToDelete = [];
+    }
+
+    public function hapusBidang()
+    {
+        if ($this->bidangIdToDelete) {
+            try {
+                Bidang::where('bidang_id', $this->bidangIdToDelete)->delete();
+
+                if ($this->bidang_id == $this->bidangIdToDelete) {
+                    $this->bidang_id = null;
+                    $this->divisi_id = null;
+                    $this->searchBidang = '';
+                }
+
+                session()->flash('message', 'Data bidang berhasil dihapus!');
+            } catch (\Illuminate\Database\QueryException $e) {
+                session()->flash('error', 'Bidang tidak dapat dihapus karena masih memiliki divisi atau digunakan oleh data akun lain.');
+            }
+        }
+
+        $this->batalHapusBidang();
+    }
+
+    /* ================= DIVISI ================= */
 
     public function getDaftarDivisiProperty()
     {
@@ -154,9 +297,72 @@ class ManajemenAkun extends Component
         }
 
         return Divisi::where('bidang_id', $this->bidang_id)
+            ->when($this->searchDivisi, function ($query) {
+                $query->where('nama_divisi', 'like', '%' . $this->searchDivisi . '%');
+            })
             ->orderBy('nama_divisi')
             ->get();
     }
+
+    public function getDivisiTerpilihProperty()
+    {
+        return $this->divisi_id ? Divisi::find($this->divisi_id) : null;
+    }
+
+    public function pilihDivisi($id, $nama)
+    {
+        $this->divisi_id = $id;
+        $this->searchDivisi = '';
+        $this->tambahDivisiBaru = false;
+        $this->namaDivisiBaru = '';
+    }
+
+    /**
+     * Menampilkan popup konfirmasi hapus divisi beserta daftar akun
+     * yang masih menggunakan divisi tersebut (jika ada).
+     */
+    public function confirmHapusDivisi($id, $nama)
+    {
+        $this->divisiIdToDelete = $id;
+        $this->namaDivisiToDelete = $nama;
+
+        $this->divisiUsersToDelete = User::where('divisi_id', $id)
+            ->orderBy('nama')
+            ->pluck('nama')
+            ->toArray();
+
+        $this->showDeleteDivisiConfirm = true;
+    }
+
+    public function batalHapusDivisi()
+    {
+        $this->showDeleteDivisiConfirm = false;
+        $this->divisiIdToDelete = null;
+        $this->namaDivisiToDelete = '';
+        $this->divisiUsersToDelete = [];
+    }
+
+    public function hapusDivisi()
+    {
+        if ($this->divisiIdToDelete) {
+            try {
+                Divisi::where('divisi_id', $this->divisiIdToDelete)->delete();
+
+                if ($this->divisi_id == $this->divisiIdToDelete) {
+                    $this->divisi_id = null;
+                    $this->searchDivisi = '';
+                }
+
+                session()->flash('message', 'Data divisi berhasil dihapus!');
+            } catch (\Illuminate\Database\QueryException $e) {
+                session()->flash('error', 'Divisi tidak dapat dihapus karena masih digunakan oleh data akun lain.');
+            }
+        }
+
+        $this->batalHapusDivisi();
+    }
+
+    /* ============================================ */
 
     public function getIsRolePklProperty(): bool
     {
@@ -176,12 +382,28 @@ class ManajemenAkun extends Component
             'nama' => 'required|min:3',
             'email' => 'required|email|unique:users,email,' . $this->userId . ',user_id',
             'role' => ['required', Rule::in($allowedRoleValues)],
-            'bidang_id' => 'required|exists:bidangs,bidang_id',
-            'divisi_id' => 'required|exists:divisis,divisi_id',
             'password' => $this->isEditMode
                 ? ['nullable', $passwordRule, 'same:confirm_password']
                 : ['required', $passwordRule, 'same:confirm_password'],
         ];
+
+        // Dynamic Rule untuk Bidang
+        if ($this->tambahBidangBaru) {
+            $rules['namaBidangBaru'] = 'required|string|min:3|unique:bidangs,nama_bidang';
+            $rules['bidang_id'] = 'nullable';
+        } else {
+            $rules['bidang_id'] = 'required|exists:bidangs,bidang_id';
+            $rules['namaBidangBaru'] = 'nullable';
+        }
+
+        // Dynamic Rule untuk Divisi
+        if ($this->tambahDivisiBaru) {
+            $rules['namaDivisiBaru'] = 'required|string|min:3';
+            $rules['divisi_id'] = 'nullable';
+        } else {
+            $rules['divisi_id'] = 'required|exists:divisis,divisi_id';
+            $rules['namaDivisiBaru'] = 'nullable';
+        }
 
         if ($this->isEditMode) {
             $rules['status'] = ['required', Rule::enum(UserStatus::class)];
@@ -213,8 +435,13 @@ class ManajemenAkun extends Component
         'role.in' => 'Anda tidak memiliki hak akses untuk memilih peran tersebut.',
         'bidang_id.required' => 'Silakan pilih bidang.',
         'bidang_id.exists' => 'Pilihan bidang tidak valid.',
+        'namaBidangBaru.required' => 'Nama bidang baru wajib diisi.',
+        'namaBidangBaru.min' => 'Nama bidang minimal 3 karakter.',
+        'namaBidangBaru.unique' => 'Bidang ini sudah ada di dalam sistem, silakan pilih dari daftar.',
         'divisi_id.required' => 'Silakan pilih divisi.',
         'divisi_id.exists' => 'Pilihan divisi tidak valid.',
+        'namaDivisiBaru.required' => 'Nama divisi baru wajib diisi.',
+        'namaDivisiBaru.min' => 'Nama divisi minimal 3 karakter.',
         'mentor.required' => 'Mentor pembimbing wajib dipilih atau diisi.',
         'sekolah_id.required' => 'Asal sekolah/instansi wajib dipilih dari daftar.',
         'sekolah_id.exists' => 'Pilihan sekolah tidak valid.',
@@ -237,11 +464,6 @@ class ManajemenAkun extends Component
         }
     }
 
-    public function updatedBidangId($value)
-    {
-        $this->divisi_id = null;
-    }
-
     public function resetFields()
     {
         $this->userId = null;
@@ -251,6 +473,12 @@ class ManajemenAkun extends Component
         $this->status = '';
         $this->bidang_id = null;
         $this->divisi_id = null;
+        $this->searchBidang = '';
+        $this->tambahBidangBaru = false;
+        $this->namaBidangBaru = '';
+        $this->searchDivisi = '';
+        $this->tambahDivisiBaru = false;
+        $this->namaDivisiBaru = '';
         $this->sekolah_id = null;
         $this->searchSekolah = '';
         $this->tambahSekolahBaru = false;
@@ -300,7 +528,7 @@ class ManajemenAkun extends Component
         $this->email = $user->email;
         $this->role = $user->role instanceof \UnitEnum ? $user->role->value : $user->role;
         $this->status = $user->status instanceof \UnitEnum ? $user->status->value : $user->status;
-        
+
         $this->sekolah_id = $user->sekolah_id;
         $this->searchSekolah = '';
 
@@ -334,6 +562,21 @@ class ManajemenAkun extends Component
         }
 
         $this->validate();
+
+        // Buat Bidang baru jika diperlukan (harus lebih dulu dari Divisi)
+        if ($this->tambahBidangBaru && !empty($this->namaBidangBaru)) {
+            $bidangBaru = Bidang::create(['nama_bidang' => trim($this->namaBidangBaru)]);
+            $this->bidang_id = $bidangBaru->bidang_id;
+        }
+
+        // Buat Divisi baru jika diperlukan
+        if ($this->tambahDivisiBaru && !empty($this->namaDivisiBaru) && $this->bidang_id) {
+            $divisiBaru = Divisi::create([
+                'nama_divisi' => trim($this->namaDivisiBaru),
+                'bidang_id' => $this->bidang_id,
+            ]);
+            $this->divisi_id = $divisiBaru->divisi_id;
+        }
 
         if ($this->isRolePkl && $this->tambahSekolahBaru && !empty($this->namaSekolahBaru)) {
             $sekolahBaru = Sekolah::create(['nama_sekolah' => trim($this->namaSekolahBaru)]);
@@ -384,50 +627,6 @@ class ManajemenAkun extends Component
         session()->flash('message', 'Akun pengguna berhasil dihapus!');
     }
 
-    /**
-     * Menampilkan popup konfirmasi hapus data sekolah.
-     */
-    public function confirmHapusSekolah($id, $nama)
-    {
-        $this->sekolahIdToDelete = $id;
-        $this->namaSekolahToDelete = $nama;
-        $this->showDeleteSekolahConfirm = true;
-    }
-
-    /**
-     * Membatalkan aksi hapus data sekolah.
-     */
-    public function batalHapusSekolah()
-    {
-        $this->showDeleteSekolahConfirm = false;
-        $this->sekolahIdToDelete = null;
-        $this->namaSekolahToDelete = '';
-    }
-
-    /**
-     * Mengeksekusi penghapusan data sekolah setelah dikonfirmasi.
-     */
-    public function hapusSekolah()
-    {
-        if ($this->sekolahIdToDelete) {
-            try {
-                Sekolah::where('sekolah_id', $this->sekolahIdToDelete)->delete();
-
-                // Jika sekolah yang dihapus sedang dipilih di form, kosongkan pilihannya
-                if ($this->sekolah_id == $this->sekolahIdToDelete) {
-                    $this->sekolah_id = null;
-                    $this->searchSekolah = '';
-                }
-
-                session()->flash('message', 'Data sekolah berhasil dihapus!');
-            } catch (\Illuminate\Database\QueryException $e) {
-                session()->flash('error', 'Sekolah tidak dapat dihapus karena masih digunakan oleh data akun lain.');
-            }
-        }
-
-        $this->batalHapusSekolah();
-    }
-
     #[On('close-jadwal-modal')]
     public function handleCloseJadwalModal()
     {
@@ -452,13 +651,11 @@ class ManajemenAkun extends Component
                       });
                 });
             })
-            // Prioritas 1: Status 'aktif' selalu di atas, 'lulus' di bawah
             ->orderByRaw("CASE 
                 WHEN status = 'aktif' THEN 1 
                 WHEN status = 'lulus' THEN 2 
                 ELSE 3 
             END ASC")
-            // Prioritas 2: Pengurutan sekunder berdasarkan kolom yang dipilih
             ->when($this->sortField === 'sekolah', function ($query) {
                 $query->leftJoin('sekolahs', 'users.sekolah_id', '=', 'sekolahs.sekolah_id')
                       ->orderBy('sekolahs.nama_sekolah', $this->sortDirection)

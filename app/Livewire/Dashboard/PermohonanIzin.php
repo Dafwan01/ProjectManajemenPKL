@@ -436,8 +436,7 @@ private function hapusFotoPresensi($presensi): void
             })
             ->when($this->search, function ($query) {
                 $query->whereHas('user', function ($q) {
-                    $q->where('nama', 'like', '%' . $this->search . '%')
-                      ->orWhere('name', 'like', '%' . $this->search . '%');
+                    $q->where('nama', 'like', '%' . $this->search . '%');
                 });
             })
             ->when($this->filterStatus, function ($query) {
