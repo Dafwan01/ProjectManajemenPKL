@@ -36,13 +36,17 @@
             z-index: -1000;
         }
 
+        /* Semua posisi pakai satuan % dari tinggi halaman, supaya
+           tetap presisi mengikuti garis pada gambar background,
+           berapa pun ukuran render-nya. Sesuaikan lagi nilai top
+           jika garis di background kamu geser sedikit. */
+
         /* ========================================================
-           0. NOMOR SERTIFIKAT
-           Tepat di tengah, di bawah kata "MAGANG" pada background.
+           0. NOMOR SERTIFIKAT - di bawah kata "MAGANG"
            ======================================================== */
         .section-nomor {
             position: absolute;
-            top: 300px;
+            top: 37%;
             left: 0;
             width: 100%;
             text-align: center;
@@ -50,20 +54,16 @@
 
         .nomor-sertifikat {
             font-size: 13px;
-            color: #1e3a8a;
-            font-weight: bold;
+            color: #64748b;
             letter-spacing: 1px;
         }
 
         /* ========================================================
-           1. NAMA PESERTA
-           Label "Diberikan kepada :" TIDAK ditulis lagi di sini
-           karena sudah ada pada gambar template. Garis di bawah
-           nama juga sudah ada pada template, jadi tidak dibuat ulang.
+           1. NAMA PESERTA - ditulis PERSIS DI ATAS garis pertama
            ======================================================== */
         .section-nama {
             position: absolute;
-            top: 368px;
+            top: 49%;
             left: 0;
             width: 100%;
             text-align: center;
@@ -71,90 +71,114 @@
 
         .nama-peserta {
             font-family: 'Great Vibes', cursive;
-            font-size: 56px;
+            font-size: 48px;
             color: #1e3a8a;
             line-height: 1.1;
         }
 
-        /* ========================================================
-           2. DETAIL TULISAN DI BAWAH GARIS UTAMA
-           ======================================================== */
-        .section-keterangan {
+        /* NIM/NIS - Asal Sekolah, tepat DI BAWAH garis pertama */
+        .section-nim {
             position: absolute;
-            top: 460px;
+            top: 57.5%;
             left: 0;
             width: 100%;
             text-align: center;
         }
 
-        .keterangan {
-            width: 100%;
-            font-size: 16px;
-            color: #1b263b;
-            line-height: 1.4;
-            margin-bottom: 0;
-            text-align: center;
+        .nim-asal {
+            font-size: 14px;
+            color: #475569;
         }
 
-        .proyek-container {
+        /* ========================================================
+           2. PARAGRAF PARTISIPASI
+           ======================================================== */
+        .section-paragraf {
+            position: absolute;
+            top: 62%;
+            left: 0;
             width: 100%;
-            margin-top: 4px;
+            text-align: center;
+            padding: 0 90px;
+        }
+
+        .paragraf {
             font-size: 15px;
-            line-height: 1.4;
-            color: #334155;
+            line-height: 1.5;
+            color: #1b263b;
+        }
+
+        /* ========================================================
+           3. PROYEK AKHIR + MENTOR + KOTA/TANGGAL
+           ======================================================== */
+        .section-proyek {
+            position: absolute;
+            top: 74%;
+            left: 0;
+            width: 100%;
             text-align: center;
         }
 
-        .tanggal {
+        .proyek-label {
+            font-size: 14px;
+            color: #1b263b;
+            margin-bottom: 2px;
+        }
+
+        .proyek-judul {
+            font-size: 15px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 2px;
+        }
+
+        .proyek-mentor {
+            font-size: 14px;
+            color: #1b263b;
+            margin-bottom: 2px;
+        }
+
+        .kota-tanggal {
             font-size: 13px;
             color: #475569;
-            font-weight: 500;
-            margin-top: 12px;
+            margin-top: 4px;
         }
 
         /* ========================================================
-           3. AREA TANDA TANGAN
-           Urutan dari atas ke bawah: NAMA -> GARIS -> JABATAN
-           (dompdf tidak mendukung flexbox dengan baik, jadi
-           dibuat dengan block/absolute biasa)
+           4. TANDA TANGAN - nama DI ATAS garis kedua, NIP di bawahnya
            ======================================================== */
-        .section-ttd {
+        .section-nama-ttd {
             position: absolute;
-            bottom: 50px;
+            top: 86%;
             left: 0;
             width: 100%;
             text-align: center;
-        }
-
-        .garis-ttd {
-            width: 220px;
-            margin: 0 auto 10px;
-            border-top: 1.5px solid #0d1b2a;
-        }
-
-        .badge-ttd-elektronik {
-            font-size: 11px;
-            color: #334155;
-            line-height: 1.4;
-            margin-top: 6px;
         }
 
         .nama-penandatangan {
-            font-size: 22px;
-            font-weight: normal;
-            color: #0d1b2a;
-            margin-top: 20px;
-            margin-bottom: 2px;
-            line-height: 1.2;
-        }
-
-        .jabatan {
-            font-size: 22px;
+            font-size: 16px;
             font-weight: bold;
             color: #0d1b2a;
-            line-height: 1.2;
         }
 
+        .section-nip {
+            position: absolute;
+            top: 90.5%;
+            left: 0;
+            width: 100%;
+            text-align: center;
+        }
+
+        .nip {
+            font-size: 13px;
+            color: #1b263b;
+        }
+
+        .badge-ttd-elektronik {
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -175,39 +199,52 @@
         </div>
     </div>
 
-    <!-- BLOCK 1: NAMA PESERTA -->
+    <!-- BLOCK 1: NAMA PESERTA (di atas garis pertama) -->
     <div class="section-nama">
         <div class="nama-peserta">
             {{ ucwords(strtolower($user->nama)) }}
         </div>
     </div>
 
-    <!-- BLOCK 2: TULISAN & KETERANGAN -->
-    <div class="section-keterangan">
-        <div class="keterangan">
-            Telah menyelesaikan Program Magang / PKL di <br>
-            <strong>Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor</strong>
-
-            <div class="proyek-container">
-                dengan proyek akhir berjudul <strong>"{{ $user->project?->nama_project ?? '-' }}"</strong> Dengan Mentor: <strong>{{ $user->mentor ?? '-' }}</strong>
-            </div>
+    <!-- NIM/NIS - Asal Sekolah (di bawah garis pertama) -->
+    <div class="section-nim">
+        <div class="nim-asal">
+            {{ $user->nim ?? '-' }} &mdash; {{ $user->asal_sekolah ?? '-' }}
         </div>
-
-        <div class="tanggal">
-            Diterbitkan pada: {{ \Carbon\Carbon::parse($tanggalTerbit ?? now())->isoFormat('D MMMM Y') }}
-        </div>
-
-        @if($jenisTtd === 'elektronik')
-            <div class="badge-ttd-elektronik">
-                Ditandatangani secara elektronik oleh
-            </div>
-        @endif
     </div>
 
-    <!-- BLOCK 3: TANDA TANGAN (nama di atas, jabatan di bawah, sejajar) -->
-    <div class="section-ttd">
+    <!-- BLOCK 2: PARAGRAF PARTISIPASI -->
+    <div class="section-paragraf">
+        <div class="paragraf">
+            Atas partisipasi dan kinerjanya yang baik selama mengikuti program magang/praktik kerja lapangan
+            di <strong>{{ $bidangUnitKerja ?? 'Dinas Komunikasi dan Informatika (Diskominfo) Kota Bogor' }}</strong>,
+            yang dilaksanakan pada tanggal
+            <strong>{{ \Carbon\Carbon::parse($tanggalMulai ?? now())->isoFormat('D MMMM Y') }}</strong>
+            sampai dengan
+            <strong>{{ \Carbon\Carbon::parse($tanggalSelesai ?? now())->isoFormat('D MMMM Y') }}</strong>.
+        </div>
+    </div>
+
+    <!-- BLOCK 3: PROYEK AKHIR, MENTOR, KOTA & TANGGAL TERBIT -->
+    <div class="section-proyek">
+        <div class="proyek-label">Dengan proyek akhir:</div>
+        <div class="proyek-judul">&ldquo;{{ $user->project?->nama_project ?? '-' }}&rdquo;</div>
+        <div class="proyek-mentor">Di bawah bimbingan mentor: <strong>{{ $user->mentor ?? '-' }}</strong></div>
+        <div class="kota-tanggal">
+            {{ $kota ?? 'Bogor' }}, {{ \Carbon\Carbon::parse($tanggalTerbit ?? now())->isoFormat('D MMMM Y') }}
+        </div>
+    </div>
+
+    <!-- BLOCK 4: TANDA TANGAN -->
+    <div class="section-nama-ttd">
         <div class="nama-penandatangan">{{ $namaPenandatangan }}</div>
-        <div class="jabatan">{{ $jabatanPenandatangan ?? '-' }}</div>
+    </div>
+
+    <div class="section-nip">
+        <div class="nip">NIP : {{ $nipPenandatangan ?? '-' }}</div>
+        @if($jenisTtd === 'elektronik')
+            <div class="badge-ttd-elektronik">Ditandatangani secara elektronik</div>
+        @endif
     </div>
 
 </body>
