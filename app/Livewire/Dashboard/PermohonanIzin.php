@@ -89,13 +89,8 @@ class PermohonanIzin extends Component
         $permohonan = PermohonanIzinModel::with('user')->findOrFail($id);
         $jenisStr = strtolower($permohonan->jenis);
 
-        if ($jenisStr === 'absen') {
+        if ($jenisStr === 'absen' || $jenisStr === 'absen pulang') {
             $this->approveAndProcess($permohonan, fn () => $this->prosesAbsen($permohonan));
-            return;
-        }
-
-        if ($jenisStr === 'absen pulang') {
-            $this->handleAbsenPulangApproval($permohonan);
             return;
         }
 
@@ -336,7 +331,33 @@ private function hapusFotoPresensi($presensi): void
             ->whereDate('tanggal', $tglString)
             ->first();
 
-        // ❌ Tidak ada presensi sama sekali, atau absen_masuk masih kosong -> tolak otomatis
+        // Jika absen_masuk belum ada, cek dulu apakah user juga punya pengajuan
+        // "Absen" (masuk) yang masih pending untuk tanggal yang sama -> proses &
+        // setujui dulu pengajuan itu secara otomatis, supaya presensi.absen_masuk
+        // terisi sebelum kita menolak pengajuan Absen Pulang ini.
+        if (!$presensi || empty($presensi->absen_masuk)) {
+            $pengajuanAbsenMasuk = PermohonanIzinModel::where('user_id', $permohonan->user_id)
+                ->whereDate('tanggal_awal', $tglString)
+                ->where('jenis', 'absen')
+                ->where('status', 'pending')
+                ->first();
+
+            if ($pengajuanAbsenMasuk) {
+                $pengajuanAbsenMasuk->update([
+                    'status'        => 'disetujui',
+                    'catatan_admin' => 'Disetujui otomatis bersamaan dengan persetujuan pengajuan Absen Pulang.',
+                ]);
+
+                $this->prosesAbsen($pengajuanAbsenMasuk);
+
+                // Ambil ulang data presensi setelah pengajuan absen masuk diproses
+                $presensi = presensi::where('user_id', $permohonan->user_id)
+                    ->whereDate('tanggal', $tglString)
+                    ->first();
+            }
+        }
+
+        // ❌ Tetap tidak ada presensi/absen_masuk setelah dicoba cascade di atas -> tolak otomatis
         if (!$presensi || empty($presensi->absen_masuk)) {
             $permohonan->update([
                 'status'        => 'ditolak',

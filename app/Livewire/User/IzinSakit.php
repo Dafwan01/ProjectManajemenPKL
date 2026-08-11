@@ -257,7 +257,10 @@ class IzinSakit extends Component
         $this->reset(['tanggalSelesai', 'alasan', 'alamatIzin']);
         $this->tanggalMulai = Carbon::today()->format('Y-m-d');
         $this->hitungJumlahHari();
-        $this->cekTanggalBentrok();
+        // Tidak memanggil cekTanggalBentrok() di sini agar pengajuan yang baru
+        // saja berhasil dibuat (untuk tanggal hari ini) tidak langsung terdeteksi
+        // sebagai 'bentrok' dan memicu warning setelah proses submit sukses.
+        $this->sudahAdaPengajuan = false;
 
         $this->resetPage();
 
