@@ -41,9 +41,26 @@ class BadWord
 
             $chars = mb_str_split($cleanWord);
 
-            // Membuat regex pattern yang mengabaikan pemisah di antara huruf
-            // Contoh "kontol" menjadi pola regex: k[\s._\-*]*o[\s._\-*]*n[\s._\-*]*t[\s._\-*]*o[\s._\-*]*l
-            $pattern = '/' . implode('[\s._\-*]*', array_map(fn($c) => preg_quote($c, '/'), $chars)) . '/i';
+            // Membuat regex pattern per-huruf dengan kuantifier '+' (satu huruf boleh
+            // muncul berkali-kali berturut-turut) + pemisah opsional di antaranya.
+            // Ini menangani DUA teknik evasion sekaligus:
+            //  - Pemisah antar huruf, misal "k.o.n.t.o.l" atau "k-o-n-t-o-l"
+            //  - Penggandaan huruf, misal "annjing" atau "gooblok" tetap terbaca
+            //    sebagai representasi dari "anjing" / "goblok"
+            // Contoh "goblok" -> g+[\s._\-*]*o+[\s._\-*]*b+[\s._\-*]*l+[\s._\-*]*o+[\s._\-*]*k+
+            $innerPattern = implode('', array_map(
+                fn($c) => preg_quote($c, '/') . '+[\s._\-*]*',
+                $chars
+            ));
+
+            // Word boundary berbasis Unicode (\p{L} = karakter huruf apapun).
+            // (?<!\p{L}) -> karakter tepat sebelum match TIDAK BOLEH huruf
+            // (?!\p{L})  -> karakter tepat sesudah match TIDAK BOLEH huruf
+            // Ini mencegah kata kasar terdeteksi jika ia hanya menjadi BAGIAN
+            // dari kata lain yang sah, misalnya "gelo" di dalam "pengelolaan"
+            // atau "gelombang", tapi tetap mendeteksi "gelo" yang berdiri sendiri
+            // (termasuk yang dipisah leetspeak seperti "g.e.l.o" atau "g-e-l-o").
+            $pattern = '/(?<!\p{L})' . $innerPattern . '(?!\p{L})/iu';
 
             if (preg_match($pattern, $normalizedText)) {
                 return true;
