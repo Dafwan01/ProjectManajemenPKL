@@ -53,9 +53,9 @@ class ForumDetail extends Component
             ? $user->role->value
             : (string) $user?->role;
 
-        // Otorisasi: Pembuat forum ATAU Admin/Non-PKL
+        // Otorisasi: Pembuat forum ATAU Admin (mentor & user lain hanya boleh miliknya sendiri)
         $isOwner = (string) $this->forum->user_id === (string) $authId;
-        $isAdmin = ($role === UserRole::ADMIN->value) || ($role !== UserRole::PKL->value);
+        $isAdmin = ($role === UserRole::ADMIN->value);
 
         if (!$isOwner && !$isAdmin) {
             session()->flash('error', 'Anda tidak memiliki hak akses untuk mengedit forum ini.');
@@ -115,7 +115,7 @@ class ForumDetail extends Component
             : (string) $user?->role;
 
         $isOwner = (string) $this->forum->user_id === (string) $authId;
-        $isAdmin = ($role === UserRole::ADMIN->value) || ($role !== UserRole::PKL->value);
+        $isAdmin = ($role === UserRole::ADMIN->value);
 
         if (!$isOwner && !$isAdmin) {
             session()->flash('error', 'Anda tidak memiliki hak akses.');
@@ -188,7 +188,7 @@ class ForumDetail extends Component
 
         // Otorisasi Backend
         $isOwner = (string) $this->forum->user_id === (string) $authId;
-        $isAdmin = ($role === UserRole::ADMIN->value) || ($role !== UserRole::PKL->value);
+        $isAdmin = ($role === UserRole::ADMIN->value);
 
         if (!$isOwner && !$isAdmin) {
             session()->flash('error', 'Anda tidak memiliki hak akses untuk menghapus forum ini.');

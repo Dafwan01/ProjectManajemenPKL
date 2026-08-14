@@ -52,7 +52,7 @@
         @forelse($forums as $forum)
             @php
                 $isOwner = (string) $forum->user_id === (string) $authId;
-                $isAdmin = ($roleValue === \App\Enums\UserRole::ADMIN->value) || ($roleValue !== \App\Enums\UserRole::PKL->value);
+                $isAdmin = ($roleValue === \App\Enums\UserRole::ADMIN->value);
                 $canModify = $isOwner || $isAdmin;
             @endphp
 
