@@ -30,7 +30,7 @@
 
                 // Pembuat forum ATAU Admin/Mentor/Non-PKL
                 $isOwner = (string) $forum->user_id === (string) $authId;
-                $isAdmin = ($roleValue === \App\Enums\UserRole::ADMIN->value) || ($roleValue !== \App\Enums\UserRole::PKL->value);
+                $isAdmin = ($roleValue === \App\Enums\UserRole::ADMIN->value);
                 
                 $canModify = $isOwner || $isAdmin;
             @endphp
@@ -67,8 +67,7 @@
                         </button>
                         <button 
                             type="button"
-                            wire:click="delete"
-                            wire:confirm="Apakah Anda yakin ingin menghapus topik forum ini?"
+                            wire:click="confirmForumDelete"
                             class="p-2 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition"
                             title="Hapus Forum"
                         >
@@ -117,7 +116,23 @@
                         <div class="flex-1 min-w-0 space-y-1.5">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="text-xs font-bold text-cyan-600 dark:text-cyan-400 truncate">{{ $msg->user->nama ?? 'Pengguna' }}</span>
-                                <span class="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">{{ $msg->created_at->diffForHumans() }}</span>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ $msg->created_at->diffForHumans() }}</span>
+
+                                    {{-- Tombol Hapus Pesan: hanya muncul untuk pengupload pesan itu sendiri --}}
+                                    @if((string) $msg->user_id === (string) $authId)
+                                        <button
+                                            type="button"
+                                            wire:click="confirmMessageDelete({{ $msg->message_id }})"
+                                            class="p-1 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition"
+                                            title="Hapus / Tarik Kembali Pesan"
+                                        >
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                        </button>
+                                    @endif
+                                </div>
                             </div>
 
                             @if($msg->gambar)
@@ -206,6 +221,58 @@
                     </div>
 
                 </form>
+            </div>
+        </div>
+    @endif
+
+    <!-- MODAL KONFIRMASI HAPUS FORUM -->
+    @if($confirmingForumDelete)
+        <div class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" wire:click.self="cancelForumDelete">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center">
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1.5">Hapus Topik Forum?</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">
+                    Tindakan ini tidak dapat dibatalkan. Seluruh pesan di dalam topik ini juga akan ikut terhapus.
+                </p>
+                <div class="flex justify-center gap-2">
+                    <button type="button" wire:click="cancelForumDelete" class="px-4 py-2 text-gray-500 dark:text-gray-400 text-sm font-semibold hover:text-gray-900 dark:hover:text-white transition">
+                        Batal
+                    </button>
+                    <button type="button" wire:click="delete" wire:loading.attr="disabled" wire:target="delete" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-60 transition shadow-sm">
+                        <span wire:loading.remove wire:target="delete">Ya, Hapus</span>
+                        <span wire:loading wire:target="delete">Menghapus...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- MODAL KONFIRMASI HAPUS PESAN -->
+    @if($confirmingMessageDeleteId)
+        <div class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" wire:click.self="cancelMessageDelete">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center">
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1.5">Tarik Kembali Pesan?</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">
+                    Pesan yang sudah dihapus tidak dapat dikembalikan.
+                </p>
+                <div class="flex justify-center gap-2">
+                    <button type="button" wire:click="cancelMessageDelete" class="px-4 py-2 text-gray-500 dark:text-gray-400 text-sm font-semibold hover:text-gray-900 dark:hover:text-white transition">
+                        Batal
+                    </button>
+                    <button type="button" wire:click="deleteMessage({{ $confirmingMessageDeleteId }})" wire:loading.attr="disabled" wire:target="deleteMessage" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-60 transition shadow-sm">
+                        <span wire:loading.remove wire:target="deleteMessage">Ya, Hapus</span>
+                        <span wire:loading wire:target="deleteMessage">Menghapus...</span>
+                    </button>
+                </div>
             </div>
         </div>
     @endif

@@ -26,6 +26,12 @@ class ForumDetail extends Component
     public $editImage;
     public ?string $existingImage = null;
 
+    // Properti Modal Konfirmasi Hapus Forum
+    public bool $confirmingForumDelete = false;
+
+    // Properti Modal Konfirmasi Hapus Pesan
+    public $confirmingMessageDeleteId = null;
+
     private function layoutUntukRole(): string
     {
         $user = Auth::user();
@@ -175,6 +181,66 @@ class ForumDetail extends Component
 
         $this->reset(['message', 'gambar']);
         $this->forum->load('messages.user');
+    }
+
+    /**
+     * Buka modal konfirmasi hapus pesan (menggantikan wire:confirm bawaan browser).
+     */
+    public function confirmMessageDelete($messageId)
+    {
+        $this->confirmingMessageDeleteId = $messageId;
+    }
+
+    public function cancelMessageDelete()
+    {
+        $this->confirmingMessageDeleteId = null;
+    }
+
+    /**
+     * Hapus / tarik kembali pesan milik sendiri di dalam forum.
+     * Hanya pengupload pesan yang boleh menghapus pesannya sendiri.
+     */
+    public function deleteMessage($messageId)
+    {
+        $authId = Auth::id();
+
+        $pesan = ForumMessage::where('message_id', $messageId)
+            ->where('forum_id', $this->forum->forum_id)
+            ->first();
+
+        if (!$pesan) {
+            session()->flash('error', 'Pesan tidak ditemukan.');
+            return;
+        }
+
+        // Otorisasi: hanya pengupload pesan itu sendiri yang boleh menghapus
+        if ((string) $pesan->user_id !== (string) $authId) {
+            session()->flash('error', 'Anda hanya dapat menghapus pesan milik Anda sendiri.');
+            return;
+        }
+
+        if ($pesan->gambar) {
+            Storage::disk('public')->delete($pesan->gambar);
+        }
+
+        $pesan->delete();
+
+        $this->forum->load('messages.user');
+        $this->confirmingMessageDeleteId = null;
+        session()->flash('message', 'Pesan berhasil dihapus.');
+    }
+
+    /**
+     * Buka modal konfirmasi hapus forum (menggantikan wire:confirm bawaan browser).
+     */
+    public function confirmForumDelete()
+    {
+        $this->confirmingForumDelete = true;
+    }
+
+    public function cancelForumDelete()
+    {
+        $this->confirmingForumDelete = false;
     }
 
     public function delete()

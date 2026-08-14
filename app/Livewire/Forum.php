@@ -24,6 +24,10 @@ class Forum extends Component
     public $editingId = null;
     public $existingGambar = null;
 
+    // Properti Modal Konfirmasi Hapus (menggantikan wire:confirm bawaan browser)
+    public $confirmDeleteId = null;
+    public string $confirmDeleteTitle = '';
+
     // Property Search
     public $search = '';
 
@@ -99,6 +103,21 @@ class Forum extends Component
     public function removeExistingGambar()
     {
         $this->existingGambar = null;
+    }
+
+    /**
+     * Buka modal konfirmasi hapus forum (menggantikan wire:confirm bawaan browser).
+     */
+    public function confirmDelete($id, $title = '')
+    {
+        $this->confirmDeleteId = $id;
+        $this->confirmDeleteTitle = $title;
+    }
+
+    public function cancelDelete()
+    {
+        $this->confirmDeleteId = null;
+        $this->confirmDeleteTitle = '';
     }
 
     public function closeModal()
@@ -210,6 +229,8 @@ class Forum extends Component
         }
 
         $forum->delete();
+        $this->confirmDeleteId = null;
+        $this->confirmDeleteTitle = '';
         session()->flash('message', 'Topik forum berhasil dihapus.');
     }
 
