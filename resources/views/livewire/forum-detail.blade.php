@@ -119,8 +119,8 @@
                                 <div class="flex items-center gap-2 shrink-0">
                                     <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ $msg->created_at->diffForHumans() }}</span>
 
-                                    {{-- Tombol Hapus Pesan: hanya muncul untuk pengupload pesan itu sendiri --}}
-                                    @if((string) $msg->user_id === (string) $authId)
+                                    {{-- Tombol Hapus Pesan: pengupload pesan itu sendiri ATAU admin --}}
+                                    @if((string) $msg->user_id === (string) $authId || $isAdmin)
                                         <button
                                             type="button"
                                             wire:click="confirmMessageDelete({{ $msg->message_id }})"

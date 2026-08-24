@@ -197,12 +197,17 @@ class ForumDetail extends Component
     }
 
     /**
-     * Hapus / tarik kembali pesan milik sendiri di dalam forum.
-     * Hanya pengupload pesan yang boleh menghapus pesannya sendiri.
+     * Hapus pesan di dalam forum.
+     * Diizinkan untuk: pengupload pesan itu sendiri ATAU admin.
      */
     public function deleteMessage($messageId)
     {
+        $user = Auth::user();
         $authId = Auth::id();
+
+        $role = $user?->role instanceof \UnitEnum
+            ? $user->role->value
+            : (string) $user?->role;
 
         $pesan = ForumMessage::where('message_id', $messageId)
             ->where('forum_id', $this->forum->forum_id)
@@ -213,8 +218,11 @@ class ForumDetail extends Component
             return;
         }
 
-        // Otorisasi: hanya pengupload pesan itu sendiri yang boleh menghapus
-        if ((string) $pesan->user_id !== (string) $authId) {
+        // Otorisasi: pengupload pesan itu sendiri ATAU admin
+        $isOwner = (string) $pesan->user_id === (string) $authId;
+        $isAdmin = ($role === UserRole::ADMIN->value);
+
+        if (!$isOwner && !$isAdmin) {
             session()->flash('error', 'Anda hanya dapat menghapus pesan milik Anda sendiri.');
             return;
         }
