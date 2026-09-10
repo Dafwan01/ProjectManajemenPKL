@@ -98,12 +98,42 @@ class MonitoringAbsensi extends Component
             'editLogbook'         => 'nullable|string',
         ]);
 
-        $presensi = presensi::find($this->selectedPresensiId);
+        $presensi = presensi::with(['user.detailJadwals.jadwal'])->find($this->selectedPresensiId);
 
         if ($presensi) {
+            $statusKehadiran = $this->editStatusKehadiran;
+
+            // Evaluasi otomatis status kehadiran berdasarkan jam masuk jadwal jika ada jam masuk
+            if (!empty($this->editAbsenMasuk) && $presensi->tanggal && in_array($statusKehadiran, ['hadir', 'terlambat'])) {
+                $hariInggris = strtolower(Carbon::parse($presensi->tanggal)->format('l'));
+                $hariMapping = [
+                    'monday' => 'senin', 'tuesday' => 'selasa', 'wednesday' => 'rabu',
+                    'thursday' => 'kamis', 'friday' => 'jumat', 'saturday' => 'sabtu', 'sunday' => 'minggu',
+                ];
+                $hariIndonesia = $hariMapping[$hariInggris] ?? null;
+
+                $jamMasukJadwal = null;
+                $user = $presensi->user ?? $presensi->logBooks->first()?->user;
+                if ($hariIndonesia && $user && $user->detailJadwals) {
+                    foreach ($user->detailJadwals as $detail) {
+                        if ($detail->hari && strtolower($detail->hari) === $hariIndonesia) {
+                            $jamMasukJadwal = $detail->jadwal?->jam_masuk;
+                            break;
+                        }
+                    }
+                }
+
+                if ($jamMasukJadwal) {
+                    $jamMasukEdit = strlen($this->editAbsenMasuk) === 5 ? $this->editAbsenMasuk . ':00' : $this->editAbsenMasuk;
+                    $jamMasukRef = strlen($jamMasukJadwal) === 5 ? $jamMasukJadwal . ':00' : $jamMasukJadwal;
+
+                    $statusKehadiran = ($jamMasukEdit > $jamMasukRef) ? 'terlambat' : 'hadir';
+                }
+            }
+
             // Update data presensi
             $presensi->update([
-                'status_kehadiran' => $this->editStatusKehadiran,
+                'status_kehadiran' => $statusKehadiran,
                 'absen_masuk'      => $this->editAbsenMasuk ?: null,
                 'absen_keluar'     => $this->editAbsenKeluar ?: null,
             ]);
