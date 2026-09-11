@@ -36,6 +36,7 @@ class Sertifikat extends Component
     public string $tanggalTerbit = '';
     public string $namaPenandatangan = '';
     public string $jabatanPenandatangan = '';
+    public string $nipPenandatangan = '';
     public string $jenisTtd = 'elektronik'; // Default: 'elektronik' atau 'non_elektronik'
 
     /**
@@ -80,6 +81,7 @@ class Sertifikat extends Component
         $this->nomorSertifikat = 'SERT/' . date('Y') . '/' . str_pad((string) $userId, 4, '0', STR_PAD_LEFT);
         $this->namaPenandatangan = '';
         $this->jabatanPenandatangan = '';
+        $this->nipPenandatangan = '';
         $this->jenisTtd = 'elektronik';
         $this->showModal = true;
     }
@@ -132,6 +134,7 @@ class Sertifikat extends Component
             'tanggalTerbit'        => 'required|date',
             'namaPenandatangan'    => 'required|string|max:255',
             'jabatanPenandatangan' => 'required|string|max:255',
+            'nipPenandatangan'     => 'nullable|string|max:50',
             'jenisTtd'             => 'required|in:elektronik,non_elektronik',
         ], [
             'nomorSertifikat.required'      => 'Nomor sertifikat wajib diisi.',
@@ -153,7 +156,8 @@ class Sertifikat extends Component
     		$user->tanggal_akhir,   // <-- baris baru
                 $this->namaPenandatangan,
                 $this->jabatanPenandatangan,
-                $this->jenisTtd
+                $this->jenisTtd,
+                $this->nipPenandatangan
             );
 
             FileModel::updateOrCreate(

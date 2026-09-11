@@ -241,7 +241,7 @@
     </div>
 
     <div class="section-nip">
-        <div class="nip">NIP : {{ $nipPenandatangan ?? '-' }}</div>
+        <div class="nip">NIP : {{ !empty($nipPenandatangan) ? $nipPenandatangan : '-' }}</div>
         @if($jenisTtd === 'elektronik')
             <div class="badge-ttd-elektronik">Ditandatangani secara elektronik</div>
         @endif

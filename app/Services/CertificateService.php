@@ -9,28 +9,30 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class CertificateService
 {
     public function generateForUser(
-    User $user, 
-    string $nomorSertifikat, 
-    string $tanggalTerbit,
-    string $tanggalMulai,
-    string $tanggalSelesai,
-    string $namaPenandatangan,
-    string $jabatanPenandatangan,
-    string $jenisTtd
-): string {
-    // Eager load relasi project dan sekolah
-    $user->load(['project', 'sekolah']);
+        User $user, 
+        string $nomorSertifikat, 
+        string $tanggalTerbit,
+        string $tanggalMulai,
+        string $tanggalSelesai,
+        string $namaPenandatangan,
+        string $jabatanPenandatangan,
+        string $jenisTtd,
+        ?string $nipPenandatangan = null
+    ): string {
+        // Eager load relasi project dan sekolah
+        $user->load(['project', 'sekolah']);
 
-    $pdf = Pdf::loadView('pdf.sertifikat', compact(
-        'user', 
-        'nomorSertifikat', 
-        'tanggalTerbit',
-        'tanggalMulai',
-        'tanggalSelesai',
-        'namaPenandatangan',
-        'jabatanPenandatangan',
-        'jenisTtd'
-    ))->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('pdf.sertifikat', compact(
+            'user', 
+            'nomorSertifikat', 
+            'tanggalTerbit',
+            'tanggalMulai',
+            'tanggalSelesai',
+            'namaPenandatangan',
+            'jabatanPenandatangan',
+            'jenisTtd',
+            'nipPenandatangan'
+        ))->setPaper('a4', 'landscape');
 
     $fileName = 'sertifikat_' . $user->user_id . '_' . time() . '.pdf';
     $relativePath = 'user-sertifikat/' . $fileName;
