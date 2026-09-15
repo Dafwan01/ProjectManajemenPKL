@@ -113,7 +113,7 @@
            ======================================================== */
         .section-proyek {
             position: absolute;
-            top: 64%;
+            top: 63%;
             left: 0;
             width: 100%;
             text-align: center;
@@ -141,7 +141,34 @@
         .kota-tanggal {
             font-size: 13px;
             color: #475569;
-            margin-top: 4px;
+            margin-top: 3px;
+        }
+
+        /* ========================================================
+           BARCODE / QR CODE LINK PDF
+           ======================================================== */
+        .section-barcode {
+            position: absolute;
+            top: 73%;
+            left: 0;
+            width: 100%;
+            text-align: center;
+        }
+
+        .section-barcode a {
+            text-decoration: none;
+            border: none;
+            outline: none;
+            display: inline-block;
+        }
+
+        .barcode-img {
+            width: 120px;
+            height: 120px;
+            display: inline-block;
+            vertical-align: middle;
+            border: none;
+            outline: none;
         }
 
         /* ========================================================
@@ -176,8 +203,9 @@
 
         .badge-ttd-elektronik {
             font-size: 10px;
-            color: #64748b;
-            margin-top: 2px;
+            color: #475569;
+            margin-top: 3px;
+            font-style: italic;
         }
     </style>
 </head>
@@ -229,23 +257,37 @@
     <div class="section-proyek">
         <div class="proyek-label">Dengan proyek akhir:</div>
         <div class="proyek-judul">&ldquo;{{ $user->project?->nama_project ?? '-' }}&rdquo;</div>
-        <div class="proyek-mentor">Di bawah bimbingan mentor: <strong>{{ $user->mentor ?? '-' }}</strong></div>
+        <div class="proyek-mentor">Mentor Magang: <strong>{{ $user->mentor ?? '-' }}</strong></div>
         <div class="kota-tanggal">
             {{ $kota ?? 'Bogor' }}, {{ \Carbon\Carbon::parse($tanggalTerbit ?? now())->isoFormat('D MMMM Y') }}
         </div>
     </div>
 
+    <!-- BLOCK BARCODE: LINK KE PDF -->
+    @if(!empty($qrCode) && ($jenisTtd ?? 'elektronik') === 'elektronik')
+        <div class="section-barcode">
+            @if(!empty($pdfUrl))
+                <a href="{{ $pdfUrl }}" target="_blank">
+                    <img src="{{ $qrCode }}" class="barcode-img" alt="Barcode Sertifikat">
+                </a>
+            @else
+                <img src="{{ $qrCode }}" class="barcode-img" alt="Barcode Sertifikat">
+            @endif
+        </div>
+    @endif
+
     <!-- BLOCK 4: TANDA TANGAN -->
     <div class="section-nama-ttd">
-        <div class="nama-penandatangan">{{ $namaPenandatangan }}</div>
+        <div class="nama-penandatangan">{{ $namaPenandatangan ?? '' }}</div>
     </div>
 
-    <div class="section-nip">
-        <div class="nip">NIP : {{ !empty($nipPenandatangan) ? $nipPenandatangan : '-' }}</div>
-        @if($jenisTtd === 'elektronik')
-            <div class="badge-ttd-elektronik">Ditandatangani secara elektronik</div>
-        @endif
-    </div>
+    @if(($jenisTtd ?? 'elektronik') === 'elektronik')
+        <div class="section-nip">
+            <div class="badge-ttd-elektronik">
+                Sertifikat ini diterbitkan secara otomatis oleh sistem {{ $websiteUrl ?? url('/') }} dan sah digunakan tanpa memerlukan tanda tangan basah.
+            </div>
+        </div>
+    @endif
 
 </body>
 </html>

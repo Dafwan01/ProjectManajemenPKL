@@ -134,7 +134,6 @@ class Sertifikat extends Component
             'tanggalTerbit'        => 'required|date',
             'namaPenandatangan'    => 'required|string|max:255',
             'jabatanPenandatangan' => 'required|string|max:255',
-            'nipPenandatangan'     => 'nullable|string|max:50',
             'jenisTtd'             => 'required|in:elektronik,non_elektronik',
         ], [
             'nomorSertifikat.required'      => 'Nomor sertifikat wajib diisi.',

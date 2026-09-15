@@ -294,21 +294,6 @@
                         @error('jabatanPenandatangan') <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
-                    <!-- Input NIP Penandatangan (Opsional) -->
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">NIP Penandatangan</label>
-                            <span class="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Opsional</span>
-                        </div>
-                        <input 
-                            type="text" 
-                            wire:model="nipPenandatangan" 
-                            placeholder="Contoh: 19800101 200501 1 001"
-                            class="w-full p-2.5 text-xs sm:text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-                        >
-                        @error('nipPenandatangan') <span class="text-xs text-rose-500 mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
                     <!-- Pilihan Jenis Tanda Tangan -->
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Jenis Tanda Tangan</label>
