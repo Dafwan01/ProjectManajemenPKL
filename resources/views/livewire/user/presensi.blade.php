@@ -329,6 +329,24 @@
             </div>
         @endif
 
+        @if ($adaIzinDisetujui)
+            <div class="mb-6 p-4 bg-blue-100 dark:bg-blue-900/60 border border-blue-400 dark:border-blue-500 text-blue-800 dark:text-blue-200 rounded-xl flex items-start gap-3 shadow-lg">
+                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div class="text-xs">
+                    <p class="font-bold text-sm">Status Izin / Sakit Aktif</p>
+                    <p class="mt-0.5">{{ $keteranganIzinHariIni }}</p>
+                </div>
+            </div>
+        @elseif ($adaIzinPending)
+            <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-600 text-amber-800 dark:text-amber-200 rounded-xl flex items-start gap-3 shadow-lg">
+                <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div class="text-xs">
+                    <p class="font-bold text-sm">Perhatian: Pengajuan Izin / Sakit Masih Pending</p>
+                    <p class="mt-0.5">{{ $keteranganIzinHariIni }}</p>
+                </div>
+            </div>
+        @endif
+
         <!-- Card Utama Form Presensi -->
         <form wire:submit.prevent="simpanPresensi(); resetVisualState();" class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-xl mb-8 w-full transition-all duration-300">
             
@@ -498,6 +516,7 @@
                     <!-- Pengecekan Logika Disabled Sisi Backend -->
                     @php
                         $isDisabledByBackend = $isLulus 
+                            || $adaIzinDisetujui
                             || ($tipePresensi === 'masuk' && $sudahAbsenMasuk) 
                             || ($tipePresensi === 'pulang' && $sudahAbsenKeluar);
                     @endphp
@@ -513,6 +532,8 @@
                         
                         @if ($isLulus)
                             <span>Status Akun Lulus (Nonaktif)</span>
+                        @elseif ($adaIzinDisetujui)
+                            <span>Izin / Sakit Telah Disetujui (Presensi Dikunci)</span>
                         @elseif ($tipePresensi === 'masuk' && $sudahAbsenMasuk)
                             <span>Sudah Absen Masuk Hari Ini</span>
                         @elseif ($tipePresensi === 'pulang' && $sudahAbsenKeluar)

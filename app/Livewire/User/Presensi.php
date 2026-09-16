@@ -3,6 +3,7 @@
 namespace App\Livewire\User;
 
 use App\Models\log_book;
+use App\Models\PermohonanIzin;
 use App\Models\presensi as PresensiModel;
 use App\Models\User;
 use App\Enums\UserRole;
@@ -32,6 +33,11 @@ class Presensi extends Component
     public bool $isWeekend = false;
     public string $namaHariIni = '';
 
+    // Flag & keterangan izin/sakit di hari yang sama
+    public bool $adaIzinDisetujui = false;
+    public bool $adaIzinPending = false;
+    public string $keteranganIzinHariIni = '';
+
     public $isWfa = false;
     public $statusKerja = 'wfo';
     public $jamMasukJadwal = null;
@@ -58,6 +64,7 @@ class Presensi extends Component
         $this->cekUserStatus();
         $this->cekHariLibur();
         $this->cekStatusPresensi();
+        $this->cekIzinSakitHariIni();
         $this->cekJadwalDanRadius();
         
         // TAMBAHAN: Memanggil fungsi kata-kata hari ini saat halaman dimuat
@@ -243,10 +250,70 @@ class Presensi extends Component
             ->first();
     }
 
+    /**
+     * Cek status izin/sakit pada hari ini.
+     */
+    public function cekIzinSakitHariIni()
+    {
+        $userId = $this->currentUserId();
+        if (!$userId) {
+            return;
+        }
+
+        $today = WorldTimeService::now()->toDateString();
+
+        // 1. Cek langsung dari data presensi hari ini jika sudah berstatus izin/sakit
+        $presensiHariIni = $this->getPresensiHariIni();
+        if ($presensiHariIni) {
+            $statusVal = $presensiHariIni->status_kehadiran instanceof \BackedEnum
+                ? $presensiHariIni->status_kehadiran->value
+                : $presensiHariIni->status_kehadiran;
+
+            if (in_array($statusVal, ['izin', 'sakit'])) {
+                $this->adaIzinDisetujui = true;
+                $labelStatus = strtoupper($statusVal);
+                $this->keteranganIzinHariIni = "Status kehadiran Anda hari ini tercatat sebagai {$labelStatus}. Anda tidak perlu melakukan presensi kehadiran lagi.";
+                return;
+            }
+        }
+
+        // 2. Cek apakah ada permohonan izin/sakit aktif untuk hari ini
+        $permohonan = PermohonanIzin::where('user_id', $userId)
+            ->whereIn('jenis', ['izin', 'sakit'])
+            ->where(function ($query) use ($today) {
+                $query->whereDate('tanggal_awal', $today)
+                    ->orWhere(function ($q) use ($today) {
+                        $q->whereDate('tanggal_awal', '<=', $today)
+                          ->whereNotNull('tanggal_akhir')
+                          ->whereDate('tanggal_akhir', '>=', $today);
+                    });
+            })
+            ->whereIn('status', ['disetujui', 'pending'])
+            ->latest()
+            ->first();
+
+        if ($permohonan) {
+            $labelJenis = ucfirst($permohonan->jenis);
+            if ($permohonan->status === 'disetujui') {
+                $this->adaIzinDisetujui = true;
+                $this->keteranganIzinHariIni = "Hari ini Anda memiliki pengajuan {$labelJenis} yang telah DISETUJUI oleh admin/mentor. Anda tidak dapat melakukan presensi kehadiran.";
+            } elseif ($permohonan->status === 'pending') {
+                $this->adaIzinPending = true;
+                $this->keteranganIzinHariIni = "Anda memiliki pengajuan {$labelJenis} berstatus PENDING hari ini. Jika Anda melakukan presensi masuk, pengajuan tersebut akan otomatis dibatalkan sistem karena Anda hadir.";
+            }
+        }
+    }
+
     public function simpanPresensi()
     {
         if ($this->isLulus) {
             session()->flash('warning', 'Gagal Presensi! Akun Anda telah berstatus LULUS.');
+            return;
+        }
+
+        // Guard: Jika izin/sakit hari ini sudah disetujui, blokir presensi
+        if ($this->adaIzinDisetujui) {
+            session()->flash('warning', 'Gagal Presensi! ' . $this->keteranganIzinHariIni);
             return;
         }
 
@@ -346,10 +413,37 @@ class Presensi extends Component
                     'longitude'        => $this->longitude,
                 ]);
 
+                // Batalkan otomatis izin/sakit yang masih pending untuk hari ini jika ada
+                $izinPendingList = PermohonanIzin::where('user_id', $user->user_id)
+                    ->whereIn('jenis', ['izin', 'sakit'])
+                    ->where(function ($query) use ($tanggalHariIni) {
+                        $query->whereDate('tanggal_awal', $tanggalHariIni)
+                            ->orWhere(function ($q) use ($tanggalHariIni) {
+                                $q->whereDate('tanggal_awal', '<=', $tanggalHariIni)
+                                  ->whereNotNull('tanggal_akhir')
+                                  ->whereDate('tanggal_akhir', '>=', $tanggalHariIni);
+                            });
+                    })
+                    ->where('status', 'pending')
+                    ->get();
+
+                $batalIzinNotif = false;
+                foreach ($izinPendingList as $ip) {
+                    $ip->update([
+                        'status' => 'ditolak',
+                        'catatan_admin' => 'Dibatalkan otomatis oleh sistem karena siswa melakukan presensi masuk (hadir fisik).',
+                    ]);
+                    $batalIzinNotif = true;
+                }
 
                 $pesan = $statusKehadiran === 'terlambat'
                     ? 'Presensi MASUK berhasil dikirim (Terlambat)!'
                     : 'Presensi MASUK berhasil dikirim!';
+
+                if ($batalIzinNotif) {
+                    $pesan .= ' Pengajuan izin/sakit pending sebelumnya otomatis dibatalkan karena Anda hadir.';
+                    $this->adaIzinPending = false;
+                }
 
                 if ($this->waktuFallbackServer) {
                     $pesan .= ' (Catatan: waktu dunia tidak dapat diakses, menggunakan waktu server sebagai cadangan.)';

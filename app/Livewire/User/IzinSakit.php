@@ -5,6 +5,7 @@ namespace App\Livewire\User;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\PermohonanIzin;
+use App\Models\presensi;
 use App\Enums\UserStatus;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -30,6 +31,8 @@ class IzinSakit extends Component
 
     public bool $sudahAdaPengajuan = false;
     public bool $tanggalAkhirPekan = false; // flag: tanggal yang dipilih jatuh di weekend / rentang tanpa hari kerja
+    public bool $sudahAbsenMasuk = false; // flag: user sudah absen masuk pada tanggalMulai
+    public string $jamAbsenMasuk = '';
 
     /**
      * Ambil data user yang sedang login saat komponen pertama kali dimuat.
@@ -130,7 +133,8 @@ class IzinSakit extends Component
     }
 
     /**
-     * Cek apakah tanggal yang dipilih sudah punya pengajuan aktif (live-check).
+     * Cek apakah tanggal yang dipilih sudah punya pengajuan aktif (live-check)
+     * serta cek apakah user sudah melakukan absen masuk pada tanggal tersebut.
      */
     public function cekTanggalBentrok()
     {
@@ -138,6 +142,8 @@ class IzinSakit extends Component
 
         if (!$user || empty($this->tanggalMulai)) {
             $this->sudahAdaPengajuan = false;
+            $this->sudahAbsenMasuk = false;
+            $this->jamAbsenMasuk = '';
             return;
         }
 
@@ -154,6 +160,19 @@ class IzinSakit extends Component
             })
             ->whereNotIn('status', ['ditolak', 'rejected'])
             ->exists();
+
+        // Cek apakah user sudah absen masuk pada tanggal yang dipilih
+        $presensiHariTerpilih = presensi::where('user_id', $userId)
+            ->whereDate('tanggal', $this->tanggalMulai)
+            ->first();
+
+        if ($presensiHariTerpilih && !empty($presensiHariTerpilih->absen_masuk)) {
+            $this->sudahAbsenMasuk = true;
+            $this->jamAbsenMasuk = substr($presensiHariTerpilih->absen_masuk, 0, 5);
+        } else {
+            $this->sudahAbsenMasuk = false;
+            $this->jamAbsenMasuk = '';
+        }
     }
 
     /**
@@ -207,6 +226,13 @@ class IzinSakit extends Component
         $isTipeAbsen = in_array($this->tipePengajuan, ['absen', 'absen_pulang']);
 
         $this->hitungJumlahHari();
+        $this->cekTanggalBentrok();
+
+        // ✅ Cegah pengajuan tipe 'absen' (masuk & keluar) jika user sudah presensi masuk
+        if ($this->tipePengajuan === 'absen' && $this->sudahAbsenMasuk) {
+            session()->flash('warning', 'Anda sudah melakukan presensi masuk pada tanggal tersebut (Pukul ' . $this->jamAbsenMasuk . '). Jika ingin mengajukan ketidakhadiran jam pulang, silakan pilih tipe "Absen Pulang".');
+            return;
+        }
 
         // ✅ Cegah kirim jika jumlah hari kerja = 0 (misal tanggal yang dipilih Sabtu/Minggu)
         if ($this->jumlahHari <= 0) {
@@ -246,8 +272,8 @@ class IzinSakit extends Component
         ]);
 
         $labelPesan = match ($this->tipePengajuan) {
-            'izin'         => 'Izin',
-            'sakit'        => 'Sakit',
+            'izin'         => $this->sudahAbsenMasuk ? 'Izin (Pulang Lebih Awal)' : 'Izin',
+            'sakit'        => $this->sudahAbsenMasuk ? 'Sakit (Pulang Lebih Awal)' : 'Sakit',
             'absen'        => 'Absen',
             'absen_pulang' => 'Absen Pulang',
             default        => ucfirst($this->tipePengajuan),

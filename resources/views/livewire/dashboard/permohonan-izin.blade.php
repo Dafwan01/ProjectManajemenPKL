@@ -415,8 +415,11 @@
         </div>
     @endif
     @if($showConfirmTimpaModal)
+    @php
+        $adaAbsenMasuk = collect($tanggalBentrok)->contains(fn ($b) => !empty($b['absen_masuk']));
+    @endphp
     <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-        <div class="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden">
+        <div class="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-start gap-3">
                 <div class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -424,37 +427,59 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-gray-900 dark:text-white">Presensi Sudah Ada</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Tanggal berikut sudah memiliki data presensi. Jika dilanjutkan, status kehadirannya akan ditimpa sesuai pengajuan ini:</p>
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white">Presensi Sudah Ada di Tanggal Tersebut</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Peserta telah memiliki data kehadiran pada tanggal pengajuan. Silakan tentukan tindakan yang diinginkan:
+                    </p>
                 </div>
             </div>
 
             <div class="px-5 py-3 max-h-48 overflow-y-auto">
-                <ul class="space-y-1.5">
+                <ul class="space-y-2">
                     @foreach($tanggalBentrok as $bentrok)
                         <li class="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60 rounded-lg px-3 py-2">
-                            <span class="text-gray-700 dark:text-gray-300">{{ $bentrok['tanggal_format'] }}</span>
-                            <span class="font-semibold text-gray-900 dark:text-white">{{ $bentrok['status_sekarang'] }}</span>
+                            <div>
+                                <span class="font-medium text-gray-800 dark:text-gray-200 block">{{ $bentrok['tanggal_format'] }}</span>
+                                @if(!empty($bentrok['absen_masuk']))
+                                    <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Tercatat Masuk: {{ $bentrok['absen_masuk'] }} WIB</span>
+                                @endif
+                            </div>
+                            <span class="font-semibold px-2 py-0.5 rounded text-[11px] {{ !empty($bentrok['absen_masuk']) ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
+                                {{ $bentrok['status_sekarang'] }}
+                            </span>
                         </li>
                     @endforeach
                 </ul>
             </div>
 
-            <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2">
+            <div class="px-5 py-4 border-t border-gray-200 dark:border-gray-800 flex flex-wrap items-center justify-end gap-2">
                 <button
                     type="button"
                     wire:click="batalTimpaPresensi"
                     class="rounded-xl px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs font-medium transition"
                 >
-                    Tidak
+                    Batal
                 </button>
+
                 <button
                     type="button"
                     wire:click="konfirmasiTimpaPresensi"
-                    class="rounded-xl px-4 py-2 bg-amber-600 text-white hover:bg-amber-500 text-xs font-semibold transition"
+                    class="rounded-xl px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition"
+                    title="Kosongkan data jam hadir dan setujui izin/sakit sehari penuh"
                 >
-                    Ya, Timpa Presensi
+                    Timpa Penuh (Seharian)
                 </button>
+
+                @if($adaAbsenMasuk)
+                    <button
+                        type="button"
+                        wire:click="konfirmasiPulangCepat"
+                        class="rounded-xl px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition shadow-sm"
+                        title="Pertahankan jam masuk dan catat sebagai izin/sakit pulang cepat"
+                    >
+                        Setujui Pulang Lebih Awal
+                    </button>
+                @endif
             </div>
         </div>
     </div>

@@ -29,10 +29,22 @@
         @endif
         
         @if($sudahAdaPengajuan)
-    <div class="flex items-center gap-2 text-xs bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700/50 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg">
-        ⚠️ Kamu sudah memiliki pengajuan untuk tanggal ini. Tidak bisa mengirim pengajuan baru.
-    </div>
-@endif
+            <div class="mb-4 flex items-center gap-2 text-xs bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700/50 text-red-600 dark:text-red-400 px-3.5 py-2.5 rounded-lg shadow-sm">
+                <span>⚠️ Kamu sudah memiliki pengajuan untuk tanggal ini. Tidak bisa mengirim pengajuan baru.</span>
+            </div>
+        @endif
+
+        @if($sudahAbsenMasuk && in_array($tipePengajuan, ['izin', 'sakit']))
+            <div class="mb-4 flex items-center gap-2 text-xs bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700/50 text-amber-800 dark:text-amber-200 px-3.5 py-2.5 rounded-lg shadow-sm">
+                <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span><strong>Catatan:</strong> Anda telah melakukan Absen Masuk pada tanggal ini (Pukul {{ $jamAbsenMasuk }} WIB). Pengajuan {{ ucfirst($tipePengajuan) }} ini akan dicatat sebagai <strong>Izin Pulang Lebih Awal</strong>. Bukti kehadiran masuk Anda tetap tersimpan.</span>
+            </div>
+        @elseif($sudahAbsenMasuk && $tipePengajuan === 'absen')
+            <div class="mb-4 flex items-center gap-2 text-xs bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700/50 text-red-700 dark:text-red-300 px-3.5 py-2.5 rounded-lg shadow-sm">
+                <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <span>Anda sudah melakukan Absen Masuk pada tanggal ini (Pukul {{ $jamAbsenMasuk }} WIB). Jika ingin mengajukan ketidakhadiran jam pulang, silakan pilih tipe <strong>Absen Pulang</strong>.</span>
+            </div>
+        @endif
 
         <!-- Card Container Compact Form -->
         <div class="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-200 dark:border-gray-700/60 shadow-lg">
@@ -145,9 +157,9 @@
                     <button 
                         type="submit" 
                         class="w-full sm:w-auto text-white bg-blue-600 hover:bg-blue-500 focus:ring-2 focus:ring-blue-800 font-medium rounded-lg text-xs px-5 py-2.5 transition duration-150 flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
-                        @disabled($isLulus || $sudahAdaPengajuan )>
+                        @disabled($isLulus || $sudahAdaPengajuan || ($tipePengajuan === 'absen' && $sudahAbsenMasuk))>
                         <span wire:loading.remove wire:target="kirimPengajuan">
-                            Kirim Pengajuan {{ $tipePengajuan === 'absen_pulang' ? 'Absen Pulang' : ucfirst($tipePengajuan) }}
+                            Kirim Pengajuan {{ $tipePengajuan === 'absen_pulang' ? 'Absen Pulang' : ($sudahAbsenMasuk && in_array($tipePengajuan, ['izin', 'sakit']) ? ucfirst($tipePengajuan) . ' (Pulang Cepat)' : ucfirst($tipePengajuan)) }}
                         </span>
                         <span wire:loading wire:target="kirimPengajuan">Mengirim Data...</span>
                     </button>

@@ -129,40 +129,62 @@ class PermohonanIzin extends Component
      * Cek apakah tanggal (rentang) permohonan izin/sakit sudah punya data presensi.
      * Mengembalikan array detail tanggal yang bentrok (kosong jika tidak ada bentrok).
      */
-   private function cekPresensiBentrok($permohonan): array
-{
-    $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
-    $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
+    private function cekPresensiBentrok($permohonan): array
+    {
+        $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
+        $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
 
-    $period = CarbonPeriod::create($startDate, $endDate);
-    $bentrok = [];
+        $period = CarbonPeriod::create($startDate, $endDate);
+        $bentrok = [];
 
-    foreach ($period as $date) {
-        $tglString = $date->format('Y-m-d');
+        foreach ($period as $date) {
+            $tglString = $date->format('Y-m-d');
 
-        $presensi = presensi::where('user_id', $permohonan->user_id)
-            ->whereDate('tanggal', $tglString)
-            ->first();
+            $presensi = presensi::where('user_id', $permohonan->user_id)
+                ->whereDate('tanggal', $tglString)
+                ->first();
 
-        if ($presensi) {
-            // ✅ Ambil value dari enum (kalau enum), atau pakai apa adanya kalau sudah string
-            $statusValue = $presensi->status_kehadiran instanceof \BackedEnum
-                ? $presensi->status_kehadiran->value
-                : $presensi->status_kehadiran;
+            if ($presensi) {
+                // ✅ Ambil value dari enum (kalau enum), atau pakai apa adanya kalau sudah string
+                $statusValue = $presensi->status_kehadiran instanceof \BackedEnum
+                    ? $presensi->status_kehadiran->value
+                    : $presensi->status_kehadiran;
 
-            $bentrok[] = [
-                'tanggal'         => $tglString,
-                'tanggal_format'  => $date->copy()->translatedFormat('l, d F Y'),
-                'status_sekarang' => strtoupper((string) ($statusValue ?? '-')),
-            ];
+                $bentrok[] = [
+                    'tanggal'         => $tglString,
+                    'tanggal_format'  => $date->copy()->translatedFormat('l, d F Y'),
+                    'status_sekarang' => strtoupper((string) ($statusValue ?? '-')),
+                    'absen_masuk'     => !empty($presensi->absen_masuk) ? substr($presensi->absen_masuk, 0, 5) : null,
+                    'absen_keluar'    => !empty($presensi->absen_keluar) ? substr($presensi->absen_keluar, 0, 5) : null,
+                ];
+            }
         }
+
+        return $bentrok;
     }
 
-    return $bentrok;
-}
+    /**
+     * Dipanggil saat admin klik "Setujui (Pulang Cepat)".
+     * Jam absen masuk dan foto masuk dipertahankan, jam keluar diisi jam sekarang jika belum ada,
+     * status diubah menjadi izin/sakit, dan logbook diisi otomatis.
+     */
+    public function konfirmasiPulangCepat(): void
+    {
+        if (!$this->pendingSetujuiId) {
+            $this->batalTimpaPresensi();
+            return;
+        }
+
+        $permohonan = PermohonanIzinModel::with('user')->findOrFail($this->pendingSetujuiId);
+        $jenisStr = strtolower($permohonan->jenis);
+
+        $this->approveAndProcess($permohonan, fn () => $this->prosesPulangCepat($permohonan, $jenisStr));
+
+        $this->resetConfirmTimpaState();
+    }
 
     /**
-     * Dipanggil saat admin klik "Ya, Timpa Presensi" di modal konfirmasi.
+     * Dipanggil saat admin klik "Timpa Penuh (Sakit/Izin Seharian)".
      */
     public function konfirmasiTimpaPresensi(): void
     {
@@ -180,7 +202,7 @@ class PermohonanIzin extends Component
     }
 
     /**
-     * Dipanggil saat admin klik "Tidak" di modal konfirmasi -> batalkan semua, kembali ke list.
+     * Dipanggil saat admin klik "Batal" di modal konfirmasi -> batalkan semua, kembali ke list.
      */
     public function batalTimpaPresensi(): void
     {
@@ -193,6 +215,60 @@ class PermohonanIzin extends Component
         $this->showConfirmTimpaModal = false;
         $this->pendingSetujuiId = null;
         $this->tanggalBentrok = [];
+    }
+
+    /**
+     * Proses persetujuan izin/sakit pulang lebih awal (mempertahankan bukti jam hadir pagi).
+     */
+    private function prosesPulangCepat($permohonan, string $statusKehadiran): void
+    {
+        $startDate = $permohonan->tanggal_awal ? Carbon::parse($permohonan->tanggal_awal) : Carbon::parse($permohonan->tanggal_permohonan);
+        $endDate   = $permohonan->tanggal_akhir ? Carbon::parse($permohonan->tanggal_akhir) : $startDate;
+
+        $period = CarbonPeriod::create($startDate, $endDate);
+
+        foreach ($period as $date) {
+            $tglString = $date->format('Y-m-d');
+
+            $presensi = presensi::where('user_id', $permohonan->user_id)
+                ->whereDate('tanggal', $tglString)
+                ->first();
+
+            $jamSekarang = Carbon::now()->format('H:i:s');
+
+            if ($presensi) {
+                $presensi->update([
+                    'status_kehadiran' => $statusKehadiran,
+                    'absen_keluar'     => $presensi->absen_keluar ?: $jamSekarang,
+                ]);
+
+                log_book::updateOrCreate(
+                    [
+                        'user_id'     => $permohonan->user_id,
+                        'presensi_id' => $presensi->presensi_id ?? $presensi->id,
+                    ],
+                    [
+                        'kegiatan'    => '(PULANG LEBIH AWAL - ' . strtoupper($permohonan->jenis) . ') ' . $permohonan->alasan,
+                    ]
+                );
+            } else {
+                $presensiNew = presensi::create([
+                    'user_id'          => $permohonan->user_id,
+                    'tanggal'          => $tglString,
+                    'status_kehadiran' => $statusKehadiran,
+                    'absen_masuk'      => null,
+                    'absen_keluar'     => null,
+                    'foto_masuk'       => null,
+                    'foto_keluar'      => null,
+                ]);
+
+                log_book::create([
+                    'user_id'     => $permohonan->user_id,
+                    'presensi_id' => $presensiNew->presensi_id ?? $presensiNew->id,
+                    'kegiatan'    => '(' . strtoupper($permohonan->jenis) . ') ' . $permohonan->alasan,
+                ]);
+            }
+        }
     }
 
     private function prosesIzinSakit($permohonan, string $statusKehadiran): void
