@@ -237,13 +237,31 @@
                 const video = this.$refs.video;
                 const canvas = this.$refs.canvas;
                 
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
+                const targetRatio = 5 / 4; // Rasio 5:4 (lebar : tinggi)
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+                const videoRatio = videoWidth / videoHeight;
+                
+                let sx = 0, sy = 0, sWidth = videoWidth, sHeight = videoHeight;
+                
+                // Potong tengah (center-crop) persis seperti apa yang terlihat pada preview object-cover (5:4)
+                if (videoRatio > targetRatio) {
+                    // Video lebih lebar daripada 5:4 (misal 16:9 landscape) -> potong sisi kiri dan kanan
+                    sWidth = Math.round(videoHeight * targetRatio);
+                    sx = Math.round((videoWidth - sWidth) / 2);
+                } else {
+                    // Video lebih tinggi daripada 5:4 (misal 9:16 portrait) -> potong sisi atas dan bawah
+                    sHeight = Math.round(videoWidth / targetRatio);
+                    sy = Math.round((videoHeight - sHeight) / 2);
+                }
+                
+                canvas.width = sWidth;
+                canvas.height = sHeight;
                 
                 const context = canvas.getContext('2d');
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                context.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
                 
-                const dataUrl = canvas.toDataURL('image/jpeg');
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
                 this.photoPreview = dataUrl;
                 this.$wire.fotoCaptured = dataUrl;
@@ -373,7 +391,7 @@
                 
                 <!-- Kamera Box -->
                 <div class="flex flex-col gap-3 w-full lg:w-80 flex-shrink-0" wire:ignore>
-                    <div class="w-full h-64 bg-gray-100 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 relative overflow-hidden shadow-inner group">
+                    <div class="w-full aspect-[5/4] bg-gray-100 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 relative overflow-hidden shadow-inner group" style="aspect-ratio: 5 / 4;">
                         
                         <video x-show="isCameraOn" x-ref="video" autoplay playsinline muted class="w-full h-full object-cover"></video>
                         
