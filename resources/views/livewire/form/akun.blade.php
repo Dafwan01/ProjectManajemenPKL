@@ -375,7 +375,7 @@
                     >
                         <option value="">-- Pilih Mentor --</option>
                         @foreach($mentors as $mentorUser)
-                            <option value="{{ $mentorUser->nama }}">{{ $mentorUser->nama }}</option>
+                            <option value="{{ $mentorUser->user_id }}">{{ $mentorUser->nama }}</option>
                         @endforeach
                     </select>
 

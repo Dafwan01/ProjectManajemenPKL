@@ -166,9 +166,12 @@ class MonitoringAbsensi extends Component
             ->whereHas('user', function ($query) use ($currentUser, $isMentor) {
                 $query->where('role', UserRole::PKL->value);
 
-                // Filter berdasarkan nama mentor jika pengakses adalah Mentor
+                // Filter berdasarkan mentor jika pengakses adalah Mentor
                 if ($isMentor) {
-                    $query->where('mentor', $currentUser->nama);
+                    $query->where(function ($q) use ($currentUser) {
+                        $q->where('mentor_id', $currentUser->user_id)
+                          ->orWhere('mentor', $currentUser->nama);
+                    });
                 }
             })
             ->whereDate('tanggal', $this->tanggal)
@@ -224,7 +227,10 @@ class MonitoringAbsensi extends Component
 
                 // Filter khusus anak bimbingan jika pengakses adalah Mentor
                 if ($isMentor) {
-                    $query->where('mentor', $currentUser->nama);
+                    $query->where(function ($q) use ($currentUser) {
+                        $q->where('mentor_id', $currentUser->user_id)
+                          ->orWhere('mentor', $currentUser->nama);
+                    });
                 }
             })
             ->when($this->tanggal, function ($query) {

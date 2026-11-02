@@ -81,7 +81,10 @@ class RekapAbsensi extends Component
         ->with(['sekolah', 'divisi.bidang']) // ✅ eager load supaya tidak N+1 query
         ->where('role', UserRole::PKL->value ?? 'PKL')
         ->when($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value, function ($query) use ($currentUser) {
-            $query->where('mentor', $currentUser->nama);
+            $query->where(function ($q) use ($currentUser) {
+                $q->where('mentor_id', $currentUser->user_id)
+                  ->orWhere('mentor', $currentUser->nama);
+            });
         })
         ->when($this->status !== 'semua', function ($query) {
             $query->where('status', $this->status);

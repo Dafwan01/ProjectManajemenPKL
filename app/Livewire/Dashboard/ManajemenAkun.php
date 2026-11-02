@@ -44,6 +44,7 @@ class ManajemenAkun extends Component
     public array $sekolahUsersToDelete = [];
 
     public $mentor = '';
+    public $mentor_id = null;
     public $password = '';
     public $confirm_password = '';
     public $status = '';
@@ -484,6 +485,7 @@ class ManajemenAkun extends Component
         $this->tambahSekolahBaru = false;
         $this->namaSekolahBaru = '';
         $this->mentor = '';
+        $this->mentor_id = null;
         $this->password = '';
         $this->confirm_password = '';
         $this->resetValidation();
@@ -491,7 +493,8 @@ class ManajemenAkun extends Component
 
     private function applyMentorBidangDivisi(User $mentorUser): void
     {
-        $this->mentor = $mentorUser->nama;
+        $this->mentor_id = $mentorUser->user_id;
+        $this->mentor = (string) $mentorUser->user_id;
         $this->divisi_id = $mentorUser->divisi_id;
 
         $divisi = Divisi::find($mentorUser->divisi_id);
@@ -536,7 +539,8 @@ class ManajemenAkun extends Component
         if ($this->isMentor()) {
             $this->applyMentorBidangDivisi($currentUser);
         } else {
-            $this->mentor = $user->mentor;
+            $this->mentor_id = $user->mentor_id;
+            $this->mentor = (string) ($user->mentor_id ?? $user->mentor);
             $this->divisi_id = $user->divisi_id;
 
             $divisi = Divisi::find($user->divisi_id);
@@ -583,6 +587,26 @@ class ManajemenAkun extends Component
             $this->sekolah_id = $sekolahBaru->sekolah_id;
         }
 
+        $mentorId = null;
+        $mentorNama = null;
+
+        if ($this->isRolePkl) {
+            if ($isMentor) {
+                $mentorId = $currentUser->user_id;
+                $mentorNama = $currentUser->nama;
+            } elseif (!empty($this->mentor)) {
+                if (is_numeric($this->mentor)) {
+                    $mentorId = (int) $this->mentor;
+                    $m = User::find($mentorId);
+                    $mentorNama = $m?->nama;
+                } else {
+                    $m = User::where('role', UserRole::MENTOR->value)->where('nama', $this->mentor)->first();
+                    $mentorId = $m?->user_id;
+                    $mentorNama = $this->mentor;
+                }
+            }
+        }
+
         if ($this->isEditMode) {
             $user = User::findOrFail($this->userId);
             $data = [
@@ -592,7 +616,8 @@ class ManajemenAkun extends Component
                 'status' => $this->status,
                 'divisi_id' => $this->divisi_id,
                 'sekolah_id' => $this->isRolePkl ? $this->sekolah_id : null,
-                'mentor' => $this->isRolePkl ? $this->mentor : null,
+                'mentor_id' => $mentorId,
+                'mentor' => $mentorNama,
             ];
 
             if (!empty($this->password)) {
@@ -610,7 +635,8 @@ class ManajemenAkun extends Component
                 'divisi_id' => $this->divisi_id,
                 'status' => UserStatus::AKTIF->value,
                 'sekolah_id' => $this->isRolePkl ? $this->sekolah_id : null,
-                'mentor' => $this->isRolePkl ? $this->mentor : null,
+                'mentor_id' => $mentorId,
+                'mentor' => $mentorNama,
                 'password' => bcrypt($this->password),
                 'tanggal_mulai' => now(),
             ]);
@@ -640,7 +666,10 @@ class ManajemenAkun extends Component
 
         $users = User::query()
             ->when($isMentor, function ($query) use ($currentUser) {
-                $query->where('mentor', $currentUser->nama);
+                $query->where(function ($q) use ($currentUser) {
+                    $q->where('mentor_id', $currentUser->user_id)
+                      ->orWhere('mentor', $currentUser->nama);
+                });
             })
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {

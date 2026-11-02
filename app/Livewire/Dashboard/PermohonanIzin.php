@@ -528,7 +528,10 @@ private function hapusFotoPresensi($presensi): void
         $permohonans = PermohonanIzinModel::with('user')
             ->when($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value, function ($query) use ($currentUser) {
                 $query->whereHas('user', function ($q) use ($currentUser) {
-                    $q->where('mentor', $currentUser->nama);
+                    $q->where(function ($subQ) use ($currentUser) {
+                        $subQ->where('mentor_id', $currentUser->user_id)
+                             ->orWhere('mentor', $currentUser->nama);
+                    });
                 });
             })
             ->when($this->search, function ($query) {
@@ -552,7 +555,10 @@ private function hapusFotoPresensi($presensi): void
         $totalPending = PermohonanIzinModel::where('status', 'pending')
             ->when($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value, function ($query) use ($currentUser) {
                 $query->whereHas('user', function ($q) use ($currentUser) {
-                    $q->where('mentor', $currentUser->nama);
+                    $q->where(function ($subQ) use ($currentUser) {
+                        $subQ->where('mentor_id', $currentUser->user_id)
+                             ->orWhere('mentor', $currentUser->nama);
+                    });
                 });
             })
             ->count();

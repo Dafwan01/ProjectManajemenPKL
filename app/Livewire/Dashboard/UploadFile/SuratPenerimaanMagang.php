@@ -137,7 +137,10 @@ class SuratPenerimaanMagang extends Component
         $users = User::query()
             ->where('role', UserRole::PKL->value)
             ->when($isMentor, function ($query) use ($currentUser) {
-                $query->where('mentor', $currentUser->nama);
+                $query->where(function ($q) use ($currentUser) {
+                    $q->where('mentor_id', $currentUser->user_id)
+                      ->orWhere('mentor', $currentUser->nama);
+                });
             })
             ->with(['files' => function ($query) {
                 $query->where('nama_file', $this->namaFileKategori);

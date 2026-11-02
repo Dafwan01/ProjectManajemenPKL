@@ -91,7 +91,10 @@ class Nilai extends Component
                 });
             })
             ->when($isMentor, function ($query) use ($currentUser) {
-                $query->where('mentor', $currentUser->nama);
+                $query->where(function ($q) use ($currentUser) {
+                    $q->where('mentor_id', $currentUser->user_id)
+                      ->orWhere('mentor', $currentUser->nama);
+                });
             })
             // ✅ Hitung apakah user sudah punya nilai (0 = belum ada, >0 = sudah ada)
             ->addSelect(['sudah_ada_nilai' => NilaiModel::selectRaw('COUNT(*)')

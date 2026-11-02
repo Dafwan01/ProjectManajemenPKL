@@ -89,7 +89,10 @@ class Dashboard extends Component
         // Query dasar peserta PKL
         $pklQuery = User::where('role', UserRole::PKL->value)
             ->when($isMentor, function ($query) use ($currentUser) {
-                $query->where('mentor', $currentUser->nama);
+                $query->where(function ($q) use ($currentUser) {
+                    $q->where('mentor_id', $currentUser->user_id)
+                      ->orWhere('mentor', $currentUser->nama);
+                });
             });
 
         $totalPeserta = (clone $pklQuery)->count();
@@ -132,7 +135,10 @@ class Dashboard extends Component
         // 1. Query: Info Sekolah Terbanyak (Keseluruhan)
         $topSekolahTahunIni = User::where('role', UserRole::PKL->value)
             ->when($isMentor, function ($query) use ($currentUser) {
-                $query->where('mentor', $currentUser->nama);
+                $query->where(function ($q) use ($currentUser) {
+                    $q->where('mentor_id', $currentUser->user_id)
+                      ->orWhere('mentor', $currentUser->nama);
+                });
             })
             ->whereNotNull('sekolah_id')
             ->select('sekolah_id', DB::raw('count(*) as total'))
@@ -145,7 +151,10 @@ class Dashboard extends Component
         // 2. Query: Data untuk Grafik Sekolah PKL Aktif
         $sekolahAktifData = User::where('role', UserRole::PKL->value)
             ->when($isMentor, function ($query) use ($currentUser) {
-                $query->where('mentor', $currentUser->nama);
+                $query->where(function ($q) use ($currentUser) {
+                    $q->where('mentor_id', $currentUser->user_id)
+                      ->orWhere('mentor', $currentUser->nama);
+                });
             })
             ->whereIn('status', ['aktif', 'AKTIF']) 
             ->whereNotNull('sekolah_id')

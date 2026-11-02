@@ -494,11 +494,21 @@ class Presensi extends Component
 
     private function resolveMentor(User $siswa): ?User
     {
+        // Prioritas 1: Relasi resmi mentor_id
+        if (!empty($siswa->mentor_id)) {
+            $mentor = User::where('user_id', $siswa->mentor_id)
+                ->where('role', UserRole::MENTOR)
+                ->first();
+            if ($mentor) {
+                return $mentor;
+            }
+        }
+
         if (empty($siswa->mentor)) {
             return null;
         }
 
-        // Kemungkinan 1: kolom 'mentor' berisi user_id (FK ke tabel users)
+        // Kemungkinan 2: kolom 'mentor' berisi user_id (FK ke tabel users)
         if (is_numeric($siswa->mentor)) {
             $mentor = User::where('user_id', $siswa->mentor)
                 ->where('role', UserRole::MENTOR)
@@ -508,7 +518,7 @@ class Presensi extends Component
             }
         }
 
-        // Kemungkinan 2: kolom 'mentor' berisi nama, cocokkan ke user ber-role mentor
+        // Kemungkinan 3: kolom 'mentor' berisi nama, cocokkan ke user ber-role mentor
         return User::where('role', UserRole::MENTOR)
             ->where('nama', $siswa->mentor)
             ->first();

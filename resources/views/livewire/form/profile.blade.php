@@ -662,7 +662,7 @@
                     >
                         <option value="">-- Pilih Mentor --</option>
                         @foreach($mentors as $m)
-                            <option value="{{ $m->nama }}">{{ $m->nama }}</option>
+                            <option value="{{ $m->user_id }}">{{ $m->nama }}</option>
                         @endforeach
                     </select>
                     @if($isMentorUser)

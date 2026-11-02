@@ -30,6 +30,7 @@ class User extends Authenticatable
     protected $fillable = [
         'nama',
         'sekolah_id',
+        'mentor_id',
         'mentor',
         'status',
         'email',
@@ -75,6 +76,7 @@ class User extends Authenticatable
                 'email',
                 'role',
                 'status',
+                'mentor_id',
                 'mentor',
                 'sekolah_id',
                 'divisi_id',
@@ -92,6 +94,16 @@ class User extends Authenticatable
             ->dontLogEmptyChanges()
             // Tag identifikasi nama log
             ->useLogName('user');
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (User $user) {
+            // Jika nama mentor berubah, otomatis sinkronkan nama di string 'mentor' anak didik
+            if ($user->wasChanged('nama') && ($user->role === UserRole::MENTOR || $user->role?->value === UserRole::MENTOR->value)) {
+                static::where('mentor_id', $user->user_id)->update(['mentor' => $user->nama]);
+            }
+        });
     }
 
     public function getTanggalAkhirAttribute($value)
@@ -214,5 +226,20 @@ class User extends Authenticatable
     public function forumMessages()
     {
         return $this->hasMany(ForumMessage::class);
+    }
+
+    public function mentorUser()
+    {
+        return $this->belongsTo(User::class, 'mentor_id', 'user_id');
+    }
+
+    public function anakDidik()
+    {
+        return $this->hasMany(User::class, 'mentor_id', 'user_id');
+    }
+
+    public function getMentorAttribute($value)
+    {
+        return $this->mentorUser?->nama ?? $value;
     }
 }

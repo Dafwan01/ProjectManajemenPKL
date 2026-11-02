@@ -41,6 +41,7 @@ class ManajemenPkl extends Component
     public $sekolah_id = null;
     public $searchSekolah = '';
     public $mentor = '';
+    public $mentor_id = null;
     public $tanggal_mulai = null;
     public $tanggal_akhir = null;
     public $skill = '';
@@ -488,6 +489,7 @@ class ManajemenPkl extends Component
         $this->searchBidang = '';
         $this->searchDivisi = '';
         $this->mentor = '';
+        $this->mentor_id = null;
         $this->tanggal_mulai = null;
         $this->tanggal_akhir = null;
         $this->skill = '';
@@ -523,7 +525,8 @@ class ManajemenPkl extends Component
         $currentUser = Auth::user();
 
         if ($this->isMentorUser()) {
-            $this->mentor = $currentUser->nama;
+            $this->mentor_id = $currentUser->user_id;
+            $this->mentor = (string) $currentUser->user_id;
             $this->lockDivisiToMentor($currentUser);
         }
 
@@ -547,6 +550,24 @@ class ManajemenPkl extends Component
             $this->divisi_id = $divisiBaru->divisi_id;
         }
 
+        $mentorId = null;
+        $mentorNama = null;
+
+        if ($this->isMentorUser()) {
+            $mentorId = $currentUser->user_id;
+            $mentorNama = $currentUser->nama;
+        } elseif (!empty($this->mentor)) {
+            if (is_numeric($this->mentor)) {
+                $mentorId = (int) $this->mentor;
+                $m = User::find($mentorId);
+                $mentorNama = $m?->nama;
+            } else {
+                $m = User::where('role', UserRole::MENTOR->value)->where('nama', $this->mentor)->first();
+                $mentorId = $m?->user_id;
+                $mentorNama = $this->mentor;
+            }
+        }
+
         $data = [
             'nama'          => $this->nama,
             'email'         => $this->email,
@@ -558,7 +579,8 @@ class ManajemenPkl extends Component
             'jurusan'       => $this->jurusan ?: null,
             'sekolah_id'    => $this->sekolah_id ?: null,
             'divisi_id'     => $this->divisi_id ?: null,
-            'mentor'        => $this->mentor ?: null,
+            'mentor_id'     => $mentorId ?: null,
+            'mentor'        => $mentorNama ?: null,
             'tanggal_mulai' => $this->tanggal_mulai ?: null,
             'tanggal_akhir' => $this->tanggal_akhir ?: null,
         ];
@@ -600,7 +622,8 @@ class ManajemenPkl extends Component
 
         $currentUser = Auth::user();
         if ($this->isMentorUser()) {
-            $this->mentor = $currentUser->nama;
+            $this->mentor_id = $currentUser->user_id;
+            $this->mentor = (string) $currentUser->user_id;
             $this->lockDivisiToMentor($currentUser);
         }
 
@@ -627,10 +650,12 @@ class ManajemenPkl extends Component
 
         $currentUser = Auth::user();
         if ($this->isMentorUser()) {
-            $this->mentor = $currentUser->nama;
+            $this->mentor_id = $currentUser->user_id;
+            $this->mentor = (string) $currentUser->user_id;
             $this->lockDivisiToMentor($currentUser);
         } else {
-            $this->mentor = $user->mentor;
+            $this->mentor_id = $user->mentor_id;
+            $this->mentor = (string) ($user->mentor_id ?? $user->mentor);
             $this->divisi_id = $user->divisi_id;
 
             $divisiUser = $this->divisi_id
@@ -764,7 +789,10 @@ class ManajemenPkl extends Component
         $users = User::query()
             ->where('role', UserRole::PKL->value)
             ->when($currentUser->role === UserRole::MENTOR || $currentUser->role?->value === UserRole::MENTOR->value, function ($query) use ($currentUser) {
-                $query->where('mentor', $currentUser->nama);
+                $query->where(function ($q) use ($currentUser) {
+                    $q->where('mentor_id', $currentUser->user_id)
+                      ->orWhere('mentor', $currentUser->nama);
+                });
             })
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {

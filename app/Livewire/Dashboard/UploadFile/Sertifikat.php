@@ -205,7 +205,10 @@ class Sertifikat extends Component
             })
             // Filter hanya peserta bimbingan jika yang login adalah Mentor
             ->when($isMentor, function ($query) use ($currentUser) {
-                $query->where('mentor', $currentUser->nama);
+                $query->where(function ($q) use ($currentUser) {
+                    $q->where('mentor_id', $currentUser->user_id)
+                      ->orWhere('mentor', $currentUser->nama);
+                });
             })
             // Pengurutan Prioritas: Status 'aktif' (1) di atas, 'lulus' (2) di bawah, status lain (3)
             ->orderByRaw("CASE 

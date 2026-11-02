@@ -124,7 +124,10 @@
                auth()->user()->role === \App\Enums\UserRole::MENTOR || auth()->user()->role?->value === \App\Enums\UserRole::MENTOR->value,
                function ($query) {
                    $query->whereHas('user', function ($q) {
-                       $q->where('mentor', auth()->user()->nama);
+                       $q->where(function ($sub) {
+                           $sub->where('mentor_id', auth()->user()->user_id)
+                               ->orWhere('mentor', auth()->user()->nama);
+                       });
                    });
                }
            )
